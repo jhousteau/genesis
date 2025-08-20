@@ -1,0 +1,277 @@
+variables:
+  TF_VERSION: "1.5.7"
+  TF_IN_AUTOMATION: "true"
+  TF_ROOT: ${CI_PROJECT_DIR}
+  GOOGLE_CLOUD_PROJECT: ${GCP_PROJECT_ID}
+  # Workload Identity Federation variables
+  WIF_PROVIDER: ${WIF_PROVIDER_GITLAB}
+  WIF_SERVICE_ACCOUNT: ${WIF_SERVICE_ACCOUNT_GITLAB}
+
+stages:
+  - validate
+  - plan
+  - apply
+  - destroy
+
+default:
+  image: 
+    name: hashicorp/terraform:${TF_VERSION}
+    entrypoint: [""]
+  before_script:
+    # Install gcloud SDK
+    - apk add --no-cache python3 py3-pip bash curl
+    - curl -sSL https://sdk.cloud.google.com | bash
+    - export PATH=$PATH:/root/google-cloud-sdk/bin
+    - gcloud --version
+    
+    # Authenticate using Workload Identity Federation
+    - |
+      echo "Configuring Workload Identity Federation..."
+      SUBJECT="system:serviceaccount:${CI_PROJECT_NAMESPACE}:${CI_PROJECT_NAME}"
+      
+      # Get identity token from GitLab
+      IDENTITY_TOKEN=$(curl -H "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
+        "${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/identity_token" \
+        | jq -r .token)
+      
+      # Exchange for Google access token
+      ACCESS_TOKEN=$(curl -X POST https://sts.googleapis.com/v1/token \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"grantType\": \"urn:ietf:params:oauth:grant-type:token-exchange\",
+          \"audience\": \"//iam.googleapis.com/${WIF_PROVIDER}\",
+          \"scope\": \"https://www.googleapis.com/auth/cloud-platform\",
+          \"requestedTokenType\": \"urn:ietf:params:oauth:token-type:access_token\",
+          \"subjectToken\": \"${IDENTITY_TOKEN}\",
+          \"subjectTokenType\": \"urn:ietf:params:oauth:token-type:jwt\"
+        }" | jq -r .access_token)
+      
+      # Configure gcloud with the access token
+      echo "${ACCESS_TOKEN}" | gcloud auth login --cred-file=-
+      gcloud config set project ${GOOGLE_CLOUD_PROJECT}
+    
+    # Initialize Terraform
+    - |
+      terraform init \
+        -backend-config="bucket=terraform-state-${GCP_PROJECT_ID}" \
+        -backend-config="prefix=${CI_ENVIRONMENT_NAME}/bootstrap"
+    
+    # Select workspace
+    - terraform workspace select ${CI_ENVIRONMENT_NAME} || terraform workspace new ${CI_ENVIRONMENT_NAME}
+
+# Template for Terraform jobs
+.terraform_template:
+  cache:
+    key: "${TF_ROOT}"
+    paths:
+      - ${TF_ROOT}/.terraform
+      - ${TF_ROOT}/.terraform.lock.hcl
+
+# Validation job
+terraform:validate:
+  extends: .terraform_template
+  stage: validate
+  script:
+    - terraform fmt -check -recursive
+    - terraform validate
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# Security scanning job
+terraform:security:
+  stage: validate
+  image: aquasec/tfsec:latest
+  script:
+    - tfsec . --format junit --out tfsec-report.xml
+  artifacts:
+    reports:
+      junit: tfsec-report.xml
+    expire_in: 1 week
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+# Plan jobs for each environment
+terraform:plan:dev:
+  extends: .terraform_template
+  stage: plan
+  environment:
+    name: dev
+  variables:
+    CI_ENVIRONMENT_NAME: dev
+  script:
+    - terraform plan -var-file="environments/dev.tfvars" -out=tfplan-dev
+  artifacts:
+    paths:
+      - tfplan-dev
+    expire_in: 7 days
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - "**.tf"
+        - "**.tfvars"
+        - ".gitlab-ci.yml"
+
+terraform:plan:staging:
+  extends: .terraform_template
+  stage: plan
+  environment:
+    name: staging
+  variables:
+    CI_ENVIRONMENT_NAME: staging
+  script:
+    - terraform plan -var-file="environments/staging.tfvars" -out=tfplan-staging
+  artifacts:
+    paths:
+      - tfplan-staging
+    expire_in: 7 days
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: true
+
+terraform:plan:prod:
+  extends: .terraform_template
+  stage: plan
+  environment:
+    name: prod
+  variables:
+    CI_ENVIRONMENT_NAME: prod
+  script:
+    - terraform plan -var-file="environments/prod.tfvars" -out=tfplan-prod
+  artifacts:
+    paths:
+      - tfplan-prod
+    expire_in: 7 days
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: manual
+      allow_failure: true
+
+# Apply jobs for each environment
+terraform:apply:dev:
+  extends: .terraform_template
+  stage: apply
+  environment:
+    name: dev
+    on_stop: terraform:destroy:dev
+  variables:
+    CI_ENVIRONMENT_NAME: dev
+  dependencies:
+    - terraform:plan:dev
+  script:
+    - terraform apply tfplan-dev
+    - |
+      echo "## Terraform Outputs" >> deploy-summary.md
+      echo '```' >> deploy-summary.md
+      terraform output >> deploy-summary.md
+      echo '```' >> deploy-summary.md
+  artifacts:
+    reports:
+      terraform: deploy-summary.md
+    expire_in: 30 days
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - "**.tf"
+        - "**.tfvars"
+        - ".gitlab-ci.yml"
+
+terraform:apply:staging:
+  extends: .terraform_template
+  stage: apply
+  environment:
+    name: staging
+    on_stop: terraform:destroy:staging
+  variables:
+    CI_ENVIRONMENT_NAME: staging
+  dependencies:
+    - terraform:plan:staging
+  script:
+    - terraform apply tfplan-staging
+    - |
+      echo "## Terraform Outputs" >> deploy-summary.md
+      echo '```' >> deploy-summary.md
+      terraform output >> deploy-summary.md
+      echo '```' >> deploy-summary.md
+  artifacts:
+    reports:
+      terraform: deploy-summary.md
+    expire_in: 30 days
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: false
+
+terraform:apply:prod:
+  extends: .terraform_template
+  stage: apply
+  environment:
+    name: prod
+    on_stop: terraform:destroy:prod
+  variables:
+    CI_ENVIRONMENT_NAME: prod
+  dependencies:
+    - terraform:plan:prod
+  script:
+    - terraform apply tfplan-prod
+    - |
+      echo "## Terraform Outputs" >> deploy-summary.md
+      echo '```' >> deploy-summary.md
+      terraform output >> deploy-summary.md
+      echo '```' >> deploy-summary.md
+  artifacts:
+    reports:
+      terraform: deploy-summary.md
+    expire_in: 90 days
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: manual
+      allow_failure: false
+
+# Destroy jobs (manual trigger only)
+terraform:destroy:dev:
+  extends: .terraform_template
+  stage: destroy
+  environment:
+    name: dev
+    action: stop
+  variables:
+    CI_ENVIRONMENT_NAME: dev
+  script:
+    - terraform destroy -var-file="environments/dev.tfvars" -auto-approve
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: true
+
+terraform:destroy:staging:
+  extends: .terraform_template
+  stage: destroy
+  environment:
+    name: staging
+    action: stop
+  variables:
+    CI_ENVIRONMENT_NAME: staging
+  script:
+    - terraform destroy -var-file="environments/staging.tfvars" -auto-approve
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: true
+
+terraform:destroy:prod:
+  extends: .terraform_template
+  stage: destroy
+  environment:
+    name: prod
+    action: stop
+  variables:
+    CI_ENVIRONMENT_NAME: prod
+  script:
+    - terraform destroy -var-file="environments/prod.tfvars" -auto-approve
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: manual
+      allow_failure: true
