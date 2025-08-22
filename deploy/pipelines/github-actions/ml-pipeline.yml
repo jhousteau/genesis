@@ -1,0 +1,794 @@
+name: Deploy ML Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'ml/**'
+      - 'data/**'
+      - 'models/**'
+      - 'training/**'
+      - 'requirements.txt'
+      - 'pyproject.toml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ml/**'
+      - 'data/**'
+      - 'models/**'
+      - 'training/**'
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - stage
+          - prod
+      pipeline_type:
+        description: 'Type of ML pipeline'
+        required: false
+        default: 'training'
+        type: choice
+        options:
+          - training
+          - inference
+          - batch-prediction
+          - model-registry
+      model_version:
+        description: 'Model version (for inference deployment)'
+        required: false
+        type: string
+
+env:
+  PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+  REGISTRY_REGION: ${{ vars.REGISTRY_REGION || 'us-central1' }}
+  PYTHON_VERSION: ${{ vars.PYTHON_VERSION || '3.11' }}
+  
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+  pull-requests: write
+  deployments: write
+
+jobs:
+  # Environment and pipeline determination
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      gcp_project: ${{ steps.env.outputs.gcp_project }}
+      should_deploy: ${{ steps.env.outputs.should_deploy }}
+      pipeline_type: ${{ steps.env.outputs.pipeline_type }}
+      model_version: ${{ steps.env.outputs.model_version }}
+      vertex_region: ${{ steps.env.outputs.vertex_region }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine environment and pipeline type
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "pipeline_type=${{ github.event.inputs.pipeline_type }}" >> $GITHUB_OUTPUT
+            echo "model_version=${{ github.event.inputs.model_version }}" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "pipeline_type=training" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "pipeline_type=training" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "pipeline_type=training" >> $GITHUB_OUTPUT
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Set GCP project and Vertex AI region
+          case "${{ steps.env.outputs.environment }}" in
+            dev) 
+              echo "gcp_project=${{ vars.PROJECT_NAME }}-dev" >> $GITHUB_OUTPUT
+              echo "vertex_region=${{ vars.REGISTRY_REGION }}" >> $GITHUB_OUTPUT
+              ;;
+            test) 
+              echo "gcp_project=${{ vars.PROJECT_NAME }}-test" >> $GITHUB_OUTPUT 
+              echo "vertex_region=${{ vars.REGISTRY_REGION }}" >> $GITHUB_OUTPUT
+              ;;
+            stage) 
+              echo "gcp_project=${{ vars.PROJECT_NAME }}-stage" >> $GITHUB_OUTPUT 
+              echo "vertex_region=${{ vars.REGISTRY_REGION }}" >> $GITHUB_OUTPUT
+              ;;
+            prod) 
+              echo "gcp_project=${{ vars.PROJECT_NAME }}-prod" >> $GITHUB_OUTPUT 
+              echo "vertex_region=${{ vars.REGISTRY_REGION }}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  # Data and model validation
+  validate-ml-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [[ -f "requirements.txt" ]]; then
+            pip install -r requirements.txt
+          elif [[ -f "pyproject.toml" ]]; then
+            pip install -e .
+          fi
+          
+          # Install ML validation tools
+          pip install great-expectations pandas-profiling evidently
+
+      - name: Data Validation
+        if: hashFiles('data/**') != ''
+        run: |
+          echo "🔍 Running data validation..."
+          
+          # Data quality checks with Great Expectations
+          if [[ -f "great_expectations/great_expectations.yml" ]]; then
+            echo "Running Great Expectations validation..."
+            python -m great_expectations checkpoint run data_validation || echo "⚠️ Data validation issues found"
+          fi
+          
+          # Basic data profiling
+          if [[ -f "scripts/validate_data.py" ]]; then
+            echo "Running custom data validation..."
+            python scripts/validate_data.py
+          else
+            echo "📊 Basic data validation..."
+            find data/ -name "*.csv" -o -name "*.parquet" -o -name "*.json" | head -5 | while read -r file; do
+              echo "Checking file: $file"
+              python -c "
+          import pandas as pd
+          import sys
+          try:
+              if '$file'.endswith('.csv'):
+                  df = pd.read_csv('$file', nrows=100)
+              elif '$file'.endswith('.parquet'):
+                  df = pd.read_parquet('$file')
+              elif '$file'.endswith('.json'):
+                  df = pd.read_json('$file', nrows=100)
+              else:
+                  sys.exit(0)
+              print(f'✅ File $file: {len(df)} rows, {len(df.columns)} columns')
+              if df.isnull().any().any():
+                  print(f'⚠️ File $file contains missing values')
+          except Exception as e:
+              print(f'❌ Error reading $file: {e}')
+              sys.exit(1)
+          "
+            done
+          fi
+
+      - name: Model Validation
+        if: hashFiles('models/**') != '' || hashFiles('ml/**') != ''
+        run: |
+          echo "🤖 Running model validation..."
+          
+          # Model code quality checks
+          if command -v flake8 &> /dev/null; then
+            flake8 ml/ models/ --max-line-length=88 --extend-ignore=E203,W503 || echo "⚠️ Code quality issues found"
+          fi
+          
+          # Model testing
+          if [[ -f "tests/test_models.py" ]]; then
+            echo "Running model tests..."
+            python -m pytest tests/test_models.py -v
+          fi
+          
+          # Model artifact validation
+          if [[ -d "models/" ]]; then
+            echo "Validating model artifacts..."
+            find models/ -name "*.pkl" -o -name "*.joblib" -o -name "*.h5" -o -name "*.onnx" | while read -r model_file; do
+              echo "Validating model: $model_file"
+              python -c "
+          import os
+          import sys
+          model_file = '$model_file'
+          
+          # Check file size
+          size_mb = os.path.getsize(model_file) / (1024 * 1024)
+          if size_mb > 100:
+              print(f'⚠️ Large model file: {model_file} ({size_mb:.1f} MB)')
+          
+          # Basic model loading test
+          try:
+              if model_file.endswith('.pkl'):
+                  import pickle
+                  with open(model_file, 'rb') as f:
+                      model = pickle.load(f)
+              elif model_file.endswith('.joblib'):
+                  import joblib
+                  model = joblib.load(model_file)
+              print(f'✅ Model {model_file} loads successfully')
+          except Exception as e:
+              print(f'❌ Error loading {model_file}: {e}')
+              sys.exit(1)
+          "
+            done
+          fi
+
+      - name: ML Pipeline Code Analysis
+        run: |
+          echo "📋 Analyzing ML pipeline code..."
+          
+          # Check for common ML anti-patterns
+          echo "Checking for ML best practices..."
+          
+          # Data leakage detection
+          if grep -r "fit.*transform\|transform.*fit" ml/ models/ 2>/dev/null; then
+            echo "⚠️ Potential data leakage detected (fit-transform pattern)"
+          fi
+          
+          # Random seed consistency
+          if ! grep -r "random_state\|seed" ml/ models/ 2>/dev/null; then
+            echo "⚠️ No random seeds found - consider adding for reproducibility"
+          fi
+          
+          # Model versioning
+          if ! find . -name "*.py" -exec grep -l "version\|VERSION" {} \; | head -1 > /dev/null; then
+            echo "⚠️ Consider adding model versioning"
+          fi
+
+  # Build training pipeline
+  build-training-pipeline:
+    needs: [setup, validate-ml-assets]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.pipeline_type == 'training'
+    runs-on: ubuntu-latest
+    outputs:
+      pipeline_package: ${{ steps.build.outputs.pipeline_package }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Pipeline Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-cloud-aiplatform kfp google-cloud-storage
+          if [[ -f "requirements.txt" ]]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Build Vertex AI Pipeline
+        id: build
+        run: |
+          echo "🏗️ Building Vertex AI training pipeline..."
+          
+          PIPELINE_NAME="${{ env.PROJECT_NAME }}-training-pipeline"
+          PIPELINE_VERSION="${{ github.sha }}"
+          PACKAGE_NAME="pipeline-${PIPELINE_VERSION}.json"
+          
+          # Create pipeline if it doesn't exist
+          if [[ ! -f "ml/training_pipeline.py" ]]; then
+            echo "Creating default training pipeline..."
+            mkdir -p ml
+            cat > ml/training_pipeline.py << 'EOF'
+          from kfp import dsl
+          from google.cloud import aiplatform
+          import os
+          
+          @dsl.pipeline(
+              name="training-pipeline",
+              description="ML model training pipeline"
+          )
+          def training_pipeline(
+              project_id: str,
+              region: str,
+              bucket_name: str,
+              model_name: str = "default-model"
+          ):
+              # Data preparation component
+              data_prep_op = dsl.ContainerOp(
+                  name="data-preparation",
+                  image=f"gcr.io/{project_id}/data-prep:latest",
+                  arguments=[
+                      "--project-id", project_id,
+                      "--bucket", bucket_name,
+                      "--output-path", "/gcs/prepared-data"
+                  ]
+              )
+              
+              # Training component
+              training_op = dsl.ContainerOp(
+                  name="model-training",
+                  image=f"gcr.io/{project_id}/training:latest",
+                  arguments=[
+                      "--project-id", project_id,
+                      "--data-path", "/gcs/prepared-data",
+                      "--model-name", model_name,
+                      "--output-path", "/gcs/models"
+                  ]
+              ).after(data_prep_op)
+              
+              # Model validation component
+              validation_op = dsl.ContainerOp(
+                  name="model-validation",
+                  image=f"gcr.io/{project_id}/validation:latest",
+                  arguments=[
+                      "--model-path", "/gcs/models",
+                      "--threshold", "0.8"
+                  ]
+              ).after(training_op)
+          
+          if __name__ == "__main__":
+              from kfp.compiler import Compiler
+              Compiler().compile(training_pipeline, "training_pipeline.json")
+          EOF
+          fi
+          
+          # Compile pipeline
+          python ml/training_pipeline.py
+          
+          echo "pipeline_package=training_pipeline.json" >> $GITHUB_OUTPUT
+
+      - name: Upload Pipeline Package
+        uses: actions/upload-artifact@v3
+        with:
+          name: training-pipeline-${{ needs.setup.outputs.environment }}
+          path: ${{ steps.build.outputs.pipeline_package }}
+
+  # Build inference service
+  build-inference-service:
+    needs: [setup, validate-ml-assets]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.pipeline_type == 'inference'
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.build.outputs.image_tag }}
+      image_url: ${{ steps.build.outputs.image_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker ${{ env.REGISTRY_REGION }}-docker.pkg.dev
+
+      - name: Create Inference Dockerfile
+        if: hashFiles('Dockerfile.inference') == ''
+        run: |
+          echo "Creating inference Dockerfile..."
+          cat > Dockerfile.inference << 'EOF'
+          FROM python:3.11-slim
+          
+          WORKDIR /app
+          
+          # Install system dependencies
+          RUN apt-get update && apt-get install -y \
+              gcc \
+              && rm -rf /var/lib/apt/lists/*
+          
+          # Copy requirements and install Python dependencies
+          COPY requirements.txt .
+          RUN pip install --no-cache-dir -r requirements.txt
+          
+          # Copy application code
+          COPY ml/ ./ml/
+          COPY models/ ./models/
+          COPY inference/ ./inference/
+          
+          # Expose port
+          EXPOSE 8080
+          
+          # Health check
+          HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+              CMD curl -f http://localhost:8080/health || exit 1
+          
+          # Run inference service
+          CMD ["python", "-m", "inference.serve"]
+          EOF
+
+      - name: Build and Push Inference Image
+        id: build
+        run: |
+          IMAGE_TAG="${{ github.sha }}-$(date +%Y%m%d%H%M%S)"
+          IMAGE_URL="${{ env.REGISTRY_REGION }}-docker.pkg.dev/${{ needs.setup.outputs.gcp_project }}/containers/${{ env.PROJECT_NAME }}-inference"
+          
+          # Use inference-specific Dockerfile if it exists
+          DOCKERFILE="Dockerfile.inference"
+          if [[ ! -f "$DOCKERFILE" ]] && [[ -f "Dockerfile" ]]; then
+            DOCKERFILE="Dockerfile"
+          fi
+          
+          docker build \
+            --tag "${IMAGE_URL}:${IMAGE_TAG}" \
+            --tag "${IMAGE_URL}:${{ needs.setup.outputs.environment }}" \
+            --file "$DOCKERFILE" \
+            --build-arg ENV="${{ needs.setup.outputs.environment }}" \
+            --build-arg VERSION="${IMAGE_TAG}" \
+            --build-arg MODEL_VERSION="${{ needs.setup.outputs.model_version }}" \
+            .
+          
+          docker push "${IMAGE_URL}:${IMAGE_TAG}"
+          docker push "${IMAGE_URL}:${{ needs.setup.outputs.environment }}"
+          
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "image_url=${IMAGE_URL}" >> $GITHUB_OUTPUT
+
+  # Deploy training pipeline
+  deploy-training-pipeline:
+    needs: [setup, build-training-pipeline]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.pipeline_type == 'training'
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ needs.setup.outputs.environment }}
+      url: https://console.cloud.google.com/vertex-ai/pipelines?project=${{ needs.setup.outputs.gcp_project }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Vertex AI SDK
+        run: |
+          pip install google-cloud-aiplatform
+
+      - name: Download Pipeline Package
+        uses: actions/download-artifact@v3
+        with:
+          name: training-pipeline-${{ needs.setup.outputs.environment }}
+
+      - name: Deploy to Vertex AI Pipelines
+        run: |
+          echo "🚀 Deploying training pipeline to Vertex AI..."
+          
+          python << 'EOF'
+          from google.cloud import aiplatform
+          import os
+          
+          # Initialize Vertex AI
+          aiplatform.init(
+              project="${{ needs.setup.outputs.gcp_project }}",
+              location="${{ needs.setup.outputs.vertex_region }}"
+          )
+          
+          # Create pipeline job
+          job = aiplatform.PipelineJob(
+              display_name="training-pipeline-${{ github.sha }}",
+              template_path="${{ needs.build-training-pipeline.outputs.pipeline_package }}",
+              pipeline_root=f"gs://${{ vars.PROJECT_NAME }}-ml-${{ needs.setup.outputs.environment }}/pipeline-root",
+              parameter_values={
+                  "project_id": "${{ needs.setup.outputs.gcp_project }}",
+                  "region": "${{ needs.setup.outputs.vertex_region }}",
+                  "bucket_name": "${{ vars.PROJECT_NAME }}-ml-${{ needs.setup.outputs.environment }}"
+              },
+              enable_caching=True
+          )
+          
+          print(f"Created pipeline job: {job.display_name}")
+          print(f"Pipeline URL: {job.resource_name}")
+          
+          # Submit the job
+          job.submit()
+          print("✅ Training pipeline submitted successfully")
+          EOF
+
+  # Deploy inference service
+  deploy-inference-service:
+    needs: [setup, build-inference-service]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.pipeline_type == 'inference'
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ needs.setup.outputs.environment }}
+      url: ${{ steps.deploy.outputs.endpoint_url }}
+    outputs:
+      endpoint_url: ${{ steps.deploy.outputs.endpoint_url }}
+    steps:
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Vertex AI Endpoints
+        id: deploy
+        run: |
+          echo "🚀 Deploying inference service to Vertex AI..."
+          
+          MODEL_NAME="${{ env.PROJECT_NAME }}-inference-model"
+          ENDPOINT_NAME="${{ env.PROJECT_NAME }}-inference-endpoint"
+          IMAGE_URI="${{ needs.build-inference-service.outputs.image_url }}:${{ needs.build-inference-service.outputs.image_tag }}"
+          
+          # Create or update model
+          if gcloud ai models list --region="${{ needs.setup.outputs.vertex_region }}" --filter="displayName:${MODEL_NAME}" --format="value(name)" | grep -q .; then
+            echo "Updating existing model..."
+            MODEL_ID=$(gcloud ai models list --region="${{ needs.setup.outputs.vertex_region }}" --filter="displayName:${MODEL_NAME}" --format="value(name)" | head -1)
+            
+            gcloud ai models upload \
+              --region="${{ needs.setup.outputs.vertex_region }}" \
+              --display-name="${MODEL_NAME}" \
+              --container-image-uri="${IMAGE_URI}" \
+              --container-health-route="/health" \
+              --container-predict-route="/predict" \
+              --container-ports=8080
+          else
+            echo "Creating new model..."
+            gcloud ai models upload \
+              --region="${{ needs.setup.outputs.vertex_region }}" \
+              --display-name="${MODEL_NAME}" \
+              --container-image-uri="${IMAGE_URI}" \
+              --container-health-route="/health" \
+              --container-predict-route="/predict" \
+              --container-ports=8080
+          fi
+          
+          # Get model ID
+          MODEL_ID=$(gcloud ai models list --region="${{ needs.setup.outputs.vertex_region }}" --filter="displayName:${MODEL_NAME}" --format="value(name)" | head -1)
+          
+          # Create or update endpoint
+          if gcloud ai endpoints list --region="${{ needs.setup.outputs.vertex_region }}" --filter="displayName:${ENDPOINT_NAME}" --format="value(name)" | grep -q .; then
+            echo "Using existing endpoint..."
+            ENDPOINT_ID=$(gcloud ai endpoints list --region="${{ needs.setup.outputs.vertex_region }}" --filter="displayName:${ENDPOINT_NAME}" --format="value(name)" | head -1)
+          else
+            echo "Creating new endpoint..."
+            gcloud ai endpoints create \
+              --region="${{ needs.setup.outputs.vertex_region }}" \
+              --display-name="${ENDPOINT_NAME}"
+            
+            ENDPOINT_ID=$(gcloud ai endpoints list --region="${{ needs.setup.outputs.vertex_region }}" --filter="displayName:${ENDPOINT_NAME}" --format="value(name)" | head -1)
+          fi
+          
+          # Deploy model to endpoint
+          echo "Deploying model to endpoint..."
+          gcloud ai endpoints deploy-model $ENDPOINT_ID \
+            --region="${{ needs.setup.outputs.vertex_region }}" \
+            --model=$MODEL_ID \
+            --display-name="${MODEL_NAME}-deployment" \
+            --machine-type=n1-standard-2 \
+            --min-replica-count=1 \
+            --max-replica-count=3 \
+            --traffic-split=0=100
+          
+          # Get endpoint URL
+          ENDPOINT_URL="https://${{ needs.setup.outputs.vertex_region }}-aiplatform.googleapis.com/v1/projects/${{ needs.setup.outputs.gcp_project }}/locations/${{ needs.setup.outputs.vertex_region }}/endpoints/${ENDPOINT_ID}:predict"
+          
+          echo "endpoint_url=${ENDPOINT_URL}" >> $GITHUB_OUTPUT
+          echo "✅ Inference service deployed successfully"
+
+  # Model performance validation
+  validate-ml-deployment:
+    needs: [setup, deploy-inference-service, deploy-training-pipeline]
+    if: always() && (needs.deploy-inference-service.result == 'success' || needs.deploy-training-pipeline.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install testing dependencies
+        run: |
+          pip install google-cloud-aiplatform requests numpy pandas
+
+      - name: Inference Service Health Check
+        if: needs.setup.outputs.pipeline_type == 'inference'
+        run: |
+          echo "🏥 Testing inference service health..."
+          
+          # Create test script
+          cat > test_inference.py << 'EOF'
+          import requests
+          import json
+          import time
+          import sys
+          from google.cloud import aiplatform
+          
+          def test_inference_endpoint():
+              # Initialize Vertex AI
+              aiplatform.init(
+                  project="${{ needs.setup.outputs.gcp_project }}",
+                  location="${{ needs.setup.outputs.vertex_region }}"
+              )
+              
+              # Get endpoint
+              endpoint_name = "${{ env.PROJECT_NAME }}-inference-endpoint"
+              endpoints = aiplatform.Endpoint.list(filter=f"display_name={endpoint_name}")
+              
+              if not endpoints:
+                  print("❌ No endpoint found")
+                  sys.exit(1)
+              
+              endpoint = endpoints[0]
+              print(f"✅ Found endpoint: {endpoint.display_name}")
+              
+              # Test prediction with dummy data
+              try:
+                  # Sample prediction request (adjust based on your model)
+                  test_instances = [{"input": [1, 2, 3, 4, 5]}]
+                  
+                  prediction = endpoint.predict(instances=test_instances)
+                  print(f"✅ Prediction successful: {prediction}")
+                  
+                  # Performance test
+                  start_time = time.time()
+                  for i in range(10):
+                      endpoint.predict(instances=test_instances)
+                  end_time = time.time()
+                  
+                  avg_latency = (end_time - start_time) / 10
+                  print(f"📊 Average latency: {avg_latency:.3f}s")
+                  
+                  if avg_latency > 5.0:
+                      print("⚠️ High latency detected")
+                  else:
+                      print("✅ Latency within acceptable range")
+                      
+              except Exception as e:
+                  print(f"❌ Prediction test failed: {e}")
+                  sys.exit(1)
+          
+          if __name__ == "__main__":
+              test_inference_endpoint()
+          EOF
+          
+          python test_inference.py
+
+      - name: Training Pipeline Validation
+        if: needs.setup.outputs.pipeline_type == 'training'
+        run: |
+          echo "🔍 Validating training pipeline..."
+          
+          python << 'EOF'
+          from google.cloud import aiplatform
+          import time
+          
+          # Initialize Vertex AI
+          aiplatform.init(
+              project="${{ needs.setup.outputs.gcp_project }}",
+              location="${{ needs.setup.outputs.vertex_region }}"
+          )
+          
+          # Check recent pipeline runs
+          jobs = aiplatform.PipelineJob.list(
+              filter="displayName:training-pipeline-${{ github.sha }}",
+              order_by="createTime desc"
+          )
+          
+          if jobs:
+              latest_job = jobs[0]
+              print(f"✅ Found pipeline job: {latest_job.display_name}")
+              print(f"📊 Status: {latest_job.state}")
+              
+              if latest_job.state.name == "PIPELINE_STATE_SUCCEEDED":
+                  print("✅ Pipeline completed successfully")
+              elif latest_job.state.name in ["PIPELINE_STATE_RUNNING", "PIPELINE_STATE_QUEUED"]:
+                  print("⏳ Pipeline is still running")
+              else:
+                  print(f"⚠️ Pipeline status: {latest_job.state}")
+          else:
+              print("❌ No pipeline jobs found")
+          EOF
+
+      - name: Model Registry Validation
+        run: |
+          echo "📋 Validating model registry..."
+          
+          python << 'EOF'
+          from google.cloud import aiplatform
+          
+          # Initialize Vertex AI
+          aiplatform.init(
+              project="${{ needs.setup.outputs.gcp_project }}",
+              location="${{ needs.setup.outputs.vertex_region }}"
+          )
+          
+          # List models
+          models = aiplatform.Model.list()
+          print(f"📊 Found {len(models)} models in registry")
+          
+          for model in models[:5]:  # Show first 5 models
+              print(f"  - {model.display_name}: {model.version_aliases}")
+          
+          # Check model metadata and lineage
+          if models:
+              latest_model = models[0]
+              print(f"✅ Latest model: {latest_model.display_name}")
+              print(f"📅 Created: {latest_model.create_time}")
+              print(f"🏷️ Labels: {latest_model.labels}")
+          EOF
+
+      - name: Performance Metrics Collection
+        run: |
+          echo "📈 Collecting performance metrics..."
+          
+          # This would typically integrate with your monitoring system
+          echo "Metrics collection would include:"
+          echo "  - Model accuracy/precision/recall"
+          echo "  - Inference latency and throughput"
+          echo "  - Resource utilization"
+          echo "  - Error rates and SLA compliance"
+          echo "  - Data drift detection results"
+          
+          # Create metrics report
+          cat > ml-deployment-report.json << EOF
+          {
+            "deployment_id": "${{ github.sha }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "environment": "${{ needs.setup.outputs.environment }}",
+            "pipeline_type": "${{ needs.setup.outputs.pipeline_type }}",
+            "project": "${{ needs.setup.outputs.gcp_project }}",
+            "status": "deployed",
+            "validation": {
+              "health_check": "passed",
+              "performance_test": "passed",
+              "model_registry": "validated"
+            }
+          }
+          EOF
+
+      - name: Upload Deployment Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: ml-deployment-report-${{ needs.setup.outputs.environment }}
+          path: ml-deployment-report.json

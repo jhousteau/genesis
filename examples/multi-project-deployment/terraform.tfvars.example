@@ -1,0 +1,25 @@
+# Example tfvars for multi-project deployment
+
+# Required: Your GCP organization ID
+organization_id = "123456789012"
+
+# Required: Billing account for all projects
+billing_account = "01ABCD-23EFGH-45IJKL"
+
+# Optional: Customize project prefix (default: "bootstrap")
+project_prefix = "mycompany"
+
+# Optional: GitHub organization for Workload Identity Federation
+github_organization = "my-github-org"
+
+# Optional: Customize the number of projects per environment
+dev_project_count     = 3
+staging_project_count = 2
+prod_project_count    = 2
+
+# Optional: Override default APIs
+# default_apis = [
+#   "compute.googleapis.com",
+#   "storage.googleapis.com",
+#   "iam.googleapis.com",
+# ]

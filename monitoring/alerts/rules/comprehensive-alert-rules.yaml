@@ -1,0 +1,787 @@
+# Comprehensive Alert Rules for Universal Project Platform
+# Defines all alert conditions, thresholds, and escalation procedures
+
+groups:
+  # Application Performance Alerts
+  - name: application_performance
+    interval: 30s
+    rules:
+      # HTTP Error Rate Alerts
+      - alert: HighHTTPErrorRate
+        expr: |
+          (
+            rate(http_requests_total{code=~"5.."}[5m]) /
+            rate(http_requests_total[5m])
+          ) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          category: availability
+          runbook: high-error-rate
+        annotations:
+          summary: "High HTTP error rate detected"
+          description: "Service {{ $labels.service }} in {{ $labels.environment }} has {{ $value | humanizePercentage }} error rate"
+          runbook_url: "https://runbooks.universal-platform.com/high-error-rate"
+          dashboard_url: "https://monitoring.universal-platform.com/d/http-errors"
+
+      - alert: ModerateHTTPErrorRate
+        expr: |
+          (
+            rate(http_requests_total{code=~"5.."}[5m]) /
+            rate(http_requests_total[5m])
+          ) * 100 > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: availability
+          runbook: moderate-error-rate
+        annotations:
+          summary: "Moderate HTTP error rate detected"
+          description: "Service {{ $labels.service }} in {{ $labels.environment }} has {{ $value | humanizePercentage }} error rate"
+          runbook_url: "https://runbooks.universal-platform.com/moderate-error-rate"
+
+      # HTTP Latency Alerts
+      - alert: HighHTTPLatencyP95
+        expr: |
+          histogram_quantile(0.95, 
+            rate(http_request_duration_seconds_bucket[5m])
+          ) * 1000 > 1000
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: high-latency
+        annotations:
+          summary: "High HTTP latency (P95) detected"
+          description: "Service {{ $labels.service }} P95 latency is {{ $value | humanizeDuration }}"
+          runbook_url: "https://runbooks.universal-platform.com/high-latency"
+          dashboard_url: "https://monitoring.universal-platform.com/d/latency"
+
+      - alert: CriticalHTTPLatencyP95
+        expr: |
+          histogram_quantile(0.95, 
+            rate(http_request_duration_seconds_bucket[5m])
+          ) * 1000 > 2000
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+          category: performance
+          runbook: critical-latency
+        annotations:
+          summary: "Critical HTTP latency (P95) detected"
+          description: "Service {{ $labels.service }} P95 latency is {{ $value | humanizeDuration }}"
+          runbook_url: "https://runbooks.universal-platform.com/critical-latency"
+
+      - alert: HighHTTPLatencyP99
+        expr: |
+          histogram_quantile(0.99, 
+            rate(http_request_duration_seconds_bucket[5m])
+          ) * 1000 > 3000
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          category: performance
+          runbook: extreme-latency
+        annotations:
+          summary: "Extreme HTTP latency (P99) detected"
+          description: "Service {{ $labels.service }} P99 latency is {{ $value | humanizeDuration }}"
+
+      # Request Volume Alerts
+      - alert: LowHTTPRequestVolume
+        expr: |
+          rate(http_requests_total[10m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+          category: availability
+          runbook: low-traffic
+        annotations:
+          summary: "Low HTTP request volume"
+          description: "Service {{ $labels.service }} receiving only {{ $value | humanize }} requests/sec"
+
+      - alert: HTTPRequestVolumeSpike
+        expr: |
+          (
+            rate(http_requests_total[5m]) /
+            rate(http_requests_total[1h] offset 1h)
+          ) > 3
+        for: 2m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: traffic-spike
+        annotations:
+          summary: "HTTP request volume spike detected"
+          description: "Service {{ $labels.service }} traffic is {{ $value }}x higher than usual"
+
+  # Infrastructure Alerts
+  - name: infrastructure_health
+    interval: 30s
+    rules:
+      # Service Availability
+      - alert: ServiceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+          team: platform
+          category: availability
+          runbook: service-down
+        annotations:
+          summary: "Service is down"
+          description: "Service {{ $labels.job }} on {{ $labels.instance }} is not responding"
+          runbook_url: "https://runbooks.universal-platform.com/service-down"
+          dashboard_url: "https://monitoring.universal-platform.com/d/uptime"
+
+      # CPU Usage
+      - alert: HighCPUUsage
+        expr: |
+          (
+            100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+          ) > 80
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: high-cpu
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Instance {{ $labels.instance }} CPU usage is {{ $value | humanizePercentage }}"
+          runbook_url: "https://runbooks.universal-platform.com/high-cpu"
+
+      - alert: CriticalCPUUsage
+        expr: |
+          (
+            100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+          ) > 95
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+          category: performance
+          runbook: critical-cpu
+        annotations:
+          summary: "Critical CPU usage detected"
+          description: "Instance {{ $labels.instance }} CPU usage is {{ $value | humanizePercentage }}"
+
+      # Memory Usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) /
+            node_memory_MemTotal_bytes
+          ) * 100 > 80
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: high-memory
+        annotations:
+          summary: "High memory usage detected"
+          description: "Instance {{ $labels.instance }} memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: CriticalMemoryUsage
+        expr: |
+          (
+            (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) /
+            node_memory_MemTotal_bytes
+          ) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+          category: performance
+          runbook: critical-memory
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Instance {{ $labels.instance }} memory usage is {{ $value | humanizePercentage }}"
+
+      # Disk Space
+      - alert: DiskSpaceRunningLow
+        expr: |
+          (
+            (node_filesystem_size_bytes{fstype!="tmpfs"} - node_filesystem_free_bytes{fstype!="tmpfs"}) /
+            node_filesystem_size_bytes{fstype!="tmpfs"}
+          ) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: disk-space-low
+        annotations:
+          summary: "Disk space running low"
+          description: "Instance {{ $labels.instance }} disk {{ $labels.mountpoint }} usage is {{ $value | humanizePercentage }}"
+
+      - alert: DiskSpaceCritical
+        expr: |
+          (
+            (node_filesystem_size_bytes{fstype!="tmpfs"} - node_filesystem_free_bytes{fstype!="tmpfs"}) /
+            node_filesystem_size_bytes{fstype!="tmpfs"}
+          ) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+          category: performance
+          runbook: disk-space-critical
+        annotations:
+          summary: "Critical disk space usage"
+          description: "Instance {{ $labels.instance }} disk {{ $labels.mountpoint }} usage is {{ $value | humanizePercentage }}"
+
+      # Disk I/O
+      - alert: HighDiskIOWait
+        expr: |
+          rate(node_cpu_seconds_total{mode="iowait"}[5m]) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: high-disk-io
+        annotations:
+          summary: "High disk I/O wait time"
+          description: "Instance {{ $labels.instance }} has {{ $value | humanizePercentage }} I/O wait time"
+
+      # Network Errors
+      - alert: NetworkErrorsHigh
+        expr: |
+          (
+            rate(node_network_transmit_errs_total[5m]) +
+            rate(node_network_receive_errs_total[5m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: availability
+          runbook: network-errors
+        annotations:
+          summary: "High network error rate"
+          description: "Instance {{ $labels.instance }} interface {{ $labels.device }} has {{ $value }} errors/sec"
+
+  # Database Alerts
+  - name: database_health
+    interval: 30s
+    rules:
+      # Database Connection Issues
+      - alert: DatabaseConnectionFailures
+        expr: |
+          rate(db_queries_total{status="error"}[5m]) > 1
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          category: availability
+          runbook: db-connection-failures
+        annotations:
+          summary: "Database connection failures detected"
+          description: "Service {{ $labels.service }} experiencing {{ $value }} DB connection failures/sec"
+
+      # Database Query Performance
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(db_query_duration_seconds_bucket[5m])
+          ) * 1000 > 1000
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: slow-db-queries
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Service {{ $labels.service }} database queries P95 latency is {{ $value | humanizeDuration }}"
+
+      - alert: VerySlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            rate(db_query_duration_seconds_bucket[5m])
+          ) * 1000 > 5000
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+          category: performance
+          runbook: very-slow-db-queries
+        annotations:
+          summary: "Very slow database queries detected"
+          description: "Service {{ $labels.service }} database queries P95 latency is {{ $value | humanizeDuration }}"
+
+      # Database Connection Pool
+      - alert: DatabaseConnectionPoolExhaustion
+        expr: |
+          (
+            db_connections_active /
+            db_connections_max
+          ) * 100 > 90
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          category: availability
+          runbook: db-pool-exhaustion
+        annotations:
+          summary: "Database connection pool near exhaustion"
+          description: "Service {{ $labels.service }} using {{ $value | humanizePercentage }} of DB connection pool"
+
+  # Cache Alerts
+  - name: cache_health
+    interval: 30s
+    rules:
+      # Cache Hit Rate
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            rate(cache_operations_total{operation="hit"}[10m]) /
+            rate(cache_operations_total[10m])
+          ) * 100 < 50
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: low-cache-hit-rate
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Service {{ $labels.service }} cache hit rate is {{ $value | humanizePercentage }}"
+
+      - alert: CriticallyLowCacheHitRate
+        expr: |
+          (
+            rate(cache_operations_total{operation="hit"}[10m]) /
+            rate(cache_operations_total[10m])
+          ) * 100 < 20
+        for: 3m
+        labels:
+          severity: critical
+          team: platform
+          category: performance
+          runbook: critical-cache-hit-rate
+        annotations:
+          summary: "Critically low cache hit rate"
+          description: "Service {{ $labels.service }} cache hit rate is {{ $value | humanizePercentage }}"
+
+      # Cache Connection Issues
+      - alert: CacheConnectionFailures
+        expr: |
+          rate(cache_operations_total{status="error"}[5m]) > 1
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          category: availability
+          runbook: cache-connection-failures
+        annotations:
+          summary: "Cache connection failures"
+          description: "Service {{ $labels.service }} experiencing {{ $value }} cache failures/sec"
+
+  # Background Job Alerts
+  - name: background_jobs
+    interval: 60s
+    rules:
+      # Job Failure Rate
+      - alert: HighBackgroundJobFailureRate
+        expr: |
+          (
+            rate(background_jobs_total{status="failed"}[10m]) /
+            rate(background_jobs_total[10m])
+          ) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: availability
+          runbook: job-failure-rate
+        annotations:
+          summary: "High background job failure rate"
+          description: "Service {{ $labels.service }} job failure rate is {{ $value | humanizePercentage }}"
+
+      - alert: CriticalBackgroundJobFailureRate
+        expr: |
+          (
+            rate(background_jobs_total{status="failed"}[10m]) /
+            rate(background_jobs_total[10m])
+          ) * 100 > 25
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          category: availability
+          runbook: critical-job-failure-rate
+        annotations:
+          summary: "Critical background job failure rate"
+          description: "Service {{ $labels.service }} job failure rate is {{ $value | humanizePercentage }}"
+
+      # Job Queue Backlog
+      - alert: BackgroundJobQueueBacklog
+        expr: |
+          background_job_queue_size > 1000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: job-queue-backlog
+        annotations:
+          summary: "Background job queue backlog"
+          description: "Service {{ $labels.service }} has {{ $value }} jobs queued"
+
+      - alert: CriticalBackgroundJobQueueBacklog
+        expr: |
+          background_job_queue_size > 5000
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          category: performance
+          runbook: critical-job-queue-backlog
+        annotations:
+          summary: "Critical background job queue backlog"
+          description: "Service {{ $labels.service }} has {{ $value }} jobs queued"
+
+  # Security Alerts
+  - name: security_monitoring
+    interval: 30s
+    rules:
+      # Authentication Failures
+      - alert: HighAuthenticationFailureRate
+        expr: |
+          rate(auth_attempts_total{status="failed"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          team: security
+          category: security
+          runbook: auth-failures
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Service {{ $labels.service }} has {{ $value }} auth failures/sec"
+
+      - alert: SuspiciousAuthenticationActivity
+        expr: |
+          rate(auth_attempts_total{status="failed"}[5m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+          team: security
+          category: security
+          runbook: suspicious-auth-activity
+        annotations:
+          summary: "Suspicious authentication activity detected"
+          description: "Service {{ $labels.service }} has {{ $value }} auth failures/sec - possible attack"
+
+      # Rate Limiting
+      - alert: HighRateLimitingActivity
+        expr: |
+          rate(http_requests_total{code="429"}[5m]) > 10
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+          category: security
+          runbook: rate-limiting
+        annotations:
+          summary: "High rate limiting activity"
+          description: "Service {{ $labels.service }} blocking {{ $value }} requests/sec due to rate limiting"
+
+  # External Dependency Alerts
+  - name: external_dependencies
+    interval: 60s
+    rules:
+      # External API Errors
+      - alert: ExternalAPIErrors
+        expr: |
+          (
+            rate(external_api_requests_total{code=~"5..|4.."}[5m]) /
+            rate(external_api_requests_total[5m])
+          ) * 100 > 10
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+          category: availability
+          runbook: external-api-errors
+        annotations:
+          summary: "External API errors detected"
+          description: "Service {{ $labels.service }} external API {{ $labels.external_service }} error rate is {{ $value | humanizePercentage }}"
+
+      - alert: CriticalExternalAPIErrors
+        expr: |
+          (
+            rate(external_api_requests_total{code=~"5..|4.."}[5m]) /
+            rate(external_api_requests_total[5m])
+          ) * 100 > 25
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+          category: availability
+          runbook: critical-external-api-errors
+        annotations:
+          summary: "Critical external API errors"
+          description: "Service {{ $labels.service }} external API {{ $labels.external_service }} error rate is {{ $value | humanizePercentage }}"
+
+      # External API Latency
+      - alert: SlowExternalAPI
+        expr: |
+          histogram_quantile(0.95,
+            rate(external_api_duration_seconds_bucket[5m])
+          ) * 1000 > 5000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: slow-external-api
+        annotations:
+          summary: "Slow external API response"
+          description: "External API {{ $labels.external_service }} P95 latency is {{ $value | humanizeDuration }}"
+
+  # Business Logic Alerts
+  - name: business_metrics
+    interval: 60s
+    rules:
+      # User Registration Issues
+      - alert: UserRegistrationFailures
+        expr: |
+          (
+            rate(user_registrations_total{status="failed"}[10m]) /
+            rate(user_registrations_total[10m])
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: product
+          category: business
+          runbook: user-registration-failures
+        annotations:
+          summary: "User registration failures detected"
+          description: "{{ $value | humanizePercentage }} of user registrations are failing"
+
+      # Payment Processing Issues
+      - alert: PaymentProcessingErrors
+        expr: |
+          (
+            rate(payments_total{status="failed"}[10m]) /
+            rate(payments_total[10m])
+          ) * 100 > 1
+        for: 2m
+        labels:
+          severity: critical
+          team: product
+          category: business
+          runbook: payment-processing-errors
+        annotations:
+          summary: "Payment processing errors detected"
+          description: "{{ $value | humanizePercentage }} of payments are failing"
+
+      # Low Business Activity
+      - alert: LowBusinessActivity
+        expr: |
+          rate(user_actions_total[30m]) < 0.1
+        for: 15m
+        labels:
+          severity: warning
+          team: product
+          category: business
+          runbook: low-business-activity
+        annotations:
+          summary: "Low business activity detected"
+          description: "User activity rate is {{ $value }} actions/sec"
+
+  # Cost Management Alerts
+  - name: cost_monitoring
+    interval: 300s  # 5 minutes
+    rules:
+      # High Infrastructure Costs
+      - alert: HighInfrastructureCosts
+        expr: |
+          infrastructure_cost_total > 1000
+        for: 10m
+        labels:
+          severity: warning
+          team: ops
+          category: cost
+          runbook: high-infrastructure-costs
+        annotations:
+          summary: "High infrastructure costs detected"
+          description: "Current infrastructure costs are ${{ $value }}"
+
+      # Budget Exceeded
+      - alert: BudgetExceeded
+        expr: |
+          budget_utilization_ratio > 1.0
+        for: 5m
+        labels:
+          severity: critical
+          team: ops
+          category: cost
+          runbook: budget-exceeded
+        annotations:
+          summary: "Budget exceeded"
+          description: "Budget utilization is {{ $value | humanizePercentage }}"
+
+      # Unusual Cost Spike
+      - alert: UnusualCostSpike
+        expr: |
+          (
+            infrastructure_cost_total /
+            infrastructure_cost_total offset 24h
+          ) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+          team: ops
+          category: cost
+          runbook: unusual-cost-spike
+        annotations:
+          summary: "Unusual cost spike detected"
+          description: "Costs are {{ $value }}x higher than yesterday"
+
+  # SLO Violation Alerts
+  - name: slo_violations
+    interval: 60s
+    rules:
+      # SLO Error Budget Burn Rate
+      - alert: FastSLOErrorBudgetBurn
+        expr: |
+          slo:burn_rate:http_availability:1h > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          category: slo
+          runbook: fast-error-budget-burn
+        annotations:
+          summary: "Fast SLO error budget burn detected"
+          description: "HTTP availability error budget burning at {{ $value }}x rate"
+
+      - alert: SLOErrorBudgetBurn
+        expr: |
+          slo:burn_rate:http_availability:6h > 6
+        for: 15m
+        labels:
+          severity: warning
+          team: platform
+          category: slo
+          runbook: slo-error-budget-burn
+        annotations:
+          summary: "SLO error budget burn detected"
+          description: "HTTP availability error budget burning at {{ $value }}x rate"
+
+      # SLO Compliance
+      - alert: SLOBreach
+        expr: |
+          slo:compliance:http_availability < 100
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+          category: slo
+          runbook: slo-breach
+        annotations:
+          summary: "SLO breach detected"
+          description: "HTTP availability SLO is being breached"
+
+      # Low Error Budget
+      - alert: LowSLOErrorBudget
+        expr: |
+          slo:error_budget:http_availability < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: slo
+          runbook: low-error-budget
+        annotations:
+          summary: "Low SLO error budget"
+          description: "Only {{ $value | humanizePercentage }} error budget remaining"
+
+  # Kubernetes Alerts (if applicable)
+  - name: kubernetes_health
+    interval: 30s
+    rules:
+      # Pod Issues
+      - alert: KubernetesPodCrashLooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          team: platform
+          category: availability
+          runbook: pod-crash-looping
+        annotations:
+          summary: "Kubernetes pod crash looping"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash looping"
+
+      - alert: KubernetesPodNotReady
+        expr: |
+          kube_pod_status_ready{condition="false"} == 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: availability
+          runbook: pod-not-ready
+        annotations:
+          summary: "Kubernetes pod not ready"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is not ready"
+
+      # Node Issues
+      - alert: KubernetesNodeNotReady
+        expr: |
+          kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+          category: availability
+          runbook: node-not-ready
+        annotations:
+          summary: "Kubernetes node not ready"
+          description: "Node {{ $labels.node }} is not ready"
+
+      # Resource Usage
+      - alert: KubernetesPodHighMemoryUsage
+        expr: |
+          (
+            container_memory_working_set_bytes /
+            container_spec_memory_limit_bytes
+          ) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: pod-high-memory
+        annotations:
+          summary: "Kubernetes pod high memory usage"
+          description: "Pod {{ $labels.pod }} memory usage is {{ $value | humanizePercentage }}"
+
+      - alert: KubernetesPodHighCPUUsage
+        expr: |
+          (
+            rate(container_cpu_usage_seconds_total[5m]) /
+            container_spec_cpu_quota * container_spec_cpu_period
+          ) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+          category: performance
+          runbook: pod-high-cpu
+        annotations:
+          summary: "Kubernetes pod high CPU usage"
+          description: "Pod {{ $labels.pod }} CPU usage is {{ $value | humanizePercentage }}"

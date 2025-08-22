@@ -1,0 +1,68 @@
+registry:
+  # Component registry configuration
+  persistence_enabled: true
+  persistence_interval: 60  # seconds
+  health_check_interval: 30  # seconds
+  heartbeat_timeout: 300  # seconds
+  auto_discovery: true
+  
+  # Paths to scan for components
+  discovery_paths:
+    - /Users/jameshousteau/source_code/bootstrapper/bin
+    - /Users/jameshousteau/source_code/bootstrapper/lib
+    - /Users/jameshousteau/source_code/bootstrapper/monitoring
+    - /Users/jameshousteau/source_code/bootstrapper/intelligence
+    - /Users/jameshousteau/source_code/bootstrapper/deploy
+    - /Users/jameshousteau/source_code/bootstrapper/isolation
+    - /Users/jameshousteau/source_code/bootstrapper/governance
+    - /Users/jameshousteau/source_code/bootstrapper/setup-project
+
+# Default component configurations
+components:
+  cli:
+    name: "Bootstrap CLI"
+    description: "Universal command-line interface"
+    health_endpoint: null
+    priority: medium
+    
+  registry:
+    name: "Component Registry"
+    description: "Service discovery and registration"
+    health_endpoint: null
+    priority: high
+    
+  monitoring:
+    name: "Monitoring System"
+    description: "Unified monitoring and observability"
+    health_endpoint: null
+    priority: high
+    
+  intelligence:
+    name: "AI Intelligence Layer"
+    description: "Automated optimization and insights"
+    health_endpoint: null
+    priority: medium
+    
+  deployment:
+    name: "Deployment Engine"
+    description: "Automated deployment and rollback"
+    health_endpoint: null
+    priority: critical
+    
+  infrastructure:
+    name: "Infrastructure Manager"
+    description: "Terraform-based infrastructure"
+    health_endpoint: null
+    priority: critical
+    
+  isolation:
+    name: "Isolation Layer"
+    description: "Environment and credential isolation"
+    health_endpoint: null
+    priority: critical
+    
+  governance:
+    name: "Governance Engine"
+    description: "Compliance and policy enforcement"
+    health_endpoint: null
+    priority: high

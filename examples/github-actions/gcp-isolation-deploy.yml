@@ -1,0 +1,72 @@
+name: Deploy to GCP
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      confirm_prod:
+        description: 'Type "I_UNDERSTAND" to deploy to production'
+        required: false
+        type: string
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # for workload identity federation
+    
+    # Set environment based on branch or manual input
+    environment: ${{ inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'dev') }}
+    
+    env:
+      PROJECT_ID: ${{ vars.PROJECT_ID }}              # Set in repository/environment variables
+      REGION: ${{ vars.REGION || 'us-central1' }}
+      DEPLOY_SA: ${{ vars.DEPLOY_SA }}                # deploy-<env>@<proj>.iam.gserviceaccount.com
+      CLOUDSDK_CONFIG: ./.ci_gcloud                    # Ephemeral per-run config dir
+      GCLOUD_IMPERSONATE_SA: ${{ vars.DEPLOY_SA }}
+      ENVIRONMENT: ${{ inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'dev') }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate production deployment
+        if: env.ENVIRONMENT == 'prod'
+        run: |
+          if [[ "${{ inputs.confirm_prod }}" != "I_UNDERSTAND" ]]; then
+            echo "❌ Production deployment requires confirm_prod: 'I_UNDERSTAND'"
+            exit 1
+          fi
+          echo "CONFIRM_PROD=I_UNDERSTAND" >> $GITHUB_ENV
+
+      - name: Install gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          install_components: "gcloud"
+
+      - name: Authenticate via Workload Identity
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOY_SA }}
+
+      - name: Bootstrap repo-scoped gcloud config
+        run: |
+          chmod +x scripts/bootstrap_gcloud.sh scripts/gcloud_guard.sh scripts/self_check.sh
+          ./scripts/bootstrap_gcloud.sh
+
+      - name: Verify setup
+        run: ./scripts/self_check.sh
+
+      - name: Deploy
+        run: make deploy

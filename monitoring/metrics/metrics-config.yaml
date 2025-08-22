@@ -1,0 +1,118 @@
+---
+# Metrics Configuration for Universal Platform
+metrics:
+  collection:
+    interval: 60s
+    retention: 30d
+    
+  custom_metrics:
+    - name: business_transactions
+      displayName: "Business Transactions"
+      metricKind: GAUGE
+      valueType: INT64
+      unit: "1"
+      description: "Number of business transactions processed"
+      labels:
+        - key: transaction_type
+          valueType: STRING
+          description: "Type of business transaction"
+        - key: status
+          valueType: STRING
+          description: "Transaction status (success/failure)"
+    
+    - name: api_request_duration
+      displayName: "API Request Duration"
+      metricKind: GAUGE
+      valueType: DOUBLE
+      unit: "ms"
+      description: "Duration of API requests in milliseconds"
+      labels:
+        - key: endpoint
+          valueType: STRING
+          description: "API endpoint path"
+        - key: method
+          valueType: STRING
+          description: "HTTP method"
+    
+    - name: cache_hit_ratio
+      displayName: "Cache Hit Ratio"
+      metricKind: GAUGE
+      valueType: DOUBLE
+      unit: "1"
+      description: "Ratio of cache hits to total requests"
+      labels:
+        - key: cache_name
+          valueType: STRING
+          description: "Name of the cache"
+    
+    - name: queue_depth
+      displayName: "Message Queue Depth"
+      metricKind: GAUGE
+      valueType: INT64
+      unit: "1"
+      description: "Number of messages in queue"
+      labels:
+        - key: queue_name
+          valueType: STRING
+          description: "Name of the message queue"
+    
+    - name: deployment_frequency
+      displayName: "Deployment Frequency"
+      metricKind: CUMULATIVE
+      valueType: INT64
+      unit: "1"
+      description: "Number of deployments"
+      labels:
+        - key: environment
+          valueType: STRING
+          description: "Deployment environment"
+        - key: service
+          valueType: STRING
+          description: "Service being deployed"
+
+  exporters:
+    - type: stackdriver
+      enabled: true
+      project_id: "${GCP_PROJECT}"
+      
+    - type: prometheus
+      enabled: false
+      endpoint: "http://prometheus:9090"
+      
+    - type: datadog
+      enabled: false
+      api_key: "${DATADOG_API_KEY}"
+
+  aggregations:
+    - metric: api_request_duration
+      operations:
+        - p50
+        - p95
+        - p99
+        - mean
+        - max
+      window: 5m
+      
+    - metric: business_transactions
+      operations:
+        - sum
+        - rate
+      window: 1m
+      
+    - metric: cache_hit_ratio
+      operations:
+        - mean
+      window: 5m
+
+  slo_metrics:
+    - name: availability
+      target: 99.9
+      window: 30d
+      
+    - name: latency_p95
+      target: 500  # ms
+      window: 7d
+      
+    - name: error_rate
+      target: 0.1  # percentage
+      window: 7d

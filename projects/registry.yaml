@@ -1,0 +1,400 @@
+global:
+  organization: whitehorse
+  default_region: us-central1
+  plumbing_version: 2.0.0
+  bootstrap_version: 1.0.0
+  registry_version: 2.0.0
+  last_updated: 2025-08-20 00:00:00+00:00
+  standards:
+    compliance_level: enhanced
+    security_baseline: high
+    monitoring_required: true
+    backup_required: true
+  templates:
+    current_version: 2.0.0
+    available_types:
+    - api
+    - web-app
+    - cli
+    - library
+    - infrastructure
+    supported_languages:
+    - python
+    - javascript
+    - go
+    - rust
+    - java
+  deployment:
+    default_strategy: canary
+    approval_required_envs:
+    - prod
+    - stage
+    auto_deploy_envs:
+    - dev
+projects:
+  terraform_bootstrapper:
+    path: /Users/jameshousteau/source_code/terraform_bootstrapper
+    type: unknown
+    language: unknown
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: terraform_bootstrapper-dev
+      prod:
+        gcp_project: terraform_bootstrapper-prod
+  conagra:
+    path: /Users/jameshousteau/source_code/conagra
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: conagra-dev
+      prod:
+        gcp_project: conagra-prod
+  python-firestore:
+    path: /Users/jameshousteau/source_code/python-firestore
+    type: unknown
+    language: unknown
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: python-firestore-dev
+      prod:
+        gcp_project: python-firestore-prod
+  llm:
+    path: /Users/jameshousteau/source_code/llm
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: llm-dev
+      prod:
+        gcp_project: llm-prod
+  solve:
+    path: /Users/jameshousteau/source_code/solve
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: solve-dev
+      prod:
+        gcp_project: solve-prod
+  pymc-marketing:
+    path: /Users/jameshousteau/source_code/pymc-marketing
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: pymc-marketing-dev
+      prod:
+        gcp_project: pymc-marketing-prod
+  screenshotagent:
+    path: /Users/jameshousteau/source_code/screenshotagent
+    type: unknown
+    language: unknown
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: screenshotagent-dev
+      prod:
+        gcp_project: screenshotagent-prod
+  llm-chat-ui:
+    path: /Users/jameshousteau/source_code/llm-chat-ui
+    type: web-app
+    language: javascript
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: llm-chat-ui-dev
+      prod:
+        gcp_project: llm-chat-ui-prod
+  youtube-utils:
+    path: /Users/jameshousteau/source_code/youtube-utils
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: youtube-utils-dev
+      prod:
+        gcp_project: youtube-utils-prod
+  housteau-website:
+    path: /Users/jameshousteau/source_code/housteau-website
+    type: web-app
+    language: javascript
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: housteau-website-dev
+      prod:
+        gcp_project: housteau-website-prod
+  wisdom_of_crowds:
+    path: /Users/jameshousteau/source_code/wisdom_of_crowds
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: wisdom_of_crowds-dev
+      prod:
+        gcp_project: wisdom_of_crowds-prod
+  myscripts:
+    path: /Users/jameshousteau/source_code/myscripts
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: myscripts-dev
+      prod:
+        gcp_project: myscripts-prod
+  solve-gemini:
+    path: /Users/jameshousteau/source_code/solve-gemini
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: solve-gemini-dev
+      prod:
+        gcp_project: solve-gemini-prod
+  mmm_mmo:
+    path: /Users/jameshousteau/source_code/mmm_mmo
+    type: unknown
+    language: unknown
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: mmm_mmo-dev
+      prod:
+        gcp_project: mmm_mmo-prod
+  agent-cage:
+    path: /Users/jameshousteau/source_code/agent-cage
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: agent-cage-dev
+      prod:
+        gcp_project: agent-cage-prod
+  twilio-openai-voice:
+    path: /Users/jameshousteau/source_code/twilio-openai-voice
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: twilio-openai-voice-dev
+      prod:
+        gcp_project: twilio-openai-voice-prod
+  claude-talk:
+    path: /Users/jameshousteau/source_code/claude-talk
+    type: web-app
+    language: javascript
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: claude-talk-dev
+      prod:
+        gcp_project: claude-talk-prod
+  gemini-cli:
+    path: /Users/jameshousteau/source_code/gemini-cli
+    type: web-app
+    language: javascript
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: gemini-cli-dev
+      prod:
+        gcp_project: gemini-cli-prod
+  lecture-processing:
+    path: /Users/jameshousteau/source_code/lecture-processing
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: lecture-processing-dev
+      prod:
+        gcp_project: lecture-processing-prod
+  pdf_converter:
+    path: /Users/jameshousteau/source_code/pdf_converter
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: pdf_converter-dev
+      prod:
+        gcp_project: pdf_converter-prod
+  vm_example:
+    path: /Users/jameshousteau/source_code/vm_example
+    type: unknown
+    language: unknown
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: vm_example-dev
+      prod:
+        gcp_project: vm_example-prod
+  universal-mastery-assistant:
+    path: /Users/jameshousteau/source_code/universal-mastery-assistant
+    type: unknown
+    language: unknown
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: universal-mastery-assistant-dev
+      prod:
+        gcp_project: universal-mastery-assistant-prod
+  job-hopper:
+    path: /Users/jameshousteau/source_code/job-hopper
+    type: web-app
+    language: javascript
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: job-hopper-dev
+      prod:
+        gcp_project: job-hopper-prod
+  jdf:
+    path: /Users/jameshousteau/source_code/jdf
+    type: unknown
+    language: unknown
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    auto_discovered: true
+    environments:
+      dev:
+        gcp_project: jdf-dev
+      prod:
+        gcp_project: jdf-prod
+  test-project:
+    path: /Users/jameshousteau/source_code/test-project
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: platform
+    criticality: low
+    environments:
+      dev:
+        gcp_project: test-project-dev
+        gcloud_home: ~/.gcloud/test-project-dev
+      test:
+        gcp_project: test-project-test
+        gcloud_home: ~/.gcloud/test-project-test
+      prod:
+        gcp_project: test-project-prod
+        gcloud_home: ~/.gcloud/test-project-prod
+        approval_required: true
+  test-validation:
+    path: /Users/jameshousteau/source_code/test-validation
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: platform
+    criticality: medium
+    environments:
+      dev:
+        gcp_project: test-validation-dev
+        gcloud_home: ~/.gcloud/test-validation-dev
+      test:
+        gcp_project: test-validation-test
+        gcloud_home: ~/.gcloud/test-validation-test
+      prod:
+        gcp_project: test-validation-prod
+        gcloud_home: ~/.gcloud/test-validation-prod
+        approval_required: true
+  test_project_20250820_220450:
+    path: /private/var/folders/cq/tphwsyqs6pv4f2k71xk3nm980000gn/T/bootstrap_test_a3vf3pjr/test_project_20250820_220450
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    environments:
+      dev:
+        gcp_project: test_project_20250820_220450-dev
+        gcloud_home: ~/.gcloud/test_project_20250820_220450-dev
+      test:
+        gcp_project: test_project_20250820_220450-test
+        gcloud_home: ~/.gcloud/test_project_20250820_220450-test
+      prod:
+        gcp_project: test_project_20250820_220450-prod
+        gcloud_home: ~/.gcloud/test_project_20250820_220450-prod
+        approval_required: true

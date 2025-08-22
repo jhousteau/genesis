@@ -1,0 +1,94 @@
+repos:
+  # Branch protection - prevents commits to main branch
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # CRITICAL: Block direct commits to main branch
+      - id: no-commit-to-branch
+        args: ['--branch', 'main', '--branch', 'master']
+        name: Protect main branch
+        description: Prevents direct commits to main/master branches
+      
+      # Essential file validation
+      - id: check-yaml
+        exclude: ^(docker-compose\.yml|\.github/workflows/)
+      - id: check-json
+      - id: check-merge-conflict
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-ast
+        files: \.py$
+      - id: forbid-new-submodules
+      - id: check-executables-have-shebangs
+        files: \.(py|sh|bash)$
+      - id: fix-byte-order-marker
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: detect-private-key
+
+  # TODO/FIXME/HACK detection - prevents placeholder code from reaching main
+  - repo: local
+    hooks:
+      - id: no-todos
+        name: Block TODO/FIXME/HACK items
+        description: Prevents TODO, FIXME, and HACK comments from being committed
+        entry: bash -c 'for file in "$@"; do if grep -E "(TODO|FIXME|HACK|XXX)" "$file" > /dev/null 2>&1; then echo "❌ Found TODO/FIXME/HACK items in $file. Please resolve before committing."; grep -n -E "(TODO|FIXME|HACK|XXX)" "$file"; exit 1; fi; done' --
+        language: system
+        files: \.(py|ts|tsx|js|jsx|go|tf)$
+        exclude: "test.*|.*_test\\.(py|ts|tsx|js|jsx|go)$|\\.git/|node_modules/|\\.venv/|\\.next/|dist/|build/|__pycache__/"
+
+  # Essential security - secret detection
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks
+
+  # Python specific hooks
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3.11
+
+  # Terraform hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.2
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+      - id: terraform_tflint
+        args:
+          - '--args=--config=__GIT_WORKING_DIR__/.tflint.hcl'
+
+# Global settings
+default_language_version:
+  python: python3.11
+
+# Exclude patterns
+exclude: |
+  (?x)^(
+    \.git/.*|
+    \.devcontainer/.*|
+    \.vscode/.*|
+    \.idea/.*|
+    build/.*|
+    tmp/.*|
+    workspace/.*|
+    dev-workspace/.*|
+    test-workspace/.*|
+    \.gcloud/.*|
+    gcloud-config/.*|
+    monitoring-data/.*|
+    test-results/.*|
+    security-reports/.*|
+    \.terraform/.*|
+    terraform\.tfstate.*|
+    \.terragrunt-cache/.*|
+    .*\.bak|
+    .*\.backup|
+    .*-backup-.*|
+    intelligence/smart-commit/htmlcov/.*
+  )$
+
+# Stop on first failure to avoid running unnecessary checks
+fail_fast: true

@@ -1,0 +1,440 @@
+# GCP Isolated Deployment Makefile
+# Part of Universal Project Platform - Agent 5 Isolation Layer
+# Provides standardized, safe deployment targets with complete isolation
+
+# Include project-specific configuration if available
+-include .env.local
+-include Makefile.local
+
+# Core configuration (override in .env.local)
+PROJECT_ID ?= $(shell echo "$${PROJECT_ID:-unset}")
+ENVIRONMENT ?= $(shell echo "$${ENVIRONMENT:-dev}")
+REGION ?= $(shell echo "$${REGION:-us-central1}")
+ZONE ?= $(shell echo "$${ZONE:-$(REGION)-a}")
+
+# Isolation configuration
+REPO_GCLOUD_HOME ?= $(HOME)/.gcloud/$(PROJECT_ID)
+CLOUDSDK_CONFIG ?= $(REPO_GCLOUD_HOME)
+
+# Deployment configuration
+TERRAFORM_DIR ?= terraform
+TERRAFORM_VAR_FILE ?= terraform.tfvars
+SERVICE_NAME ?= $(shell basename $(CURDIR))
+CONTAINER_REGISTRY ?= gcr.io/$(PROJECT_ID)
+IMAGE_NAME ?= $(CONTAINER_REGISTRY)/$(SERVICE_NAME)
+IMAGE_TAG ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "latest")
+
+# Production safety
+PRODUCTION_MODE ?= $(shell [[ "$(ENVIRONMENT)" =~ ^(prod|production)$$ ]] && echo "true" || echo "false")
+CONFIRM_PROD ?= $(shell echo "$${CONFIRM_PROD:-}")
+
+# Colors for output
+CYAN := \033[36m
+GREEN := \033[32m
+YELLOW := \033[33m
+RED := \033[31m
+WHITE := \033[1;37m
+NC := \033[0m
+
+# Default target
+.DEFAULT_GOAL := help
+
+# Ensure isolation is active
+.PHONY: check-isolation
+check-isolation:
+	@if [[ -z "$(CLOUDSDK_CONFIG)" ]]; then \
+		echo -e "$(RED)❌ Isolation not active: CLOUDSDK_CONFIG not set$(NC)"; \
+		echo "Run: direnv allow"; \
+		exit 1; \
+	fi
+	@if [[ ! -d "$(CLOUDSDK_CONFIG)" ]]; then \
+		echo -e "$(RED)❌ Isolation directory missing: $(CLOUDSDK_CONFIG)$(NC)"; \
+		echo "Run: make bootstrap"; \
+		exit 1; \
+	fi
+	@if [[ ! -f "$(CLOUDSDK_CONFIG)/.initialized" ]]; then \
+		echo -e "$(YELLOW)⚠️  Isolation not initialized$(NC)"; \
+		echo "Run: make bootstrap"; \
+		exit 1; \
+	fi
+	@echo -e "$(GREEN)✅ Isolation active: $(PROJECT_ID) ($(ENVIRONMENT))$(NC)"
+
+# Production safety check
+.PHONY: check-production
+check-production:
+	@if [[ "$(PRODUCTION_MODE)" == "true" ]]; then \
+		echo -e "$(RED)⚠️  PRODUCTION ENVIRONMENT: $(PROJECT_ID)$(NC)"; \
+		if [[ "$(CONFIRM_PROD)" != "I_UNDERSTAND" ]]; then \
+			echo "Set CONFIRM_PROD=I_UNDERSTAND to proceed"; \
+			exit 1; \
+		fi; \
+		echo -e "$(YELLOW)Production operation confirmed$(NC)"; \
+	fi
+
+# Help target
+.PHONY: help
+help:
+	@echo -e "$(WHITE)GCP Isolated Deployment Makefile$(NC)"
+	@echo -e "$(WHITE)Universal Project Platform - Agent 5 Isolation Layer$(NC)"
+	@echo ""
+	@echo -e "$(CYAN)Environment:$(NC)"
+	@echo "  Project:     $(PROJECT_ID)"
+	@echo "  Environment: $(ENVIRONMENT)"
+	@echo "  Region:      $(REGION)"
+	@echo "  Zone:        $(ZONE)"
+	@echo "  Config Dir:  $(CLOUDSDK_CONFIG)"
+	@echo "  Production:  $(PRODUCTION_MODE)"
+	@echo ""
+	@echo -e "$(CYAN)Setup & Validation:$(NC)"
+	@echo "  bootstrap        Initialize GCP isolation"
+	@echo "  self-check       Validate isolation configuration"
+	@echo "  status           Show current configuration"
+	@echo ""
+	@echo -e "$(CYAN)Development:$(NC)"
+	@echo "  dev              Start development environment"
+	@echo "  test             Run all tests"
+	@echo "  lint             Run linting and code quality checks"
+	@echo "  security         Run security scans"
+	@echo ""
+	@echo -e "$(CYAN)Infrastructure:$(NC)"
+	@echo "  infra-init       Initialize Terraform"
+	@echo "  infra-plan       Plan infrastructure changes"
+	@echo "  infra-apply      Apply infrastructure changes"
+	@echo "  infra-destroy    Destroy infrastructure (DANGEROUS)"
+	@echo "  infra-validate   Validate Terraform configuration"
+	@echo ""
+	@echo -e "$(CYAN)Deployment:$(NC)"
+	@echo "  build            Build application/container"
+	@echo "  deploy           Deploy to current environment"
+	@echo "  rollback         Rollback to previous version"
+	@echo "  health           Check application health"
+	@echo ""
+	@echo -e "$(CYAN)Monitoring:$(NC)"
+	@echo "  logs             View application logs"
+	@echo "  metrics          View metrics dashboard"
+	@echo "  alerts           Show active alerts"
+	@echo ""
+	@echo -e "$(CYAN)Cleanup:$(NC)"
+	@echo "  clean            Clean build artifacts"
+	@echo "  clean-all        Clean everything including caches"
+	@echo ""
+
+# Bootstrap isolation
+.PHONY: bootstrap
+bootstrap:
+	@echo -e "$(CYAN)🔒 Bootstrapping GCP isolation...$(NC)"
+	@if [[ -f "./scripts/bootstrap_gcloud.sh" ]]; then \
+		./scripts/bootstrap_gcloud.sh; \
+	elif [[ -f "../../isolation/gcp/scripts/bootstrap_gcloud.sh" ]]; then \
+		../../isolation/gcp/scripts/bootstrap_gcloud.sh; \
+	else \
+		echo -e "$(RED)❌ Bootstrap script not found$(NC)"; \
+		exit 1; \
+	fi
+
+# Self-check isolation
+.PHONY: self-check
+self-check: check-isolation
+	@echo -e "$(CYAN)🔍 Running isolation self-check...$(NC)"
+	@if command -v self-check >/dev/null 2>&1; then \
+		self-check; \
+	elif [[ -f "./scripts/self_check.sh" ]]; then \
+		./scripts/self_check.sh; \
+	elif [[ -f "../../isolation/gcp/scripts/self_check.sh" ]]; then \
+		../../isolation/gcp/scripts/self_check.sh; \
+	else \
+		echo -e "$(RED)❌ Self-check script not found$(NC)"; \
+		exit 1; \
+	fi
+
+# Show status
+.PHONY: status
+status: check-isolation
+	@echo -e "$(WHITE)Configuration Status:$(NC)"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@gcloud config list --configuration=default
+	@echo ""
+	@echo -e "$(WHITE)Active Account:$(NC)"
+	@gcloud auth list --filter=status:ACTIVE --format="table(account,status)"
+	@echo ""
+	@if [[ -f "$(CLOUDSDK_CONFIG)/.initialized" ]]; then \
+		echo -e "$(WHITE)Initialization Info:$(NC)"; \
+		grep -E "(INITIALIZED_AT|SCRIPT_VERSION|ENVIRONMENT)" "$(CLOUDSDK_CONFIG)/.initialized" | sed 's/^/  /'; \
+	fi
+
+# Development environment
+.PHONY: dev
+dev: check-isolation
+	@echo -e "$(CYAN)🚀 Starting development environment...$(NC)"
+	@if [[ -f "docker-compose.yml" ]]; then \
+		docker-compose up -d; \
+	elif [[ -f "package.json" ]]; then \
+		npm run dev; \
+	elif [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]]; then \
+		python -m venv .venv 2>/dev/null || true; \
+		source .venv/bin/activate && pip install -r requirements.txt 2>/dev/null || true; \
+		python app.py 2>/dev/null || python main.py 2>/dev/null || echo "No main Python file found"; \
+	else \
+		echo -e "$(YELLOW)⚠️  No development configuration found$(NC)"; \
+		echo "Create docker-compose.yml, package.json, or requirements.txt"; \
+	fi
+
+# Run tests
+.PHONY: test
+test: check-isolation
+	@echo -e "$(CYAN)🧪 Running tests...$(NC)"
+	@if [[ -f "pytest.ini" ]] || [[ -f "pyproject.toml" ]] && grep -q "\[tool.pytest" pyproject.toml 2>/dev/null; then \
+		pytest -v; \
+	elif [[ -f "package.json" ]] && jq -e '.scripts.test' package.json >/dev/null 2>&1; then \
+		npm test; \
+	elif [[ -f "go.mod" ]]; then \
+		go test ./...; \
+	elif [[ -f "Cargo.toml" ]]; then \
+		cargo test; \
+	else \
+		echo -e "$(YELLOW)⚠️  No test configuration found$(NC)"; \
+		echo "Configure pytest, npm test, go test, or cargo test"; \
+	fi
+
+# Run linting
+.PHONY: lint
+lint: check-isolation
+	@echo -e "$(CYAN)🔍 Running linting and code quality checks...$(NC)"
+	@if [[ -f "pyproject.toml" ]] && grep -q "\[tool.black\]" pyproject.toml 2>/dev/null; then \
+		black --check .; \
+		isort --check-only .; \
+		flake8 .; \
+	elif [[ -f "package.json" ]] && jq -e '.scripts.lint' package.json >/dev/null 2>&1; then \
+		npm run lint; \
+	elif [[ -f "go.mod" ]]; then \
+		go fmt ./...; \
+		go vet ./...; \
+	elif [[ -f ".terraform" ]]; then \
+		terraform fmt -check -recursive; \
+		terraform validate; \
+	else \
+		echo -e "$(YELLOW)⚠️  No linting configuration found$(NC)"; \
+	fi
+
+# Security scan
+.PHONY: security
+security: check-isolation
+	@echo -e "$(CYAN)🔒 Running security scans...$(NC)"
+	@if command -v trivy >/dev/null 2>&1; then \
+		trivy fs .; \
+	elif [[ -f "requirements.txt" ]]; then \
+		pip audit; \
+	elif [[ -f "package.json" ]]; then \
+		npm audit; \
+	elif [[ -f "go.mod" ]]; then \
+		go list -m all | go version -m; \
+	else \
+		echo -e "$(YELLOW)⚠️  Install trivy for comprehensive security scanning$(NC)"; \
+	fi
+
+# Initialize Terraform
+.PHONY: infra-init
+infra-init: check-isolation
+	@echo -e "$(CYAN)🏗️  Initializing Terraform...$(NC)"
+	@if [[ -d "$(TERRAFORM_DIR)" ]]; then \
+		cd $(TERRAFORM_DIR) && terraform init; \
+	elif [[ -f "main.tf" ]]; then \
+		terraform init; \
+	else \
+		echo -e "$(RED)❌ No Terraform configuration found$(NC)"; \
+		exit 1; \
+	fi
+
+# Plan infrastructure
+.PHONY: infra-plan
+infra-plan: check-isolation infra-init
+	@echo -e "$(CYAN)📋 Planning infrastructure changes...$(NC)"
+	@if [[ -d "$(TERRAFORM_DIR)" ]]; then \
+		cd $(TERRAFORM_DIR) && terraform plan -var-file="../$(TERRAFORM_VAR_FILE)" -out=tfplan; \
+	else \
+		terraform plan -var-file="$(TERRAFORM_VAR_FILE)" -out=tfplan; \
+	fi
+
+# Apply infrastructure
+.PHONY: infra-apply
+infra-apply: check-isolation check-production
+	@echo -e "$(CYAN)🚀 Applying infrastructure changes...$(NC)"
+	@if [[ -d "$(TERRAFORM_DIR)" ]]; then \
+		cd $(TERRAFORM_DIR) && terraform apply tfplan; \
+	else \
+		terraform apply tfplan; \
+	fi
+
+# Destroy infrastructure
+.PHONY: infra-destroy
+infra-destroy: check-isolation check-production
+	@echo -e "$(RED)💥 WARNING: This will destroy infrastructure$(NC)"
+	@echo "Type 'yes' to confirm destruction of $(PROJECT_ID) infrastructure"
+	@read -p "Confirm destruction: " confirm && [[ $$confirm == "yes" ]] || (echo "Cancelled" && exit 1)
+	@if [[ -d "$(TERRAFORM_DIR)" ]]; then \
+		cd $(TERRAFORM_DIR) && terraform destroy -var-file="../$(TERRAFORM_VAR_FILE)"; \
+	else \
+		terraform destroy -var-file="$(TERRAFORM_VAR_FILE)"; \
+	fi
+
+# Validate Terraform
+.PHONY: infra-validate
+infra-validate: check-isolation
+	@echo -e "$(CYAN)✅ Validating Terraform configuration...$(NC)"
+	@if [[ -d "$(TERRAFORM_DIR)" ]]; then \
+		cd $(TERRAFORM_DIR) && terraform validate; \
+	else \
+		terraform validate; \
+	fi
+
+# Build application
+.PHONY: build
+build: check-isolation
+	@echo -e "$(CYAN)🔨 Building application...$(NC)"
+	@if [[ -f "Dockerfile" ]]; then \
+		docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .; \
+		docker tag $(IMAGE_NAME):$(IMAGE_TAG) $(IMAGE_NAME):latest; \
+	elif [[ -f "cloudbuild.yaml" ]]; then \
+		gcloud builds submit --config cloudbuild.yaml; \
+	elif [[ -f "package.json" ]] && jq -e '.scripts.build' package.json >/dev/null 2>&1; then \
+		npm run build; \
+	elif [[ -f "go.mod" ]]; then \
+		go build .; \
+	else \
+		echo -e "$(YELLOW)⚠️  No build configuration found$(NC)"; \
+	fi
+
+# Deploy application
+.PHONY: deploy
+deploy: check-isolation check-production build
+	@echo -e "$(CYAN)🚀 Deploying to $(ENVIRONMENT)...$(NC)"
+	@if [[ -f "cloudbuild.yaml" ]]; then \
+		gcloud builds submit --config cloudbuild.yaml --substitutions=_ENVIRONMENT=$(ENVIRONMENT); \
+	elif [[ -f "app.yaml" ]]; then \
+		gcloud app deploy --quiet; \
+	elif [[ -f "k8s/" ]]; then \
+		kubectl apply -f k8s/; \
+	elif [[ -f "service.yaml" ]]; then \
+		gcloud run services replace service.yaml --region=$(REGION); \
+	else \
+		echo -e "$(YELLOW)⚠️  No deployment configuration found$(NC)"; \
+		echo "Create cloudbuild.yaml, app.yaml, k8s/, or service.yaml"; \
+	fi
+
+# Rollback deployment
+.PHONY: rollback
+rollback: check-isolation check-production
+	@echo -e "$(CYAN)⏪ Rolling back deployment...$(NC)"
+	@if command -v kubectl >/dev/null 2>&1; then \
+		kubectl rollout undo deployment/$(SERVICE_NAME); \
+	elif gcloud run services describe $(SERVICE_NAME) --region=$(REGION) >/dev/null 2>&1; then \
+		echo "Cloud Run rollback requires manual revision selection"; \
+		gcloud run revisions list --service=$(SERVICE_NAME) --region=$(REGION); \
+	else \
+		echo -e "$(YELLOW)⚠️  No rollback mechanism configured$(NC)"; \
+	fi
+
+# Health check
+.PHONY: health
+health: check-isolation
+	@echo -e "$(CYAN)❤️  Checking application health...$(NC)"
+	@if gcloud run services describe $(SERVICE_NAME) --region=$(REGION) --format="value(status.url)" 2>/dev/null; then \
+		URL=$$(gcloud run services describe $(SERVICE_NAME) --region=$(REGION) --format="value(status.url)"); \
+		curl -f $$URL/health || curl -f $$URL || echo "Health check endpoint not available"; \
+	elif kubectl get deployment $(SERVICE_NAME) >/dev/null 2>&1; then \
+		kubectl get pods -l app=$(SERVICE_NAME); \
+	else \
+		echo -e "$(YELLOW)⚠️  No health check configured$(NC)"; \
+	fi
+
+# View logs
+.PHONY: logs
+logs: check-isolation
+	@echo -e "$(CYAN)📋 Viewing application logs...$(NC)"
+	@if gcloud run services describe $(SERVICE_NAME) --region=$(REGION) >/dev/null 2>&1; then \
+		gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=$(SERVICE_NAME)" --limit=100 --format=json | jq -r '.[] | [.timestamp, .severity, .textPayload // .jsonPayload.message] | @tsv'; \
+	elif kubectl get deployment $(SERVICE_NAME) >/dev/null 2>&1; then \
+		kubectl logs -l app=$(SERVICE_NAME) --tail=100; \
+	else \
+		gcloud logging read "resource.type=project" --limit=50 --project=$(PROJECT_ID); \
+	fi
+
+# View metrics
+.PHONY: metrics
+metrics: check-isolation
+	@echo -e "$(CYAN)📊 Opening metrics dashboard...$(NC)"
+	@echo "Opening Cloud Monitoring for $(PROJECT_ID)..."
+	@open "https://console.cloud.google.com/monitoring?project=$(PROJECT_ID)" 2>/dev/null || \
+		echo "Visit: https://console.cloud.google.com/monitoring?project=$(PROJECT_ID)"
+
+# Show alerts
+.PHONY: alerts
+alerts: check-isolation
+	@echo -e "$(CYAN)🚨 Checking active alerts...$(NC)"
+	@gcloud alpha monitoring policies list --format="table(displayName,enabled,conditions[].displayName)" --filter="enabled=true" || \
+		echo "No alerting policies configured"
+
+# Clean build artifacts
+.PHONY: clean
+clean:
+	@echo -e "$(CYAN)🧹 Cleaning build artifacts...$(NC)"
+	@rm -rf .terraform/
+	@rm -f tfplan
+	@rm -rf node_modules/
+	@rm -rf .venv/
+	@rm -rf __pycache__/
+	@rm -rf .pytest_cache/
+	@rm -rf target/
+	@rm -f *.log
+	@docker system prune -f || true
+
+# Clean everything
+.PHONY: clean-all
+clean-all: clean
+	@echo -e "$(CYAN)🧹 Cleaning everything including caches...$(NC)"
+	@rm -rf .git/hooks/*
+	@docker volume prune -f || true
+	@docker image prune -a -f || true
+
+# Validation checks
+.PHONY: validate-config
+validate-config:
+	@if [[ "$(PROJECT_ID)" == "unset" ]]; then \
+		echo -e "$(RED)❌ PROJECT_ID not set$(NC)"; \
+		exit 1; \
+	fi
+	@if [[ -z "$(ENVIRONMENT)" ]]; then \
+		echo -e "$(RED)❌ ENVIRONMENT not set$(NC)"; \
+		exit 1; \
+	fi
+	@echo -e "$(GREEN)✅ Configuration valid$(NC)"
+
+# Emergency procedures
+.PHONY: emergency-stop
+emergency-stop: check-isolation
+	@echo -e "$(RED)🚨 EMERGENCY STOP INITIATED$(NC)"
+	@echo "Stopping all services in $(PROJECT_ID)..."
+	@if command -v kubectl >/dev/null 2>&1; then \
+		kubectl scale deployment --all --replicas=0; \
+	fi
+	@gcloud run services list --format="value(metadata.name)" --region=$(REGION) | \
+		xargs -I {} gcloud run services update {} --region=$(REGION) --cpu=0.1 --memory=128Mi --min-instances=0 --max-instances=0 || true
+
+# Cost analysis
+.PHONY: cost-analysis
+cost-analysis: check-isolation
+	@echo -e "$(CYAN)💰 Running cost analysis...$(NC)"
+	@echo "Current month billing for $(PROJECT_ID):"
+	@gcloud billing accounts list --format="table(name,displayName)"
+	@echo ""
+	@echo "Visit Cloud Console for detailed cost analysis:"
+	@echo "https://console.cloud.google.com/billing?project=$(PROJECT_ID)"
+
+# All validation targets depend on basic configuration
+validate-config infra-init infra-plan infra-apply infra-destroy build deploy: validate-config
+
+# Mark targets as phony
+.PHONY: help bootstrap self-check status dev test lint security
+.PHONY: infra-init infra-plan infra-apply infra-destroy infra-validate
+.PHONY: build deploy rollback health logs metrics alerts
+.PHONY: clean clean-all validate-config emergency-stop cost-analysis
