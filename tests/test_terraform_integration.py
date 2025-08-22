@@ -56,9 +56,9 @@ class TestTerraformModules:
             if module_dir.is_dir() and not module_dir.name.startswith("."):
                 for required_file in required_files:
                     file_path = module_dir / required_file
-                    assert file_path.exists(), (
-                        f"Module {module_dir.name} missing {required_file}"
-                    )
+                    assert (
+                        file_path.exists()
+                    ), f"Module {module_dir.name} missing {required_file}"
 
     def test_bootstrap_module(self):
         """Test bootstrap module configuration"""
@@ -138,9 +138,9 @@ class TestTerraformModules:
 
                     # Check for output blocks
                     if "output" in content:
-                        assert "value" in content, (
-                            f"Module {module_dir.name} has outputs without values"
-                        )
+                        assert (
+                            "value" in content
+                        ), f"Module {module_dir.name} has outputs without values"
 
 
 class TestTerraformIntegration:
@@ -325,7 +325,7 @@ class TestModuleUsage:
             f"""
 module "bootstrap" {{
   source = "{self.modules_dir}/bootstrap"
-  
+
   project_id   = "test-project"
   project_name = "Test Project"
   organization = "test-org"
@@ -346,7 +346,7 @@ module "bootstrap" {{
             f"""
 module "state_backend" {{
   source = "{self.modules_dir}/state-backend"
-  
+
   project_id   = "test-project"
   bucket_name  = "test-tfstate"
   location     = "US"
@@ -365,7 +365,7 @@ module "state_backend" {{
             f"""
 module "networking" {{
   source = "{self.modules_dir}/networking"
-  
+
   project_id   = "test-project"
   network_name = "test-vpc"
   region       = "us-central1"
@@ -384,21 +384,21 @@ module "networking" {{
             f"""
 module "bootstrap" {{
   source = "{self.modules_dir}/bootstrap"
-  
+
   project_id   = "test-project"
   project_name = "Test Project"
 }}
 
 module "networking" {{
   source = "{self.modules_dir}/networking"
-  
+
   project_id   = module.bootstrap.project_id
   network_name = "main-vpc"
 }}
 
 module "compute" {{
   source = "{self.modules_dir}/compute"
-  
+
   project_id = module.bootstrap.project_id
   network_id = module.networking.network_id
 }}
@@ -439,9 +439,9 @@ class TestEnvironmentConfigurations:
             if env_dir.is_dir() and not env_dir.name.startswith("."):
                 for required_file in required_files:
                     file_path = env_dir / required_file
-                    assert file_path.exists(), (
-                        f"Environment {env_dir.name} missing {required_file}"
-                    )
+                    assert (
+                        file_path.exists()
+                    ), f"Environment {env_dir.name} missing {required_file}"
 
     def test_backend_configuration_examples(self):
         """Test that backend configuration examples exist"""
@@ -555,7 +555,7 @@ variable "object_var" {
             """
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -606,11 +606,11 @@ resource "google_compute_instance" "vm" {
   name         = "test-vm"
   machine_type = "n1-standard-1"
   zone         = "us-central1-a"
-  
+
   network_interface {
     subnetwork = google_compute_subnetwork.subnet.self_link
   }
-  
+
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-11"

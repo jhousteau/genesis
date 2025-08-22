@@ -20,8 +20,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from solve.lesson_capture_system import (ActionType, Priority, ProcessedLesson,
-                                         UpdateTemplateAction)
+from solve.lesson_capture_system import (
+    ActionType,
+    Priority,
+    ProcessedLesson,
+    UpdateTemplateAction,
+)
 
 logger = logging.getLogger(__name__)
 

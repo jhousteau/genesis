@@ -24,7 +24,6 @@ Example:
 """
 
 import logging
-from typing import Any, Callable, List, Optional, Type, Union
 
 from .circuit_breaker import CircuitBreaker, CircuitBreakerError, CircuitBreakerState
 from .policies import (
