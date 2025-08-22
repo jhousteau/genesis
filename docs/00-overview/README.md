@@ -3,7 +3,7 @@ title: Genesis Platform Overview
 category: overview
 status: approved
 version: 1.0.0
-updated: 2024-08-21
+updated: 2025-08-21
 ---
 
 # Genesis Platform
@@ -80,21 +80,21 @@ graph TD
         CLI[Genesis CLI 'g']
         VSCode[IDE Integration]
     end
-    
+
     subgraph "Intelligence Layer"
         SOLVE[SOLVE Framework]
         SC[Smart Commit]
         AF[Autofix Pipeline]
         GO[Graph Orchestration]
     end
-    
+
     subgraph "Foundation Layer"
         EP[Error & Plumbing]
         OB[Observability]
         RS[Resilience]
         SEC[Security]
     end
-    
+
     subgraph "GCP Platform"
         TF[Terraform Modules]
         CR[Cloud Run]
@@ -102,19 +102,19 @@ graph TD
         FS[Firestore]
         PS[Pub/Sub]
     end
-    
+
     CLI --> SOLVE
     VSCode --> SOLVE
     SOLVE --> SC
     SOLVE --> AF
     SOLVE --> GO
-    
+
     SOLVE --> EP
     EP --> TF
     OB --> TF
     RS --> TF
     SEC --> TF
-    
+
     TF --> CR
     TF --> CF
     TF --> FS
