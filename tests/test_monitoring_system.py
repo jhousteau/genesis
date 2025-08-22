@@ -45,9 +45,9 @@ class TestMonitoringConfiguration:
 
         for expected_dir in expected_dirs:
             dir_path = self.monitoring_dir / expected_dir
-            assert dir_path.exists(), (
-                f"Monitoring directory {expected_dir} does not exist"
-            )
+            assert (
+                dir_path.exists()
+            ), f"Monitoring directory {expected_dir} does not exist"
             assert dir_path.is_dir(), f"{expected_dir} is not a directory"
 
     def test_alert_configuration_files(self):

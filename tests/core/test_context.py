@@ -21,59 +21,53 @@ Test Categories:
 """
 
 import asyncio
-import pytest
 import threading
 import time
-import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-from core.context.manager import (
-    # Core classes
-    CorrelationID,
-    UserContext,
-    TraceContext,
-    RequestContext,
+import pytest
+
+from core.context.manager import (  # Core classes; ID generation functions; Context access functions; Convenience functions; Header propagation functions; Global context manager
     ContextManager,
-    # ID generation functions
-    generate_correlation_id,
-    generate_trace_id,
-    generate_span_id,
-    # Context access functions
-    get_correlation_id,
-    set_correlation_id,
-    get_request_id,
-    set_request_id,
-    get_user_id,
-    set_user_id,
-    get_session_id,
-    set_session_id,
-    get_trace_id,
-    set_trace_id,
-    get_span_id,
-    set_span_id,
-    get_parent_span_id,
-    set_parent_span_id,
-    get_baggage,
-    set_baggage,
+    CorrelationID,
+    RequestContext,
+    TraceContext,
+    UserContext,
     add_baggage,
-    get_metadata,
-    set_metadata,
     add_metadata,
-    # Convenience functions
-    get_current_context,
-    set_user_context,
-    get_user_context,
-    set_trace_context,
-    get_trace_context,
-    # Header propagation functions
-    propagate_headers,
     extract_headers,
-    # Global context manager
+    generate_correlation_id,
+    generate_span_id,
+    generate_trace_id,
+    get_baggage,
     get_context_manager,
+    get_correlation_id,
+    get_current_context,
+    get_metadata,
+    get_parent_span_id,
+    get_request_id,
+    get_session_id,
+    get_span_id,
+    get_trace_context,
+    get_trace_id,
+    get_user_context,
+    get_user_id,
+    propagate_headers,
+    set_baggage,
+    set_correlation_id,
+    set_metadata,
+    set_parent_span_id,
+    set_request_id,
+    set_session_id,
+    set_span_id,
+    set_trace_context,
+    set_trace_id,
+    set_user_context,
+    set_user_id,
 )
-from core.errors.handler import GenesisError, ErrorCategory
+from core.errors.handler import ErrorCategory, GenesisError
 
 
 class TestCorrelationID:
@@ -1576,7 +1570,6 @@ class TestContextIntegration:
             parent_span_id=context_info["parent_span_id"],
             metadata={"endpoint": "/api/users", "method": "GET"},
         ) as request_context:
-
             # Simulate business logic with nested spans
             with manager.trace_span("validate_user"):
                 await asyncio.sleep(0.001)  # Simulate validation
@@ -1624,7 +1617,6 @@ class TestContextIntegration:
             user_id="chain-user",
             trace_id=generate_trace_id(),
         ):
-
             # Service A processing
             with manager.trace_span("service_a_processing"):
                 service_a_headers = propagate_headers()
@@ -1643,7 +1635,6 @@ class TestContextIntegration:
                 span_id=generate_span_id(),
                 parent_span_id=service_b_context["parent_span_id"],
             ):
-
                 with manager.trace_span("service_b_processing"):
                     service_b_headers = propagate_headers()
 
@@ -1706,7 +1697,6 @@ class TestContextIntegration:
         async with manager.request_context(
             correlation_id="error-handling", user_id="error-user"
         ):
-
             try:
                 with manager.trace_span("error_prone_operation"):
                     # Simulate operation that fails

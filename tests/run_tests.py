@@ -470,7 +470,7 @@ class TestRunner:
         <p>Execution Time: {summary["execution_time"]}</p>
         <p>Total Duration: {summary["total_duration"]:.1f} seconds</p>
     </div>
-    
+
     <div class="metrics">
         <div class="metric {"success" if summary["success_rate"] >= 90 else "warning" if summary["success_rate"] >= 70 else "danger"}">
             <h3>Success Rate</h3>
@@ -493,7 +493,7 @@ class TestRunner:
             <p style="font-size: 24px; margin: 0;">{summary["total_skipped"]}</p>
         </div>
     </div>
-    
+
     <h2>Test Suite Results</h2>
     <table>
         <thead>
