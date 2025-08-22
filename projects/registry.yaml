@@ -398,3 +398,21 @@ projects:
         gcp_project: test_project_20250820_220450-prod
         gcloud_home: ~/.gcloud/test_project_20250820_220450-prod
         approval_required: true
+  test_project_20250822_083005:
+    path: /private/var/folders/cq/tphwsyqs6pv4f2k71xk3nm980000gn/T/bootstrap_test_3t_duscd/test_project_20250822_083005
+    type: api
+    language: python
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    environments:
+      dev:
+        gcp_project: test_project_20250822_083005-dev
+        gcloud_home: ~/.gcloud/test_project_20250822_083005-dev
+      test:
+        gcp_project: test_project_20250822_083005-test
+        gcloud_home: ~/.gcloud/test_project_20250822_083005-test
+      prod:
+        gcp_project: test_project_20250822_083005-prod
+        gcloud_home: ~/.gcloud/test_project_20250822_083005-prod
+        approval_required: true
