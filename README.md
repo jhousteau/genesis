@@ -243,5 +243,5 @@ For support, please:
 
 ---
 
-**Current Version**: 0.2.0 (Alpha)  
-**Last Updated**: August 21, 2025
+**Current Version**: 0.2.1 (Alpha)
+**Last Updated**: August 22, 2025
