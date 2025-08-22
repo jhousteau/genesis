@@ -71,8 +71,8 @@ _phases_available = False
 _tools_available = False
 
 try:
-    from .phases import (AnalysisPhase, ImplementationPhase,  # noqa: F401
-                         Phase, PlanningPhase)
+    from .phases import ImplementationPhase  # noqa: F401
+    from .phases import AnalysisPhase, Phase, PlanningPhase
 
     _phases_available = True
 except ImportError:

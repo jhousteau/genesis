@@ -127,9 +127,23 @@ class GenesisLogger:
         self._log(LogLevel.CRITICAL, message, **kwargs)
 
     def _log(self, level: LogLevel, message: str, **kwargs):
-        """Internal logging method"""
-        # Merge contexts
+        """Internal logging method with automatic context injection"""
+        # Start with instance context
         log_data = {**self._context, **kwargs, "message": message}
+
+        # Automatically inject context from context manager if available
+        try:
+            from core.context import get_current_context
+
+            current_context = get_current_context()
+            if current_context:
+                # Inject correlation and tracing context
+                logger_context = current_context.get_logger_context()
+                # Instance context and explicit kwargs override automatic context
+                log_data = {**logger_context, **log_data}
+        except ImportError:
+            # Context manager not available, continue without automatic context
+            pass
 
         # Use appropriate logging method
         log_method = getattr(self.logger, level.name.lower())
@@ -161,7 +175,10 @@ class GenesisLogger:
     @contextmanager
     def trace(self, trace_id: str, span_id: Optional[str] = None):
         """
-        Context manager for distributed tracing
+        Context manager for distributed tracing (legacy)
+
+        NOTE: This method is maintained for backward compatibility.
+        For new code, use the core.context.ContextManager.trace_span() method instead.
 
         Usage:
             with logger.trace(trace_id="abc123", span_id="def456"):
