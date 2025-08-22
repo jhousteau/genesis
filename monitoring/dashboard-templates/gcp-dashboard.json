@@ -1,0 +1,84 @@
+{
+  "displayName": "Universal Platform Monitoring",
+  "mosaicLayout": {
+    "columns": 12,
+    "tiles": [
+      {
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Request Rate",
+          "xyChart": {
+            "timeSeries": [
+              {
+                "filter": "resource.type=\"cloud_function\" OR resource.type=\"gce_instance\"",
+                "aggregation": {
+                  "alignmentPeriod": "60s",
+                  "perSeriesAligner": "ALIGN_RATE"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Error Rate",
+          "xyChart": {
+            "timeSeries": [
+              {
+                "filter": "severity=\"ERROR\"",
+                "aggregation": {
+                  "alignmentPeriod": "60s",
+                  "perSeriesAligner": "ALIGN_RATE"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "yPos": 4,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Latency P95",
+          "xyChart": {
+            "timeSeries": [
+              {
+                "filter": "metric.type=\"loadbalancing.googleapis.com/https/backend_latencies\"",
+                "aggregation": {
+                  "alignmentPeriod": "60s",
+                  "perSeriesAligner": "ALIGN_PERCENTILE_95"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "xPos": 6,
+        "yPos": 4,
+        "width": 6,
+        "height": 4,
+        "widget": {
+          "title": "Resource Utilization",
+          "xyChart": {
+            "timeSeries": [
+              {
+                "filter": "metric.type=\"compute.googleapis.com/instance/cpu/utilization\"",
+                "aggregation": {
+                  "alignmentPeriod": "60s",
+                  "perSeriesAligner": "ALIGN_MEAN"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,898 @@
+{
+  "ComprehensiveAWSPolicies": {
+    "Version": "2.0.0",
+    "Description": "Comprehensive AWS governance policies for multi-cloud compliance",
+    "LastUpdated": "2024-08-20",
+    "PolicyFramework": "Multi-Cloud Governance",
+    
+    "ServiceControlPolicies": {
+      "SecurityBaseline": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "DenyRootUserActions",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": "*",
+            "Resource": "*",
+            "Condition": {
+              "StringEquals": {
+                "aws:PrincipalType": "Root"
+              }
+            }
+          },
+          {
+            "Sid": "RequireMFAForConsoleAccess",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "ec2:*",
+              "s3:*",
+              "rds:*",
+              "iam:*"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "Bool": {
+                "aws:MultiFactorAuthPresent": "false"
+              },
+              "StringEquals": {
+                "aws:RequestedRegion": [
+                  "us-east-1",
+                  "us-west-2",
+                  "eu-west-1"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "DenyUnencryptedS3Objects",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "s3:PutObject"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "StringNotEquals": {
+                "s3:x-amz-server-side-encryption": [
+                  "AES256",
+                  "aws:kms"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "DenyPublicS3Buckets",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "s3:PutBucketAcl",
+              "s3:PutBucketPolicy",
+              "s3:PutBucketPublicAccessBlock"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "Bool": {
+                "s3:BlockPublicAcls": "false"
+              }
+            }
+          }
+        ]
+      },
+      
+      "ComplianceEnforcement": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "RequireResourceTagging",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "ec2:RunInstances",
+              "rds:CreateDBInstance",
+              "s3:CreateBucket"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "Null": {
+                "aws:RequestedRegionTag/Environment": "true",
+                "aws:RequestedRegionTag/Project": "true",
+                "aws:RequestedRegionTag/CostCenter": "true",
+                "aws:RequestedRegionTag/Owner": "true"
+              }
+            }
+          },
+          {
+            "Sid": "EnforceCloudTrail",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "cloudtrail:StopLogging",
+              "cloudtrail:DeleteTrail"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Sid": "EnforceConfigRecorder",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "config:StopConfigurationRecorder",
+              "config:DeleteConfigurationRecorder"
+            ],
+            "Resource": "*"
+          }
+        ]
+      },
+      
+      "CostOptimization": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "RestrictExpensiveInstanceTypes",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "ec2:RunInstances"
+            ],
+            "Resource": "arn:aws:ec2:*:*:instance/*",
+            "Condition": {
+              "StringEquals": {
+                "ec2:InstanceType": [
+                  "p3.24xlarge",
+                  "p4d.24xlarge",
+                  "x1e.32xlarge",
+                  "m5dn.24xlarge"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "RequireBusinessJustificationForLargeResources",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "ec2:RunInstances"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "StringNotEquals": {
+                "ec2:InstanceType": [
+                  "t3.micro",
+                  "t3.small",
+                  "t3.medium",
+                  "m5.large",
+                  "m5.xlarge"
+                ]
+              },
+              "Null": {
+                "aws:RequestedRegionTag/BusinessJustification": "true"
+              }
+            }
+          },
+          {
+            "Sid": "PreventUnattachedEBSVolumes",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "ec2:CreateVolume"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "Bool": {
+                "ec2:Encrypted": "false"
+              }
+            }
+          }
+        ]
+      },
+      
+      "DataProtection": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "RequireS3Encryption",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "s3:PutObject"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "StringNotEquals": {
+                "s3:x-amz-server-side-encryption": "aws:kms"
+              }
+            }
+          },
+          {
+            "Sid": "RequireRDSEncryption",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "rds:CreateDBInstance",
+              "rds:CreateDBCluster"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "Bool": {
+                "rds:StorageEncrypted": "false"
+              }
+            }
+          },
+          {
+            "Sid": "RequireEBSEncryption",
+            "Effect": "Deny",
+            "Principal": {
+              "AWS": "*"
+            },
+            "Action": [
+              "ec2:CreateVolume"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "Bool": {
+                "ec2:Encrypted": "false"
+              }
+            }
+          }
+        ]
+      }
+    },
+    
+    "ConfigRules": {
+      "SecurityCompliance": [
+        {
+          "ConfigRuleName": "required-tags",
+          "Description": "Ensure all resources have required tags",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "REQUIRED_TAGS"
+          },
+          "InputParameters": {
+            "tag1Key": "Environment",
+            "tag2Key": "Project",
+            "tag3Key": "CostCenter",
+            "tag4Key": "Owner"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::EC2::Instance",
+              "AWS::S3::Bucket",
+              "AWS::RDS::DBInstance",
+              "AWS::Lambda::Function"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "encrypted-volumes",
+          "Description": "Ensure EBS volumes are encrypted",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "ENCRYPTED_VOLUMES"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::EC2::Volume"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "s3-bucket-ssl-requests-only",
+          "Description": "Ensure S3 buckets require SSL requests",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "S3_BUCKET_SSL_REQUESTS_ONLY"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::S3::Bucket"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "rds-storage-encrypted",
+          "Description": "Ensure RDS instances have encryption enabled",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "RDS_STORAGE_ENCRYPTED"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::RDS::DBInstance"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "cloudtrail-enabled",
+          "Description": "Ensure CloudTrail is enabled",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "CLOUD_TRAIL_ENABLED"
+          }
+        }
+      ],
+      
+      "NetworkSecurity": [
+        {
+          "ConfigRuleName": "security-group-ssh-restricted",
+          "Description": "Ensure security groups don't allow unrestricted SSH access",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "INCOMING_SSH_DISABLED"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::EC2::SecurityGroup"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "security-group-unrestricted-common-ports",
+          "Description": "Ensure security groups don't allow unrestricted access to common ports",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "EC2_SECURITY_GROUP_ATTACHED_TO_ENI"
+          },
+          "InputParameters": {
+            "blockedPort1": "20",
+            "blockedPort2": "21",
+            "blockedPort3": "3389",
+            "blockedPort4": "3306",
+            "blockedPort5": "5432"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::EC2::SecurityGroup"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "vpc-default-security-group-closed",
+          "Description": "Ensure default security groups prohibit all traffic",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "VPC_DEFAULT_SECURITY_GROUP_CLOSED"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::EC2::SecurityGroup"
+            ]
+          }
+        }
+      ],
+      
+      "CostOptimization": [
+        {
+          "ConfigRuleName": "ec2-instance-managed-by-systems-manager",
+          "Description": "Ensure EC2 instances are managed by Systems Manager",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "EC2_INSTANCE_MANAGED_BY_SSM"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::EC2::Instance"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "ebs-optimized-instance",
+          "Description": "Ensure EC2 instances are EBS-optimized",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "EBS_OPTIMIZED_INSTANCE"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::EC2::Instance"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "unused-ebs-volumes",
+          "Description": "Identify unused EBS volumes",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "EC2_VOLUME_INUSE_CHECK"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::EC2::Volume"
+            ]
+          }
+        }
+      ],
+      
+      "DataClassification": [
+        {
+          "ConfigRuleName": "s3-bucket-public-access-prohibited",
+          "Description": "Ensure S3 buckets prohibit public access",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "S3_BUCKET_PUBLIC_ACCESS_PROHIBITED"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::S3::Bucket"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "s3-bucket-logging-enabled",
+          "Description": "Ensure S3 bucket logging is enabled",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "S3_BUCKET_LOGGING_ENABLED"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::S3::Bucket"
+            ]
+          }
+        },
+        {
+          "ConfigRuleName": "rds-logging-enabled",
+          "Description": "Ensure RDS logging is enabled",
+          "Source": {
+            "Owner": "AWS",
+            "SourceIdentifier": "RDS_LOGGING_ENABLED"
+          },
+          "InputParameters": {
+            "requiredLogTypes": "audit,error,general,slowquery"
+          },
+          "Scope": {
+            "ComplianceResourceTypes": [
+              "AWS::RDS::DBInstance"
+            ]
+          }
+        }
+      ]
+    },
+    
+    "IAMPolicies": {
+      "SecurityBaseline": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "RequireMFAForSensitiveActions",
+            "Effect": "Deny",
+            "Action": [
+              "iam:CreateUser",
+              "iam:DeleteUser",
+              "iam:CreateRole",
+              "iam:DeleteRole",
+              "iam:AttachUserPolicy",
+              "iam:DetachUserPolicy",
+              "iam:AttachRolePolicy",
+              "iam:DetachRolePolicy",
+              "iam:PutUserPolicy",
+              "iam:PutRolePolicy",
+              "iam:DeleteUserPolicy",
+              "iam:DeleteRolePolicy"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "Bool": {
+                "aws:MultiFactorAuthPresent": "false"
+              }
+            }
+          },
+          {
+            "Sid": "DenyPasswordPolicyModification",
+            "Effect": "Deny",
+            "Action": [
+              "iam:UpdateAccountPasswordPolicy",
+              "iam:DeleteAccountPasswordPolicy"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Sid": "RequireSecurePasswordPolicy",
+            "Effect": "Allow",
+            "Action": [
+              "iam:GetAccountPasswordPolicy"
+            ],
+            "Resource": "*"
+          }
+        ]
+      },
+      
+      "DeveloperAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "AllowDevelopmentActions",
+            "Effect": "Allow",
+            "Action": [
+              "ec2:Describe*",
+              "ec2:RunInstances",
+              "ec2:StartInstances",
+              "ec2:StopInstances",
+              "ec2:TerminateInstances",
+              "s3:GetObject",
+              "s3:PutObject",
+              "s3:DeleteObject",
+              "s3:ListBucket",
+              "rds:Describe*",
+              "lambda:*",
+              "logs:*",
+              "cloudwatch:*"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "StringEquals": {
+                "aws:RequestedRegion": [
+                  "us-east-1",
+                  "us-west-2"
+                ]
+              },
+              "StringLike": {
+                "aws:ResourceTag/Environment": [
+                  "development",
+                  "staging"
+                ]
+              }
+            }
+          },
+          {
+            "Sid": "DenyProductionAccess",
+            "Effect": "Deny",
+            "Action": "*",
+            "Resource": "*",
+            "Condition": {
+              "StringEquals": {
+                "aws:ResourceTag/Environment": "production"
+              }
+            }
+          }
+        ]
+      },
+      
+      "ReadOnlyAccess": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "AllowReadOnlyAccess",
+            "Effect": "Allow",
+            "Action": [
+              "ec2:Describe*",
+              "s3:GetObject",
+              "s3:ListBucket",
+              "rds:Describe*",
+              "lambda:GetFunction",
+              "lambda:ListFunctions",
+              "logs:Describe*",
+              "logs:Get*",
+              "cloudwatch:Describe*",
+              "cloudwatch:Get*",
+              "cloudwatch:List*"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Sid": "DenyWriteActions",
+            "Effect": "Deny",
+            "NotAction": [
+              "ec2:Describe*",
+              "s3:GetObject",
+              "s3:ListBucket",
+              "rds:Describe*",
+              "lambda:GetFunction",
+              "lambda:ListFunctions",
+              "logs:Describe*",
+              "logs:Get*",
+              "cloudwatch:Describe*",
+              "cloudwatch:Get*",
+              "cloudwatch:List*"
+            ],
+            "Resource": "*"
+          }
+        ]
+      }
+    },
+    
+    "AutomationPolicies": {
+      "BackupAutomation": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "AllowBackupOperations",
+            "Effect": "Allow",
+            "Action": [
+              "backup:StartBackupJob",
+              "backup:StartCopyJob",
+              "backup:StartRestoreJob",
+              "backup:DescribeBackupJob",
+              "backup:DescribeCopyJob",
+              "backup:DescribeRestoreJob",
+              "backup:ListBackupJobs",
+              "backup:ListCopyJobs",
+              "backup:ListRestoreJobs",
+              "backup:GetBackupPlan",
+              "backup:GetBackupSelection",
+              "backup:ListBackupPlans",
+              "backup:ListBackupSelections"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Sid": "AllowResourceAccess",
+            "Effect": "Allow",
+            "Action": [
+              "ec2:DescribeInstances",
+              "ec2:DescribeImages",
+              "ec2:DescribeSnapshots",
+              "ec2:DescribeVolumes",
+              "ec2:CreateSnapshot",
+              "ec2:CreateImage",
+              "rds:DescribeDBInstances",
+              "rds:DescribeDBClusters",
+              "rds:CreateDBSnapshot",
+              "rds:CreateDBClusterSnapshot"
+            ],
+            "Resource": "*"
+          }
+        ]
+      },
+      
+      "ComplianceAutomation": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "AllowConfigOperations",
+            "Effect": "Allow",
+            "Action": [
+              "config:GetComplianceDetailsByConfigRule",
+              "config:GetComplianceDetailsByResource",
+              "config:GetComplianceSummaryByConfigRule",
+              "config:GetComplianceSummaryByResourceType",
+              "config:DescribeConfigRules",
+              "config:DescribeConfigRuleEvaluationStatus",
+              "config:DescribeComplianceByConfigRule",
+              "config:DescribeComplianceByResource"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Sid": "AllowRemediationActions",
+            "Effect": "Allow",
+            "Action": [
+              "ec2:ModifyInstanceAttribute",
+              "ec2:ModifyVolume",
+              "s3:PutBucketPolicy",
+              "s3:PutBucketAcl",
+              "s3:PutBucketNotification",
+              "s3:PutBucketLogging",
+              "s3:PutEncryptionConfiguration",
+              "rds:ModifyDBInstance",
+              "rds:ModifyDBCluster"
+            ],
+            "Resource": "*",
+            "Condition": {
+              "StringEquals": {
+                "aws:RequestedRegion": [
+                  "us-east-1",
+                  "us-west-2",
+                  "eu-west-1"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      
+      "CostOptimizationAutomation": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "AllowInstanceManagement",
+            "Effect": "Allow",
+            "Action": [
+              "ec2:DescribeInstances",
+              "ec2:DescribeInstanceTypes",
+              "ec2:ModifyInstanceAttribute",
+              "ec2:StartInstances",
+              "ec2:StopInstances",
+              "ec2:RebootInstances",
+              "cloudwatch:GetMetricStatistics",
+              "cloudwatch:ListMetrics"
+            ],
+            "Resource": "*"
+          },
+          {
+            "Sid": "AllowRightsizingRecommendations",
+            "Effect": "Allow",
+            "Action": [
+              "ce:GetRightsizingRecommendation",
+              "ce:GetDimensionValues",
+              "ce:GetReservationCoverage",
+              "ce:GetReservationPurchaseRecommendation",
+              "ce:GetReservationUtilization",
+              "ce:GetCostAndUsage",
+              "ce:GetUsageReport"
+            ],
+            "Resource": "*"
+          }
+        ]
+      }
+    },
+    
+    "MonitoringPolicies": {
+      "CloudTrailPolicy": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "AllowCloudTrailLogging",
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "cloudtrail.amazonaws.com"
+            },
+            "Action": [
+              "s3:PutObject",
+              "s3:GetBucketAcl"
+            ],
+            "Resource": [
+              "arn:aws:s3:::governance-cloudtrail-logs-*/*",
+              "arn:aws:s3:::governance-cloudtrail-logs-*"
+            ],
+            "Condition": {
+              "StringEquals": {
+                "s3:x-amz-acl": "bucket-owner-full-control"
+              }
+            }
+          }
+        ]
+      },
+      
+      "GuardDutyPolicy": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "AllowGuardDutyOperations",
+            "Effect": "Allow",
+            "Action": [
+              "guardduty:GetDetector",
+              "guardduty:GetFindings",
+              "guardduty:GetFindingsStatistics",
+              "guardduty:ListDetectors",
+              "guardduty:ListFindings",
+              "guardduty:GetMasterAccount",
+              "guardduty:GetMembers",
+              "guardduty:ListMembers"
+            ],
+            "Resource": "*"
+          }
+        ]
+      }
+    },
+    
+    "ComplianceFrameworks": {
+      "SOX": {
+        "RequiredControls": [
+          "cloudtrail-enabled",
+          "config-enabled",
+          "guardduty-enabled",
+          "encrypted-volumes",
+          "s3-bucket-ssl-requests-only",
+          "rds-storage-encrypted",
+          "required-tags"
+        ],
+        "AuditRequirements": {
+          "LogRetention": "7 years",
+          "ImmutableLogs": true,
+          "AccessLogging": true,
+          "ChangeTracking": true
+        }
+      },
+      
+      "HIPAA": {
+        "RequiredControls": [
+          "encrypted-volumes",
+          "rds-storage-encrypted",
+          "s3-bucket-ssl-requests-only",
+          "s3-bucket-public-access-prohibited",
+          "security-group-ssh-restricted",
+          "vpc-default-security-group-closed"
+        ],
+        "DataProtection": {
+          "EncryptionAtRest": "Required",
+          "EncryptionInTransit": "Required",
+          "AccessControls": "Role-based",
+          "AuditLogging": "Comprehensive"
+        }
+      },
+      
+      "PCI-DSS": {
+        "RequiredControls": [
+          "encrypted-volumes",
+          "rds-storage-encrypted",
+          "s3-bucket-ssl-requests-only",
+          "security-group-ssh-restricted",
+          "cloudtrail-enabled",
+          "guardduty-enabled"
+        ],
+        "NetworkSecurity": {
+          "Segmentation": "Required",
+          "Firewalls": "Mandatory",
+          "IntrusionDetection": "Required",
+          "VulnerabilityScanning": "Regular"
+        }
+      },
+      
+      "GDPR": {
+        "RequiredControls": [
+          "encrypted-volumes",
+          "rds-storage-encrypted",
+          "s3-bucket-public-access-prohibited",
+          "required-tags",
+          "cloudtrail-enabled"
+        ],
+        "DataPrivacy": {
+          "DataMinimization": "Enforced",
+          "ConsentManagement": "Automated",
+          "DataRetention": "Policy-driven",
+          "BreachNotification": "Automated"
+        }
+      }
+    },
+    
+    "AutomationWorkflows": {
+      "PolicyEnforcement": {
+        "TriggerEvents": [
+          "ConfigRuleCompliance",
+          "GuardDutyFinding",
+          "CloudTrailEvent",
+          "CostAnomaly"
+        ],
+        "AutomationActions": [
+          "ResourceTagging",
+          "SecurityGroupRemediation",
+          "EncryptionEnforcement",
+          "AccessControlUpdate",
+          "NotificationSending",
+          "IncidentCreation"
+        ]
+      },
+      
+      "ComplianceReporting": {
+        "ReportingFrequency": {
+          "Executive": "Monthly",
+          "Operational": "Weekly",
+          "Compliance": "Daily"
+        },
+        "ReportTypes": [
+          "ComplianceStatus",
+          "RiskAssessment",
+          "CostOptimization",
+          "SecurityPosture",
+          "AuditReadiness"
+        ]
+      }
+    }
+  }
+}

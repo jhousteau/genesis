@@ -20,7 +20,7 @@
 locals {
   project_name = var.project_name != "" ? var.project_name : "${var.project_id}-${var.environment}"
   state_bucket = var.state_bucket_name != "" ? var.state_bucket_name : "tf-state-${var.project_id}"
-  
+
   common_labels = merge(
     var.labels,
     {
@@ -45,7 +45,7 @@ module "bootstrap" {
   project_id      = var.project_id
   project_name    = local.project_name
   folder_id       = var.folder_id
-  
+
   activate_apis = var.activate_apis
   labels        = local.common_labels
 }
@@ -58,7 +58,7 @@ module "state_backend" {
   project_id      = var.project_id
   bucket_name     = local.state_bucket
   bucket_location = var.state_bucket_location
-  
+
   labels = local.common_labels
 }
 
@@ -74,7 +74,7 @@ module "service_accounts" {
     description  = "Service account for Terraform automation"
     roles        = var.terraform_sa_roles
   }]
-  
+
   labels = local.common_labels
 }
 
@@ -86,9 +86,9 @@ module "workload_identity" {
   project_id  = var.project_id
   github_org  = var.github_org
   github_repo = var.github_repo
-  
+
   service_account_email = var.create_terraform_sa ? module.service_accounts[0].service_account_emails[var.terraform_sa_name] : ""
-  
+
   labels = local.common_labels
 }
 
@@ -127,13 +127,13 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   workload_identity_pool_id          = google_iam_workload_identity_pool.github[0].workload_identity_pool_id
   workload_identity_pool_provider_id = "github-provider-${var.environment}"
   display_name                        = "GitHub Provider ${var.environment}"
-  
+
   attribute_mapping = {
     "google.subject"       = "assertion.sub"
     "attribute.actor"      = "assertion.actor"
     "attribute.repository" = "assertion.repository"
   }
-  
+
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
   }

@@ -1,6 +1,6 @@
 /**
  * Service Accounts Module - Provider Requirements
- * 
+ *
  * Define required provider versions for the module
  */
 

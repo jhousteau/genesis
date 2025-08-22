@@ -1,0 +1,394 @@
+#!/usr/bin/env python3
+"""
+Deployment Integration Module for Bootstrap CLI
+Provides seamless deployment across all environments
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import yaml
+
+# Add lib path for integrations
+sys.path.insert(0, str(Path(__file__).parent.parent / "lib" / "python"))
+
+class DeploymentManager:
+    """Manages deployment operations across environments"""
+    
+    def __init__(self, project_path: str = None):
+        self.project_path = Path(project_path) if project_path else Path.cwd()
+        self.config = self._load_project_config()
+        self.deployment_history = []
+        
+    def _load_project_config(self) -> Dict[str, Any]:
+        """Load project configuration"""
+        config_file = self.project_path / ".project-config.yaml"
+        if config_file.exists():
+            with open(config_file, 'r') as f:
+                return yaml.safe_load(f)
+        return {}
+    
+    def deploy_to_environment(self, environment: str, options: Dict[str, Any] = None) -> bool:
+        """Deploy to specific environment"""
+        print(f"🚀 Deploying to {environment}...")
+        
+        # Validate environment
+        valid_envs = ['dev', 'test', 'stage', 'prod']
+        if environment not in valid_envs:
+            print(f"❌ Invalid environment: {environment}")
+            return False
+        
+        # Check for deployment script
+        deploy_script = self.project_path / "scripts" / "deploy.sh"
+        if not deploy_script.exists():
+            print("⚠️  No deploy script found, using default deployment")
+            return self._default_deployment(environment, options)
+        
+        # Execute deployment
+        env_vars = os.environ.copy()
+        env_vars['DEPLOY_ENV'] = environment
+        env_vars['PROJECT_PATH'] = str(self.project_path)
+        
+        if options:
+            for key, value in options.items():
+                env_vars[f'DEPLOY_{key.upper()}'] = str(value)
+        
+        try:
+            result = subprocess.run(
+                [str(deploy_script), environment],
+                cwd=self.project_path,
+                env=env_vars,
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                print(f"✅ Deployment to {environment} successful")
+                self._record_deployment(environment, 'success')
+                return True
+            else:
+                print(f"❌ Deployment to {environment} failed")
+                print(f"Error: {result.stderr}")
+                self._record_deployment(environment, 'failed', result.stderr)
+                return False
+                
+        except Exception as e:
+            print(f"❌ Deployment error: {e}")
+            self._record_deployment(environment, 'error', str(e))
+            return False
+    
+    def _default_deployment(self, environment: str, options: Dict[str, Any] = None) -> bool:
+        """Default deployment strategy"""
+        deployment_type = self.config.get('project_type', 'unknown')
+        
+        if deployment_type == 'api':
+            return self._deploy_api(environment, options)
+        elif deployment_type == 'web-app':
+            return self._deploy_webapp(environment, options)
+        elif deployment_type == 'cli':
+            return self._deploy_cli(environment, options)
+        elif deployment_type == 'library':
+            return self._deploy_library(environment, options)
+        else:
+            print(f"⚠️  Unknown project type: {deployment_type}")
+            return False
+    
+    def _deploy_api(self, environment: str, options: Dict[str, Any] = None) -> bool:
+        """Deploy API project"""
+        print(f"📦 Deploying API to {environment}...")
+        
+        # Check for Cloud Run configuration
+        cloud_run_config = self.project_path / "deploy" / "cloud-run.yaml"
+        if cloud_run_config.exists():
+            return self._deploy_cloud_run(environment, cloud_run_config)
+        
+        # Check for App Engine configuration
+        app_yaml = self.project_path / "app.yaml"
+        if app_yaml.exists():
+            return self._deploy_app_engine(environment)
+        
+        # Check for Kubernetes configuration
+        k8s_dir = self.project_path / "k8s"
+        if k8s_dir.exists():
+            return self._deploy_kubernetes(environment, k8s_dir)
+        
+        print("⚠️  No deployment configuration found")
+        return False
+    
+    def _deploy_webapp(self, environment: str, options: Dict[str, Any] = None) -> bool:
+        """Deploy web application"""
+        print(f"🌐 Deploying web app to {environment}...")
+        
+        # Check for Firebase configuration
+        firebase_json = self.project_path / "firebase.json"
+        if firebase_json.exists():
+            return self._deploy_firebase(environment)
+        
+        # Check for static site deployment
+        dist_dir = self.project_path / "dist"
+        if dist_dir.exists():
+            return self._deploy_static_site(environment, dist_dir)
+        
+        return False
+    
+    def _deploy_cli(self, environment: str, options: Dict[str, Any] = None) -> bool:
+        """Deploy CLI tool"""
+        print(f"🔧 Deploying CLI tool...")
+        
+        # Package and upload to artifact registry
+        setup_py = self.project_path / "setup.py"
+        if setup_py.exists():
+            return self._deploy_python_package(environment)
+        
+        return False
+    
+    def _deploy_library(self, environment: str, options: Dict[str, Any] = None) -> bool:
+        """Deploy library"""
+        print(f"📚 Deploying library...")
+        
+        # Similar to CLI deployment
+        return self._deploy_cli(environment, options)
+    
+    def _deploy_cloud_run(self, environment: str, config_file: Path) -> bool:
+        """Deploy to Cloud Run"""
+        try:
+            project_id = f"{self.config.get('project_name', 'app')}-{environment}"
+            service_name = self.config.get('service_name', 'app')
+            region = self.config.get('region', 'us-central1')
+            
+            # Build container
+            print("🐳 Building container...")
+            subprocess.run([
+                "gcloud", "builds", "submit",
+                "--project", project_id,
+                "--tag", f"gcr.io/{project_id}/{service_name}"
+            ], cwd=self.project_path, check=True)
+            
+            # Deploy to Cloud Run
+            print("☁️  Deploying to Cloud Run...")
+            subprocess.run([
+                "gcloud", "run", "deploy", service_name,
+                "--project", project_id,
+                "--region", region,
+                "--image", f"gcr.io/{project_id}/{service_name}",
+                "--platform", "managed",
+                "--allow-unauthenticated"
+            ], cwd=self.project_path, check=True)
+            
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Cloud Run deployment failed: {e}")
+            return False
+    
+    def _deploy_app_engine(self, environment: str) -> bool:
+        """Deploy to App Engine"""
+        try:
+            project_id = f"{self.config.get('project_name', 'app')}-{environment}"
+            
+            print("🚀 Deploying to App Engine...")
+            subprocess.run([
+                "gcloud", "app", "deploy",
+                "--project", project_id,
+                "--quiet"
+            ], cwd=self.project_path, check=True)
+            
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ App Engine deployment failed: {e}")
+            return False
+    
+    def _deploy_kubernetes(self, environment: str, k8s_dir: Path) -> bool:
+        """Deploy to Kubernetes"""
+        try:
+            cluster_name = f"{self.config.get('project_name', 'app')}-{environment}"
+            zone = self.config.get('zone', 'us-central1-a')
+            
+            # Get cluster credentials
+            print("🔐 Getting cluster credentials...")
+            subprocess.run([
+                "gcloud", "container", "clusters", "get-credentials",
+                cluster_name, "--zone", zone
+            ], check=True)
+            
+            # Apply Kubernetes manifests
+            print("☸️  Applying Kubernetes manifests...")
+            for manifest in k8s_dir.glob("*.yaml"):
+                subprocess.run([
+                    "kubectl", "apply", "-f", str(manifest)
+                ], check=True)
+            
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Kubernetes deployment failed: {e}")
+            return False
+    
+    def _deploy_firebase(self, environment: str) -> bool:
+        """Deploy to Firebase Hosting"""
+        try:
+            print("🔥 Deploying to Firebase...")
+            subprocess.run([
+                "firebase", "deploy",
+                "--only", "hosting"
+            ], cwd=self.project_path, check=True)
+            
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Firebase deployment failed: {e}")
+            return False
+    
+    def _deploy_static_site(self, environment: str, dist_dir: Path) -> bool:
+        """Deploy static site to Cloud Storage"""
+        try:
+            bucket_name = f"{self.config.get('project_name', 'app')}-{environment}-static"
+            
+            print(f"☁️  Deploying static site to gs://{bucket_name}...")
+            
+            # Create bucket if it doesn't exist
+            subprocess.run([
+                "gsutil", "mb", "-p", f"{self.config.get('project_name', 'app')}-{environment}",
+                f"gs://{bucket_name}"
+            ], capture_output=True)
+            
+            # Upload files
+            subprocess.run([
+                "gsutil", "-m", "rsync", "-r", "-d",
+                str(dist_dir), f"gs://{bucket_name}"
+            ], check=True)
+            
+            # Set bucket to serve website
+            subprocess.run([
+                "gsutil", "web", "set",
+                "-m", "index.html",
+                "-e", "404.html",
+                f"gs://{bucket_name}"
+            ], check=True)
+            
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Static site deployment failed: {e}")
+            return False
+    
+    def _deploy_python_package(self, environment: str) -> bool:
+        """Deploy Python package"""
+        try:
+            print("📦 Building Python package...")
+            subprocess.run([
+                "python", "setup.py", "sdist", "bdist_wheel"
+            ], cwd=self.project_path, check=True)
+            
+            # Upload to artifact registry or PyPI
+            if environment == 'prod':
+                print("📤 Uploading to PyPI...")
+                subprocess.run([
+                    "twine", "upload", "dist/*"
+                ], cwd=self.project_path, check=True)
+            else:
+                print(f"📤 Uploading to test PyPI ({environment})...")
+                subprocess.run([
+                    "twine", "upload", "--repository-url",
+                    "https://test.pypi.org/legacy/", "dist/*"
+                ], cwd=self.project_path, check=True)
+            
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Package deployment failed: {e}")
+            return False
+    
+    def _record_deployment(self, environment: str, status: str, error: str = None):
+        """Record deployment in history"""
+        deployment_record = {
+            'timestamp': datetime.now().isoformat(),
+            'environment': environment,
+            'status': status,
+            'error': error
+        }
+        
+        self.deployment_history.append(deployment_record)
+        
+        # Save to file
+        history_file = self.project_path / ".deployment-history.json"
+        if history_file.exists():
+            with open(history_file, 'r') as f:
+                history = json.load(f)
+        else:
+            history = []
+        
+        history.append(deployment_record)
+        
+        with open(history_file, 'w') as f:
+            json.dump(history, f, indent=2)
+    
+    def rollback(self, environment: str, version: str = None) -> bool:
+        """Rollback deployment"""
+        print(f"⏪ Rolling back {environment}...")
+        
+        # Implementation would depend on deployment type
+        # For now, just a placeholder
+        print("⚠️  Rollback not yet implemented")
+        return False
+    
+    def get_deployment_status(self, environment: str) -> Dict[str, Any]:
+        """Get current deployment status"""
+        # Check various deployment targets for status
+        status = {
+            'environment': environment,
+            'deployed': False,
+            'version': 'unknown',
+            'last_deployment': None
+        }
+        
+        # Check deployment history
+        history_file = self.project_path / ".deployment-history.json"
+        if history_file.exists():
+            with open(history_file, 'r') as f:
+                history = json.load(f)
+                
+            env_deployments = [d for d in history if d['environment'] == environment]
+            if env_deployments:
+                last = env_deployments[-1]
+                status['last_deployment'] = last['timestamp']
+                status['deployed'] = last['status'] == 'success'
+        
+        return status
+
+
+def main():
+    """Main entry point for deployment integration"""
+    parser = argparse.ArgumentParser(description="Deployment Integration for Bootstrap")
+    parser.add_argument('action', choices=['deploy', 'rollback', 'status'],
+                       help='Deployment action')
+    parser.add_argument('environment', help='Target environment')
+    parser.add_argument('--project', help='Project path')
+    parser.add_argument('--version', help='Version to deploy or rollback to')
+    parser.add_argument('--dry-run', action='store_true', help='Dry run mode')
+    
+    args = parser.parse_args()
+    
+    manager = DeploymentManager(args.project)
+    
+    if args.action == 'deploy':
+        success = manager.deploy_to_environment(args.environment)
+        sys.exit(0 if success else 1)
+    elif args.action == 'rollback':
+        success = manager.rollback(args.environment, args.version)
+        sys.exit(0 if success else 1)
+    elif args.action == 'status':
+        status = manager.get_deployment_status(args.environment)
+        print(json.dumps(status, indent=2))
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

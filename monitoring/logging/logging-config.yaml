@@ -1,0 +1,121 @@
+---
+# Logging Configuration for Universal Platform
+logging:
+  version: 1
+  disable_existing_loggers: false
+  
+  formatters:
+    standard:
+      format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+      datefmt: '%Y-%m-%d %H:%M:%S'
+    
+    json:
+      class: pythonjsonlogger.jsonlogger.JsonFormatter
+      format: '%(asctime)s %(name)s %(levelname)s %(message)s'
+    
+    structured:
+      format: |
+        timestamp: %(asctime)s
+        logger: %(name)s
+        level: %(levelname)s
+        message: %(message)s
+        trace_id: %(trace_id)s
+        span_id: %(span_id)s
+  
+  filters:
+    sensitive_data:
+      class: logging.Filter
+      patterns:
+        - password
+        - api_key
+        - secret
+        - token
+        - credential
+  
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: INFO
+      formatter: standard
+      stream: ext://sys.stdout
+    
+    file:
+      class: logging.handlers.RotatingFileHandler
+      level: DEBUG
+      formatter: json
+      filename: logs/application.log
+      maxBytes: 10485760  # 10MB
+      backupCount: 5
+    
+    cloud_logging:
+      class: google.cloud.logging.handlers.CloudLoggingHandler
+      level: INFO
+      formatter: json
+    
+    error_file:
+      class: logging.handlers.RotatingFileHandler
+      level: ERROR
+      formatter: json
+      filename: logs/errors.log
+      maxBytes: 10485760  # 10MB
+      backupCount: 5
+  
+  loggers:
+    '':  # root logger
+      level: INFO
+      handlers:
+        - console
+        - cloud_logging
+    
+    application:
+      level: DEBUG
+      handlers:
+        - console
+        - file
+        - cloud_logging
+      propagate: false
+    
+    security:
+      level: WARNING
+      handlers:
+        - console
+        - file
+        - cloud_logging
+        - error_file
+      propagate: false
+    
+    performance:
+      level: INFO
+      handlers:
+        - file
+        - cloud_logging
+      propagate: false
+    
+    audit:
+      level: INFO
+      handlers:
+        - file
+        - cloud_logging
+      propagate: false
+
+  log_levels:
+    development: DEBUG
+    staging: INFO
+    production: WARNING
+    
+  retention:
+    application_logs: 30d
+    error_logs: 90d
+    audit_logs: 365d
+    security_logs: 365d
+    
+  sampling:
+    enabled: true
+    rate: 0.1  # Sample 10% of debug logs in production
+    
+  correlation:
+    enabled: true
+    headers:
+      - X-Request-ID
+      - X-Correlation-ID
+      - X-Trace-ID

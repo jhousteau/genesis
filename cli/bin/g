@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+"""
+Genesis CLI - Universal Infrastructure Platform
+
+The 'g' command is the primary interface to Genesis platform.
+"""
+
+import os
+import sys
+from pathlib import Path
+
+# Add Genesis root to Python path
+genesis_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(genesis_root))
+
+from cli.commands import main
+
+if __name__ == "__main__":
+    sys.exit(main.run())

@@ -1,0 +1,405 @@
+# Global Configuration for Bootstrapper Platform
+# This file contains system-wide configuration that applies to all components
+
+system:
+  name: "bootstrapper"
+  version: "1.0.0"
+  description: "Universal Project Platform"
+  environment: "${BOOTSTRAPPER_ENV:-development}"
+  debug: false
+  log_level: "INFO"
+  base_url: "https://api.bootstrapper.dev"
+  
+  # System-wide feature flags
+  features:
+    intelligence_layer: true
+    self_healing: true
+    cross_project_analysis: true
+    automated_optimization: true
+    predictive_analytics: true
+
+# Intelligence Layer Configuration
+intelligence:
+  enabled: true
+  coordination_enabled: true
+  
+  auto_fix:
+    enabled: true
+    auto_execute: false  # Require confirmation for fixes
+    max_retries: 3
+    timeout: 300  # 5 minutes
+    concurrent_fixes: 2
+    
+    # Categories of issues to auto-fix
+    categories:
+      security: true
+      dependencies: true
+      configuration: true
+      infrastructure: false  # Requires manual approval
+    
+    # Notification settings
+    notifications:
+      on_execution: true
+      on_completion: true
+      on_failure: true
+  
+  optimization:
+    enabled: true
+    analysis_interval: 3600  # 1 hour
+    cost_threshold: 100  # Minimum cost impact to report
+    
+    # Optimization categories
+    categories:
+      cost: true
+      performance: true
+      resource: true
+      security: true
+    
+    # Auto-apply optimizations below this cost threshold
+    auto_apply_threshold: 50
+  
+  predictions:
+    enabled: true
+    confidence_threshold: 0.7
+    forecast_horizon: 30  # days
+    
+    # Prediction types
+    types:
+      failure: true
+      capacity: true
+      cost: true
+      performance: true
+    
+    # Alert thresholds
+    alerts:
+      high_confidence: 0.85
+      critical_prediction: 0.90
+  
+  recommendations:
+    enabled: true
+    priority_filter: "medium"  # minimum priority to show
+    max_recommendations: 20
+    
+    # Recommendation categories
+    categories:
+      architecture: true
+      security: true
+      performance: true
+      maintainability: true
+      reliability: true
+    
+    # Implementation roadmap settings
+    roadmap:
+      phase_1_duration: 30  # days
+      phase_2_duration: 90  # days
+      phase_3_duration: 180  # days
+  
+  self_healing:
+    enabled: true
+    monitoring_interval: 60  # seconds
+    auto_heal_enabled: true
+    max_healing_attempts: 3
+    
+    # Health check categories
+    health_checks:
+      disk_space: true
+      memory_usage: true
+      cpu_usage: true
+      service_status: true
+      application_health: true
+      security_status: true
+    
+    # Healing actions
+    actions:
+      restart_services: true
+      clean_disk_space: true
+      optimize_memory: true
+      fix_permissions: true
+      update_dependencies: false  # Requires approval
+
+# System Coordination Configuration
+coordination:
+  enabled: true
+  coordination_interval: 30  # seconds
+  health_check_interval: 60  # seconds
+  max_concurrent_tasks: 5
+  task_timeout: 300  # seconds
+  auto_resolve_conflicts: true
+  
+  # Component priorities for conflict resolution
+  component_priorities:
+    isolation: 100  # Highest priority
+    governance: 90
+    deployment: 80
+    intelligence: 70
+    monitoring: 60
+    setup-project: 50  # Lowest priority
+  
+  # Task scheduling
+  scheduling:
+    max_queue_size: 100
+    priority_levels: ["low", "medium", "high", "critical"]
+    retry_failed_tasks: true
+    max_retries: 3
+
+# Deployment Configuration
+deployment:
+  default_strategy: "rolling"
+  strategies:
+    blue_green:
+      enabled: true
+      timeout: 1800  # 30 minutes
+      health_check_interval: 30
+    canary:
+      enabled: true
+      initial_percentage: 10
+      increment_percentage: 25
+      timeout: 3600  # 1 hour
+    rolling:
+      enabled: true
+      max_unavailable: 1
+      timeout: 1800
+  
+  # Validation settings
+  validation:
+    pre_deploy_checks: true
+    post_deploy_validation: true
+    rollback_on_failure: true
+    
+  # Approval requirements
+  approvals:
+    production_required: true
+    staging_required: false
+    development_required: false
+
+# Governance Configuration
+governance:
+  compliance_enabled: true
+  policy_enforcement: "strict"  # strict, permissive, disabled
+  audit_logging: true
+  cost_monitoring: true
+  
+  # Compliance frameworks
+  frameworks:
+    soc2: false
+    hipaa: false
+    gdpr: true
+    pci_dss: false
+    iso27001: false
+  
+  # Cost controls
+  cost_control:
+    budget_alerts: true
+    spend_limits: true
+    optimization_recommendations: true
+    
+  # Security policies
+  security:
+    vulnerability_scanning: true
+    dependency_scanning: true
+    secrets_scanning: true
+    compliance_checking: true
+
+# Isolation Configuration
+isolation:
+  gcp_isolation: true
+  credential_rotation: true
+  policy_validation: true
+  
+  # GCP settings
+  gcp:
+    project_isolation: true
+    service_account_per_env: true
+    workload_identity: true
+    
+  # AWS settings (for future use)
+  aws:
+    account_isolation: false
+    role_based_access: false
+    
+  # Azure settings (for future use)
+  azure:
+    subscription_isolation: false
+    managed_identity: false
+
+# Monitoring Configuration
+monitoring:
+  metrics_enabled: true
+  logging_enabled: true
+  tracing_enabled: true
+  alerting_enabled: true
+  retention_days: 30
+  
+  # Metrics collection
+  metrics:
+    collection_interval: 60  # seconds
+    batch_size: 100
+    compression_enabled: true
+    
+  # Logging configuration
+  logging:
+    level: "INFO"
+    structured: true
+    format: "json"
+    
+  # Distributed tracing
+  tracing:
+    sampling_rate: 0.1  # 10% of requests
+    max_span_duration: 3600  # 1 hour
+    
+  # Alerting rules
+  alerting:
+    error_rate_threshold: 0.05  # 5%
+    latency_threshold: 1000  # 1 second
+    availability_threshold: 0.99  # 99%
+
+# Security Configuration
+security:
+  authentication_required: true
+  authorization_enabled: true
+  encryption_at_rest: true
+  encryption_in_transit: true
+  vulnerability_scanning: true
+  
+  # Authentication providers
+  auth_providers:
+    oauth2: true
+    saml: false
+    ldap: false
+    
+  # Session management
+  sessions:
+    timeout: 3600  # 1 hour
+    refresh_enabled: true
+    secure_cookies: true
+    
+  # API security
+  api:
+    rate_limiting: true
+    cors_enabled: true
+    csrf_protection: true
+
+# Performance Configuration
+performance:
+  caching_enabled: true
+  compression_enabled: true
+  async_processing: true
+  connection_pooling: true
+  
+  # Caching settings
+  cache:
+    default_ttl: 3600  # 1 hour
+    max_size: "1GB"
+    compression: true
+    
+  # Database optimization
+  database:
+    connection_pool_size: 20
+    query_timeout: 30  # seconds
+    slow_query_threshold: 1000  # milliseconds
+    
+  # Network optimization
+  network:
+    keepalive_enabled: true
+    compression_enabled: true
+    timeout: 30  # seconds
+
+# Integration Configuration
+integrations:
+  # Version control
+  github:
+    enabled: false
+    webhook_secret: "${GITHUB_WEBHOOK_SECRET}"
+    api_token: "${GITHUB_API_TOKEN}"
+    
+  gitlab:
+    enabled: false
+    webhook_secret: "${GITLAB_WEBHOOK_SECRET}"
+    api_token: "${GITLAB_API_TOKEN}"
+  
+  # Communication
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    bot_token: "${SLACK_BOT_TOKEN}"
+    
+  # Alerting
+  pagerduty:
+    enabled: false
+    integration_key: "${PAGERDUTY_INTEGRATION_KEY}"
+    
+  # Cloud providers
+  gcp:
+    enabled: true
+    project_id: "${GCP_PROJECT_ID}"
+    region: "${GCP_REGION:-us-central1}"
+    
+  aws:
+    enabled: false
+    region: "${AWS_REGION:-us-east-1}"
+    
+  azure:
+    enabled: false
+    region: "${AZURE_REGION:-East US}"
+
+# System Integration Configuration
+integration:
+  # Component Registry
+  registry:
+    enabled: true
+    persistence_enabled: true
+    persistence_interval: 60
+    health_check_interval: 30
+    heartbeat_timeout: 300
+    auto_discovery: true
+  
+  # Event Bus
+  event_bus:
+    enabled: true
+    max_queue_size: 10000
+    enable_persistence: false
+    delivery_timeout: 5
+    retry_attempts: 3
+  
+  # Configuration Manager
+  config_manager:
+    enabled: true
+    hot_reload: true
+    validation_enabled: true
+    encryption_enabled: false
+    backup_enabled: true
+  
+  # Health Aggregator
+  health_aggregator:
+    enabled: true
+    default_interval: 30
+    default_timeout: 5
+    history_size: 100
+    alert_on_degraded: true
+    alert_on_unhealthy: true
+    aggregation_strategy: "weighted"
+    
+    # Component weights for health calculation
+    component_weights:
+      cli: 0.5
+      registry: 1.0
+      monitoring: 0.8
+      intelligence: 0.6
+      deployment: 1.0
+      infrastructure: 1.0
+      isolation: 0.9
+      governance: 0.7
+
+# Development and Testing
+development:
+  debug_mode: true
+  hot_reload: true
+  mock_external_services: true
+  test_data_enabled: true
+  
+  # Testing configuration
+  testing:
+    integration_tests: true
+    performance_tests: true
+    security_tests: true
+    chaos_testing: false

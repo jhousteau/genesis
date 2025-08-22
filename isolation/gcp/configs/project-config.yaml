@@ -1,0 +1,162 @@
+# GCP Project Configuration Template
+# Part of Universal Project Platform - Agent 5 Isolation Layer
+# Defines project-specific isolation configuration
+
+# Basic project information
+project:
+  id: "${PROJECT_ID}"
+  environment: "${ENVIRONMENT}"
+  region: "${REGION}"
+  zone: "${ZONE}"
+
+# Isolation configuration
+isolation:
+  level: "${ISOLATION_LEVEL:-standard}"  # strict, standard, relaxed
+  config_directory: "${REPO_GCLOUD_HOME}"
+  enforce_project_boundaries: true
+  audit_all_operations: true
+  
+  # Safety thresholds
+  thresholds:
+    cost_limit_usd: "${COST_THRESHOLD_USD:-1000}"
+    resource_limit_percent: 80
+    api_rate_limit_per_minute: 1000
+    concurrent_operations: 10
+
+# Authentication configuration
+authentication:
+  method: "${AUTH_METHOD:-user}"  # user, service_account, wif
+  service_account: "${DEPLOY_SA:-}"
+  workload_identity:
+    provider: "${WIF_PROVIDER:-}"
+    service_account: "${WIF_SA_EMAIL:-}"
+    github_repo: "${GITHUB_REPO:-}"
+  
+  # Token refresh settings
+  token_refresh_threshold_minutes: 30
+  auto_refresh_enabled: true
+
+# Production safety
+production:
+  enabled: "${PRODUCTION_MODE:-false}"
+  confirmation_required: true
+  destructive_operations_blocked: true
+  additional_approval_required: false
+  audit_retention_days: 365
+  
+  # Emergency procedures
+  emergency_contact: "${EMERGENCY_CONTACT:-}"
+  emergency_runbook: "${EMERGENCY_RUNBOOK:-}"
+
+# Monitoring and alerting
+monitoring:
+  enabled: true
+  log_level: "${LOG_LEVEL:-INFO}"
+  metrics_collection: true
+  alert_on_policy_violations: true
+  alert_on_cost_overrun: true
+  alert_on_security_events: true
+  
+  # Integration endpoints
+  slack_webhook: "${SLACK_WEBHOOK:-}"
+  pagerduty_integration_key: "${PAGERDUTY_INTEGRATION_KEY:-}"
+  email_notifications: "${ALERT_EMAIL:-}"
+
+# Security policies
+security:
+  enforce_organization_policies: true
+  require_mfa: true
+  block_public_access: true
+  encrypt_at_rest: true
+  encrypt_in_transit: true
+  
+  # Network security
+  require_private_google_access: true
+  disable_default_internet_gateway: false
+  require_vpc_flow_logs: true
+  
+  # Service account security
+  disable_service_account_keys: true
+  require_workload_identity: true
+  max_service_account_key_age_days: 90
+
+# Resource quotas and limits
+quotas:
+  compute_instances: 100
+  storage_gb: 1000
+  sql_instances: 10
+  load_balancers: 5
+  vpn_gateways: 2
+  
+  # Per-region limits
+  regional_compute_instances: 50
+  regional_storage_gb: 500
+
+# Compliance requirements
+compliance:
+  frameworks:
+    - "${COMPLIANCE_FRAMEWORK:-SOC2}"
+  data_residency: "${DATA_RESIDENCY:-US}"
+  encryption_required: true
+  audit_logging_required: true
+  access_logging_required: true
+  
+  # Data classification
+  data_classification: "${DATA_CLASSIFICATION:-internal}"
+  retention_policy_days: 2555  # 7 years default
+
+# Development overrides (only for non-production)
+development:
+  relaxed_networking: false
+  allow_external_ips: false
+  allow_service_account_keys: false
+  skip_approval_gates: false
+  debug_logging: false
+
+# Integration settings
+integrations:
+  terraform:
+    state_backend: "${TF_STATE_BACKEND:-gcs}"
+    state_bucket: "${TF_STATE_BUCKET:-}"
+    state_encryption: true
+  
+  ci_cd:
+    platform: "${CI_CD_PLATFORM:-github-actions}"
+    auto_deploy: "${AUTO_DEPLOY:-false}"
+    require_approval: "${REQUIRE_APPROVAL:-true}"
+  
+  monitoring:
+    prometheus_enabled: false
+    grafana_enabled: false
+    custom_metrics: []
+
+# Template metadata
+metadata:
+  version: "2.0.0"
+  generated_by: "universal-project-platform"
+  agent: "agent-5-isolation-layer"
+  last_updated: "${TIMESTAMP:-}"
+  configuration_hash: "${CONFIG_HASH:-}"
+
+# Validation rules
+validation:
+  required_apis:
+    - "cloudresourcemanager.googleapis.com"
+    - "iam.googleapis.com"
+    - "cloudshell.googleapis.com"
+    - "logging.googleapis.com"
+    - "monitoring.googleapis.com"
+  
+  required_roles:
+    - "roles/viewer"
+    - "roles/logging.logWriter"
+    - "roles/monitoring.metricWriter"
+  
+  prohibited_roles:
+    - "roles/owner"
+    - "roles/editor"
+  
+  required_labels:
+    - "environment"
+    - "project"
+    - "managed-by"

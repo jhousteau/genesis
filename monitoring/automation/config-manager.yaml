@@ -1,0 +1,162 @@
+---
+# Configuration Manager Settings for Universal Platform
+
+# Global settings
+log_level: INFO
+backup_enabled: true
+backup_retention_days: 7
+dry_run: false
+templates_dir: "templates"
+
+# Configuration paths and settings
+configurations:
+  prometheus:
+    config_file: "/etc/prometheus/prometheus.yml"
+    reload_url: "http://prometheus:9090/-/reload"
+    template: "prometheus.yml.j2"
+    backup_dir: "/var/backups/prometheus"
+    validation_enabled: true
+    
+  alertmanager:
+    config_file: "/etc/alertmanager/alertmanager.yml"
+    reload_url: "http://alertmanager:9093/-/reload"
+    template: "alertmanager.yml.j2"
+    backup_dir: "/var/backups/alertmanager"
+    validation_enabled: true
+    
+  grafana:
+    provisioning_dir: "/etc/grafana/provisioning"
+    dashboards_dir: "/etc/grafana/provisioning/dashboards"
+    datasources_dir: "/etc/grafana/provisioning/datasources"
+    reload_url: "http://grafana:3000/api/admin/provisioning/dashboards/reload"
+    backup_dir: "/var/backups/grafana"
+    
+  jaeger:
+    config_file: "/etc/jaeger/jaeger.yml"
+    template: "jaeger.yml.j2"
+    backup_dir: "/var/backups/jaeger"
+    
+  loki:
+    config_file: "/etc/loki/loki.yml"
+    template: "loki.yml.j2"
+    backup_dir: "/var/backups/loki"
+
+# Service discovery integration
+service_discovery:
+  registry_file: "/var/lib/monitoring/services.json"
+  targets_file: "/etc/prometheus/targets/services.json"
+  refresh_interval: 60
+
+# Template configuration
+template_config:
+  prometheus:
+    global_scrape_interval: "15s"
+    global_evaluation_interval: "15s"
+    scrape_timeout: "10s"
+    external_labels:
+      cluster: "universal-platform"
+      environment: "production"
+    
+  alertmanager:
+    smtp_smarthost: "localhost:587"
+    smtp_from: "alertmanager@universal-platform.com"
+    group_wait: "10s"
+    group_interval: "10s"
+    repeat_interval: "1h"
+    
+  grafana:
+    default_datasource: "Prometheus"
+    theme: "dark"
+    auto_assign_org_role: "Viewer"
+    allow_sign_up: false
+
+# Team configuration for alert routing
+teams:
+  platform:
+    slack_webhook: "${PLATFORM_SLACK_WEBHOOK}"
+    slack_channel: "#platform-alerts"
+    email_addresses:
+      - "platform-team@universal-platform.com"
+    escalation_policy: "platform-escalation"
+    
+  frontend:
+    slack_webhook: "${FRONTEND_SLACK_WEBHOOK}"
+    slack_channel: "#frontend-alerts"
+    email_addresses:
+      - "frontend-team@universal-platform.com"
+    escalation_policy: "frontend-escalation"
+    
+  backend:
+    slack_webhook: "${BACKEND_SLACK_WEBHOOK}"
+    slack_channel: "#backend-alerts"
+    email_addresses:
+      - "backend-team@universal-platform.com"
+    escalation_policy: "backend-escalation"
+    
+  data:
+    slack_webhook: "${DATA_SLACK_WEBHOOK}"
+    slack_channel: "#data-alerts"
+    email_addresses:
+      - "data-team@universal-platform.com"
+    escalation_policy: "data-escalation"
+
+# Notification settings
+notification:
+  webhook_urls:
+    - "${GENERAL_WEBHOOK_URL}"
+  slack_channels:
+    - "#monitoring-updates"
+  email_recipients:
+    - "ops-team@universal-platform.com"
+  default_slack_webhook: "${DEFAULT_SLACK_WEBHOOK}"
+
+# Update policies
+update_policies:
+  prometheus:
+    auto_reload: true
+    validation_required: true
+    backup_before_update: true
+    rollback_on_failure: true
+    
+  alertmanager:
+    auto_reload: true
+    validation_required: true
+    backup_before_update: true
+    rollback_on_failure: true
+    
+  grafana:
+    auto_reload: false  # Grafana handles its own reloading
+    validation_required: false
+    backup_before_update: true
+    rollback_on_failure: false
+
+# Configuration validation settings
+validation:
+  prometheus:
+    check_syntax: true
+    check_targets: false  # Don't validate targets as they may not be reachable
+    check_rules: true
+    
+  alertmanager:
+    check_syntax: true
+    check_routes: true
+    check_receivers: false  # Don't validate external receivers
+    
+  grafana:
+    check_json_syntax: true
+    check_datasource_refs: false
+
+# Monitoring of the config manager itself
+self_monitoring:
+  enabled: true
+  metrics_port: 8080
+  health_check_port: 8081
+  log_file: "/var/log/config-manager.log"
+  
+# Security settings
+security:
+  encrypt_backups: false
+  backup_encryption_key: ""
+  restrict_file_permissions: true
+  audit_log_enabled: true
+  audit_log_file: "/var/log/config-manager-audit.log"

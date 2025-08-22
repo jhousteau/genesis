@@ -1,0 +1,98 @@
+---
+# Alert Rules Configuration for Universal Platform
+alerts:
+  - name: high_error_rate
+    displayName: "High Error Rate"
+    conditions:
+      - displayName: "Error rate exceeds 1%"
+        conditionThreshold:
+          filter: 'severity="ERROR"'
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: ALIGN_RATE
+          comparison: COMPARISON_GT
+          thresholdValue: 0.01
+          duration: "300s"
+    notificationChannels: []
+    documentation:
+      content: "Error rate has exceeded 1% for more than 5 minutes"
+      mimeType: "text/markdown"
+    alertStrategy:
+      autoClose: "1800s"
+
+  - name: high_latency
+    displayName: "High Latency Alert"
+    conditions:
+      - displayName: "P95 latency exceeds 1000ms"
+        conditionThreshold:
+          filter: 'metric.type="loadbalancing.googleapis.com/https/backend_latencies"'
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: ALIGN_PERCENTILE_95
+          comparison: COMPARISON_GT
+          thresholdValue: 1000
+          duration: "300s"
+    notificationChannels: []
+    documentation:
+      content: "P95 latency has exceeded 1000ms for more than 5 minutes"
+      mimeType: "text/markdown"
+
+  - name: high_cpu_utilization
+    displayName: "High CPU Utilization"
+    conditions:
+      - displayName: "CPU utilization exceeds 80%"
+        conditionThreshold:
+          filter: 'metric.type="compute.googleapis.com/instance/cpu/utilization"'
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: ALIGN_MEAN
+          comparison: COMPARISON_GT
+          thresholdValue: 0.8
+          duration: "300s"
+    notificationChannels: []
+    documentation:
+      content: "CPU utilization has exceeded 80% for more than 5 minutes"
+      mimeType: "text/markdown"
+
+  - name: low_disk_space
+    displayName: "Low Disk Space Alert"
+    conditions:
+      - displayName: "Disk usage exceeds 90%"
+        conditionThreshold:
+          filter: 'metric.type="compute.googleapis.com/instance/disk/write_bytes_count"'
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: ALIGN_MEAN
+          comparison: COMPARISON_GT
+          thresholdValue: 0.9
+          duration: "600s"
+    notificationChannels: []
+    documentation:
+      content: "Disk usage has exceeded 90% for more than 10 minutes"
+      mimeType: "text/markdown"
+
+  - name: function_failures
+    displayName: "Cloud Function Failures"
+    conditions:
+      - displayName: "Function execution failures"
+        conditionThreshold:
+          filter: 'resource.type="cloud_function" AND metric.type="cloudfunctions.googleapis.com/function/execution_count" AND metric.label.status!="ok"'
+          aggregations:
+            - alignmentPeriod: "60s"
+              perSeriesAligner: ALIGN_RATE
+          comparison: COMPARISON_GT
+          thresholdValue: 5
+          duration: "300s"
+    notificationChannels: []
+    documentation:
+      content: "Cloud function failures exceeding 5 per minute"
+      mimeType: "text/markdown"
+
+notification_channels:
+  - email:
+      - platform-alerts@example.com
+  - slack:
+      - channel: "#platform-alerts"
+        webhook_url: "${SLACK_WEBHOOK_URL}"
+  - pagerduty:
+      - integration_key: "${PAGERDUTY_KEY}"

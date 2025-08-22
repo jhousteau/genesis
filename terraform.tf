@@ -15,7 +15,7 @@ terraform {
       version = "~> 3.6"
     }
   }
-  
+
   # Backend configuration should be provided via backend config file
   # Example: terraform init -backend-config=backend.tf
 }

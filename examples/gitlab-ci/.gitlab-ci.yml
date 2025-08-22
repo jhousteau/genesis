@@ -14,7 +14,7 @@ stages:
   - destroy
 
 default:
-  image: 
+  image:
     name: hashicorp/terraform:${TF_VERSION}
     entrypoint: [""]
   before_script:
@@ -23,17 +23,17 @@ default:
     - curl -sSL https://sdk.cloud.google.com | bash
     - export PATH=$PATH:/root/google-cloud-sdk/bin
     - gcloud --version
-    
+
     # Authenticate using Workload Identity Federation
     - |
       echo "Configuring Workload Identity Federation..."
       SUBJECT="system:serviceaccount:${CI_PROJECT_NAMESPACE}:${CI_PROJECT_NAME}"
-      
+
       # Get identity token from GitLab
       IDENTITY_TOKEN=$(curl -H "PRIVATE-TOKEN: ${CI_JOB_TOKEN}" \
         "${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/identity_token" \
         | jq -r .token)
-      
+
       # Exchange for Google access token
       ACCESS_TOKEN=$(curl -X POST https://sts.googleapis.com/v1/token \
         -H "Content-Type: application/json" \
@@ -45,17 +45,17 @@ default:
           \"subjectToken\": \"${IDENTITY_TOKEN}\",
           \"subjectTokenType\": \"urn:ietf:params:oauth:token-type:jwt\"
         }" | jq -r .access_token)
-      
+
       # Configure gcloud with the access token
       echo "${ACCESS_TOKEN}" | gcloud auth login --cred-file=-
       gcloud config set project ${GOOGLE_CLOUD_PROJECT}
-    
+
     # Initialize Terraform
     - |
       terraform init \
         -backend-config="bucket=terraform-state-${GCP_PROJECT_ID}" \
         -backend-config="prefix=${CI_ENVIRONMENT_NAME}/bootstrap"
-    
+
     # Select workspace
     - terraform workspace select ${CI_ENVIRONMENT_NAME} || terraform workspace new ${CI_ENVIRONMENT_NAME}
 

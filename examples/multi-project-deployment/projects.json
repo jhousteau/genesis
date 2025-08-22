@@ -1,0 +1,74 @@
+{
+  "group": "example-projects",
+  "organization": "123456789",
+  "projects": [
+    {
+      "id": "data-lake-dev",
+      "billing": "01234-56789-ABCDEF",
+      "env": "development",
+      "budget": 1000,
+      "labels": {
+        "team": "data",
+        "project": "data-lake"
+      },
+      "apis": [
+        "bigquery.googleapis.com",
+        "dataflow.googleapis.com",
+        "storage.googleapis.com"
+      ],
+      "needs_network": false
+    },
+    {
+      "id": "web-app-dev",
+      "billing": "01234-56789-ABCDEF",
+      "env": "development",
+      "budget": 500,
+      "labels": {
+        "team": "frontend",
+        "project": "web-app"
+      },
+      "apis": [
+        "run.googleapis.com",
+        "firebase.googleapis.com",
+        "firebasehosting.googleapis.com"
+      ],
+      "needs_network": true
+    },
+    {
+      "id": "ml-platform-dev",
+      "billing": "01234-56789-ABCDEF",
+      "env": "development",
+      "budget": 2000,
+      "labels": {
+        "team": "ml",
+        "project": "ml-platform"
+      },
+      "apis": [
+        "ml.googleapis.com",
+        "notebooks.googleapis.com",
+        "aiplatform.googleapis.com",
+        "storage.googleapis.com"
+      ],
+      "needs_network": true
+    },
+    {
+      "id": "monitoring-prod",
+      "billing": "01234-56789-ABCDEF",
+      "env": "production",
+      "budget": 1500,
+      "labels": {
+        "team": "platform",
+        "project": "monitoring",
+        "critical": "true"
+      },
+      "apis": [
+        "monitoring.googleapis.com",
+        "logging.googleapis.com",
+        "cloudtrace.googleapis.com",
+        "cloudprofiler.googleapis.com",
+        "clouderrorreporting.googleapis.com"
+      ],
+      "needs_network": false
+    }
+  ]
+}

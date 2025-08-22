@@ -20,7 +20,7 @@ module "service_accounts" {
   source = "./modules/service-accounts"
 
   project_id = "my-project-id"
-  
+
   service_accounts = {
     terraform = {
       account_id   = "terraform-deployer"
@@ -32,7 +32,7 @@ module "service_accounts" {
         "roles/compute.admin"
       ]
     }
-    
+
     cicd = {
       account_id   = "cicd-pipeline"
       display_name = "CI/CD Pipeline"
@@ -55,38 +55,38 @@ module "service_accounts" {
 
   project_id      = "my-project-id"
   organization_id = "123456789"
-  
+
   service_accounts = {
     terraform = {
       account_id   = "terraform-deployer"
       display_name = "Terraform Deployer"
       description  = "Service account for Terraform deployments"
-      
+
       # Project-level roles
       project_roles = [
         "roles/resourcemanager.projectIamAdmin",
         "roles/storage.admin"
       ]
-      
+
       # Organization-level roles
       organization_roles = [
         "roles/resourcemanager.organizationViewer",
         "roles/billing.viewer"
       ]
-      
+
       # Folder-level roles
       folder_roles = {
         "folders/123456" = ["roles/resourcemanager.folderAdmin"]
         "folders/789012" = ["roles/compute.admin", "roles/storage.admin"]
       }
-      
+
       # Allow impersonation
       impersonators = [
         "user:admin@example.com",
         "group:platform-team@example.com"
       ]
     }
-    
+
     monitoring = {
       account_id   = "monitoring-agent"
       display_name = "Monitoring Agent"
@@ -97,7 +97,7 @@ module "service_accounts" {
         "roles/cloudtrace.agent"
       ]
     }
-    
+
     application = {
       account_id   = "app-runtime"
       display_name = "Application Runtime"
@@ -112,9 +112,9 @@ module "service_accounts" {
       key_secret_accessors = ["serviceAccount:deployer@my-project.iam.gserviceaccount.com"]
     }
   }
-  
+
   store_keys_in_secret_manager = true
-  
+
   labels = {
     environment = "production"
     managed_by  = "terraform"
@@ -130,27 +130,27 @@ module "service_accounts" {
   source = "./modules/service-accounts"
 
   project_id = "my-project-id"
-  
+
   service_accounts = {
     terraform = {
       account_id    = "terraform-deployer"
       display_name  = "Terraform Deployer"
       project_roles = var.predefined_roles.terraform_deployer
     }
-    
+
     cicd = {
       account_id    = "cicd-pipeline"
       display_name  = "CI/CD Pipeline"
       project_roles = var.predefined_roles.cicd_pipeline
     }
-    
+
     monitoring = {
       account_id    = "monitoring-agent"
       display_name  = "Monitoring Agent"
       project_roles = var.predefined_roles.monitoring
     }
   }
-  
+
   predefined_roles = {
     terraform_deployer = [
       "roles/resourcemanager.projectIamAdmin",

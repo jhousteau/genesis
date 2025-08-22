@@ -1,0 +1,602 @@
+name: Deploy Microservice
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - stage
+          - prod
+      strategy:
+        description: 'Deployment strategy'
+        required: false
+        default: 'canary'
+        type: choice
+        options:
+          - rolling
+          - blue-green
+          - canary
+      skip_validation:
+        description: 'Skip validation steps'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+  REGISTRY_REGION: ${{ vars.REGISTRY_REGION || 'us-central1' }}
+  
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+  pull-requests: write
+  deployments: write
+  security-events: write
+
+jobs:
+  # Environment determination and validation
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      gcp_project: ${{ steps.env.outputs.gcp_project }}
+      should_deploy: ${{ steps.env.outputs.should_deploy }}
+      deployment_strategy: ${{ steps.env.outputs.deployment_strategy }}
+      skip_validation: ${{ steps.env.outputs.skip_validation }}
+    steps:
+      - name: Determine deployment configuration
+        id: env
+        run: |
+          # Determine environment
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "deployment_strategy=${{ github.event.inputs.strategy }}" >> $GITHUB_OUTPUT
+            echo "skip_validation=${{ github.event.inputs.skip_validation }}" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "deployment_strategy=blue-green" >> $GITHUB_OUTPUT
+            echo "skip_validation=false" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "deployment_strategy=canary" >> $GITHUB_OUTPUT
+            echo "skip_validation=false" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "deployment_strategy=rolling" >> $GITHUB_OUTPUT
+            echo "skip_validation=false" >> $GITHUB_OUTPUT
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Set GCP project based on environment
+          ENV=$(echo "${{ steps.env.outputs.environment }}" | sed 's/=.*//')
+          case "$ENV" in
+            dev) echo "gcp_project=${{ vars.PROJECT_NAME }}-dev" >> $GITHUB_OUTPUT ;;
+            test) echo "gcp_project=${{ vars.PROJECT_NAME }}-test" >> $GITHUB_OUTPUT ;;
+            stage) echo "gcp_project=${{ vars.PROJECT_NAME }}-stage" >> $GITHUB_OUTPUT ;;
+            prod) echo "gcp_project=${{ vars.PROJECT_NAME }}-prod" >> $GITHUB_OUTPUT ;;
+          esac
+
+  # Multi-language code quality and security
+  quality:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        checks: [linting, testing, security-scan, dependency-scan]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Python
+        if: hashFiles('requirements.txt', 'pyproject.toml') != ''
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Setup Go
+        if: hashFiles('go.mod') != ''
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          if [[ -f "package.json" ]]; then
+            npm ci
+          elif [[ -f "requirements.txt" ]]; then
+            pip install -r requirements.txt
+          elif [[ -f "pyproject.toml" ]]; then
+            pip install .
+          elif [[ -f "go.mod" ]]; then
+            go mod download
+          fi
+
+      - name: Run linting
+        if: matrix.checks == 'linting'
+        run: |
+          if [[ -f "package.json" ]] && npm run lint --if-present; then
+            echo "✅ JavaScript/TypeScript linting passed"
+          elif [[ -f "pyproject.toml" ]] && python -m ruff check .; then
+            echo "✅ Python linting passed"
+          elif [[ -f "requirements.txt" ]] && python -m flake8 .; then
+            echo "✅ Python linting passed"
+          elif [[ -f "go.mod" ]] && go vet ./...; then
+            echo "✅ Go linting passed"
+          else
+            echo "⚠️ No linting configuration found"
+          fi
+
+      - name: Run tests with coverage
+        if: matrix.checks == 'testing'
+        run: |
+          if [[ -f "package.json" ]]; then
+            npm run test:coverage --if-present || npm test --if-present
+          elif [[ -f "pyproject.toml" ]]; then
+            python -m pytest --cov=. --cov-report=xml
+          elif [[ -f "requirements.txt" ]]; then
+            python -m pytest --cov=. --cov-report=xml
+          elif [[ -f "go.mod" ]]; then
+            go test -v -race -coverprofile=coverage.out ./...
+          else
+            echo "⚠️ No tests found"
+          fi
+
+      - name: Upload coverage reports
+        if: matrix.checks == 'testing' && (hashFiles('coverage.xml', 'coverage.out') != '')
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: false
+
+      - name: Security scan - Secrets
+        if: matrix.checks == 'security-scan'
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Security scan - Code analysis
+        if: matrix.checks == 'security-scan'
+        uses: github/codeql-action/analyze@v2
+        with:
+          languages: ${{ matrix.language }}
+        continue-on-error: true
+
+      - name: Dependency vulnerability scan
+        if: matrix.checks == 'dependency-scan'
+        run: |
+          if [[ -f "package.json" ]]; then
+            npm audit --audit-level high
+            npx audit-ci --high
+          elif [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]]; then
+            pip install safety
+            safety check --json --output safety-report.json || true
+          elif [[ -f "go.mod" ]]; then
+            go install golang.org/x/vuln/cmd/govulncheck@latest
+            govulncheck ./...
+          fi
+
+  # Enhanced container build with multi-arch support
+  build:
+    needs: [setup, quality]
+    if: needs.setup.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.build.outputs.image_tag }}
+      image_url: ${{ steps.build.outputs.image_url }}
+      image_digest: ${{ steps.build.outputs.image_digest }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY_REGION }}-docker.pkg.dev
+
+      - name: Build and push multi-arch image
+        id: build
+        run: |
+          IMAGE_TAG="${{ github.sha }}-$(date +%Y%m%d%H%M%S)"
+          IMAGE_URL="${{ env.REGISTRY_REGION }}-docker.pkg.dev/${{ needs.setup.outputs.gcp_project }}/containers/${{ env.PROJECT_NAME }}"
+          
+          echo "Building multi-arch image: ${IMAGE_URL}:${IMAGE_TAG}"
+          
+          # Build with buildx for multi-arch support
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag "${IMAGE_URL}:${IMAGE_TAG}" \
+            --tag "${IMAGE_URL}:${{ needs.setup.outputs.environment }}" \
+            --tag "${IMAGE_URL}:latest" \
+            --build-arg ENV="${{ needs.setup.outputs.environment }}" \
+            --build-arg VERSION="${IMAGE_TAG}" \
+            --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --build-arg VCS_REF="${{ github.sha }}" \
+            --build-arg VCS_URL="${{ github.server_url }}/${{ github.repository }}" \
+            --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
+            --label "org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            --push \
+            .
+            
+          # Get image digest for security verification
+          IMAGE_DIGEST=$(docker buildx imagetools inspect "${IMAGE_URL}:${IMAGE_TAG}" --format '{{.Manifest.Digest}}')
+          
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "image_url=${IMAGE_URL}" >> $GITHUB_OUTPUT
+          echo "image_digest=${IMAGE_DIGEST}" >> $GITHUB_OUTPUT
+
+      - name: Container security scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ steps.build.outputs.image_url }}:${{ steps.build.outputs.image_tag }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload security scan results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Sign container image
+        if: needs.setup.outputs.environment == 'prod'
+        run: |
+          # Install cosign
+          curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o cosign
+          chmod +x cosign
+          sudo mv cosign /usr/local/bin/
+          
+          # Sign image using keyless signing
+          cosign sign --yes ${{ steps.build.outputs.image_url }}@${{ steps.build.outputs.image_digest }}
+
+  # Comprehensive pre-deployment validation
+  validate:
+    needs: [setup, build]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.skip_validation == 'false'
+    runs-on: ubuntu-latest
+    environment: ${{ needs.setup.outputs.environment }}-validation
+    strategy:
+      matrix:
+        validation: [infrastructure, security, performance, compliance, cost]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Infrastructure validation
+        if: matrix.validation == 'infrastructure'
+        run: |
+          echo "Running infrastructure validation..."
+          if [[ -f "main.tf" ]] || [[ -d "terraform" ]]; then
+            curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+            sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+            sudo apt-get update && sudo apt-get install terraform
+            
+            terraform init -backend=false
+            terraform validate
+            terraform fmt -check
+            
+            # Run tfsec for security scanning
+            curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+            tfsec . --format sarif --out tfsec-results.sarif || true
+          fi
+
+      - name: Security validation
+        if: matrix.validation == 'security'
+        run: |
+          echo "Running security validation for ${{ needs.setup.outputs.environment }}"
+          
+          # Policy validation with OPA
+          if [[ -f ".policy/policy.rego" ]]; then
+            docker run --rm -v "$PWD:/workspace" openpolicyagent/opa:latest-envoy \
+              test /workspace/.policy/ -v
+          fi
+          
+          # Runtime security scan
+          echo "Running runtime security checks..."
+
+      - name: Performance validation
+        if: matrix.validation == 'performance'
+        run: |
+          echo "Running performance validation..."
+          
+          # Load testing with k6
+          if [[ -f "scripts/load-test.js" ]]; then
+            docker run --rm -v "$PWD:/workspace" grafana/k6:latest \
+              run /workspace/scripts/load-test.js
+          fi
+          
+          # Resource limit validation
+          echo "Validating resource requirements..."
+
+      - name: Compliance validation
+        if: matrix.validation == 'compliance'
+        run: |
+          echo "Running compliance validation for ${{ needs.setup.outputs.environment }}"
+          
+          # GDPR compliance check
+          if [[ "${{ needs.setup.outputs.environment }}" == "prod" ]]; then
+            echo "Validating GDPR compliance..."
+            # Add GDPR validation logic
+          fi
+          
+          # SOC2 compliance
+          echo "Validating SOC2 compliance..."
+
+      - name: Cost impact analysis
+        if: matrix.validation == 'cost'
+        run: |
+          echo "Analyzing cost impact for ${{ needs.setup.outputs.environment }}"
+          
+          # Install Infracost
+          curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+          
+          if [[ -f "main.tf" ]]; then
+            infracost breakdown --path . \
+              --terraform-var="project_id=${{ needs.setup.outputs.gcp_project }}" \
+              --terraform-var="region=${{ env.REGISTRY_REGION }}" \
+              --terraform-var="environment=${{ needs.setup.outputs.environment }}"
+          fi
+
+  # Enhanced deployment with strategy-specific logic
+  deploy:
+    needs: [setup, build, validate]
+    if: needs.setup.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ needs.setup.outputs.environment }}
+      url: ${{ steps.deploy.outputs.service_url }}
+    outputs:
+      service_url: ${{ steps.deploy.outputs.service_url }}
+      deployment_id: ${{ steps.deploy.outputs.deployment_id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy infrastructure
+        if: hashFiles('main.tf') != ''
+        run: |
+          echo "Deploying infrastructure..."
+          terraform init -backend-config="bucket=${{ needs.setup.outputs.gcp_project }}-terraform-state"
+          terraform plan \
+            -var="project_id=${{ needs.setup.outputs.gcp_project }}" \
+            -var="region=${{ env.REGISTRY_REGION }}" \
+            -var="environment=${{ needs.setup.outputs.environment }}" \
+            -var="image_tag=${{ needs.build.outputs.image_tag }}" \
+            -out=tfplan
+          terraform apply tfplan
+
+      - name: Execute deployment strategy
+        id: deploy
+        run: |
+          DEPLOYMENT_ID="${{ needs.setup.outputs.environment }}-$(date +%Y%m%d-%H%M%S)-${{ github.sha:0:7 }}"
+          IMAGE_URL="${{ needs.build.outputs.image_url }}:${{ needs.build.outputs.image_tag }}"
+          
+          echo "Deploying ${{ env.PROJECT_NAME }} to ${{ needs.setup.outputs.environment }}"
+          echo "Strategy: ${{ needs.setup.outputs.deployment_strategy }}"
+          echo "Image: ${IMAGE_URL}"
+          
+          # Execute deployment using strategy-specific script
+          chmod +x deploy/strategies/deploy-runner.sh
+          
+          export PROJECT_NAME="${{ env.PROJECT_NAME }}"
+          export ENVIRONMENT="${{ needs.setup.outputs.environment }}"
+          export GCP_PROJECT="${{ needs.setup.outputs.gcp_project }}"
+          export REGION="${{ env.REGISTRY_REGION }}"
+          export IMAGE_TAG="${{ needs.build.outputs.image_tag }}"
+          export IMAGE_URL="${{ needs.build.outputs.image_url }}"
+          export DEPLOYMENT_ID="${DEPLOYMENT_ID}"
+          export DEPLOYMENT_STRATEGY="${{ needs.setup.outputs.deployment_strategy }}"
+          
+          # Run deployment
+          ./deploy/strategies/deploy-runner.sh
+          
+          # Get service URL
+          SERVICE_URL=$(gcloud run services describe "${{ env.PROJECT_NAME }}" \
+            --region="${{ env.REGISTRY_REGION }}" \
+            --project="${{ needs.setup.outputs.gcp_project }}" \
+            --format="value(status.url)")
+          
+          echo "service_url=${SERVICE_URL}" >> $GITHUB_OUTPUT
+          echo "deployment_id=${DEPLOYMENT_ID}" >> $GITHUB_OUTPUT
+
+  # Comprehensive post-deployment validation
+  validate-deployment:
+    needs: [setup, deploy]
+    if: needs.setup.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        check: [health, performance, security, smoke-tests]
+    steps:
+      - name: Health check
+        if: matrix.check == 'health'
+        run: |
+          echo "Performing health checks..."
+          SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
+          
+          # Comprehensive health validation
+          for i in {1..60}; do
+            if curl -f "${SERVICE_URL}/health" --max-time 10 --silent; then
+              echo "✅ Health check passed"
+              
+              # Check readiness
+              if curl -f "${SERVICE_URL}/ready" --max-time 5 --silent; then
+                echo "✅ Readiness check passed"
+              fi
+              
+              break
+            fi
+            
+            if [[ $i -eq 60 ]]; then
+              echo "❌ Health check failed after 60 attempts"
+              exit 1
+            fi
+            
+            echo "⏳ Waiting for service to be ready (attempt $i/60)"
+            sleep 5
+          done
+
+      - name: Performance validation
+        if: matrix.check == 'performance'
+        run: |
+          echo "Running performance validation..."
+          SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
+          
+          # Response time check
+          RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "${SERVICE_URL}/health")
+          echo "Response time: ${RESPONSE_TIME}s"
+          
+          # SLA validation based on environment
+          case "${{ needs.setup.outputs.environment }}" in
+            prod)
+              THRESHOLD=2.0
+              ;;
+            stage)
+              THRESHOLD=3.0
+              ;;
+            *)
+              THRESHOLD=5.0
+              ;;
+          esac
+          
+          if (( $(echo "${RESPONSE_TIME} > ${THRESHOLD}" | bc -l) )); then
+            echo "❌ Performance validation failed: Response time ${RESPONSE_TIME}s exceeds ${THRESHOLD}s threshold"
+            exit 1
+          fi
+          
+          echo "✅ Performance validation passed"
+
+      - name: Security validation
+        if: matrix.check == 'security'
+        run: |
+          echo "Running security validation..."
+          SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
+          
+          # Security headers check
+          curl -I "${SERVICE_URL}" | grep -i "x-frame-options\|x-content-type-options\|strict-transport-security" || {
+            echo "⚠️ Missing security headers"
+          }
+          
+          # HTTPS enforcement
+          if [[ "${SERVICE_URL}" == https://* ]]; then
+            echo "✅ HTTPS enabled"
+          else
+            echo "⚠️ HTTPS not enforced"
+          fi
+
+      - name: Smoke tests
+        if: matrix.check == 'smoke-tests'
+        run: |
+          echo "Running smoke tests..."
+          SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
+          
+          # API endpoint tests
+          curl -f "${SERVICE_URL}/version" --max-time 5 --silent || echo "⚠️ Version endpoint not available"
+          curl -f "${SERVICE_URL}/metrics" --max-time 5 --silent || echo "⚠️ Metrics endpoint not available"
+          
+          # Custom smoke tests
+          if [[ -f "scripts/smoke-tests.sh" ]]; then
+            chmod +x scripts/smoke-tests.sh
+            SERVICE_URL="${SERVICE_URL}" ./scripts/smoke-tests.sh
+          fi
+
+  # Enhanced monitoring and alerting setup
+  setup-monitoring:
+    needs: [setup, deploy, validate-deployment]
+    if: needs.setup.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup deployment monitoring
+        run: |
+          echo "Setting up monitoring for deployment ${{ needs.deploy.outputs.deployment_id }}"
+          
+          # Create deployment marker
+          cat > deployment-marker.json << EOF
+          {
+            "deployment_id": "${{ needs.deploy.outputs.deployment_id }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "environment": "${{ needs.setup.outputs.environment }}",
+            "service_url": "${{ needs.deploy.outputs.service_url }}",
+            "image_tag": "${{ needs.build.outputs.image_tag }}",
+            "git_sha": "${{ github.sha }}",
+            "strategy": "${{ needs.setup.outputs.deployment_strategy }}"
+          }
+          EOF
+
+  # Automatic promotion to next environment
+  promote:
+    needs: [setup, deploy, validate-deployment]
+    if: |
+      needs.setup.outputs.environment == 'dev' && 
+      needs.validate-deployment.result == 'success' &&
+      github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger promotion workflow
+        run: |
+          echo "🚀 Ready to promote to test environment"
+          echo "Deployment validated successfully"
+          
+          # In a real scenario, this would trigger the next environment deployment
+          echo "Would trigger: gh workflow run deploy.yml -f environment=test"

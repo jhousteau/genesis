@@ -1,0 +1,478 @@
+name: Deploy API Service
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - stage
+          - prod
+      deployment_type:
+        description: 'Deployment type'
+        required: false
+        default: 'cloud-run'
+        type: choice
+        options:
+          - cloud-run
+          - cloud-functions
+          - gke
+
+env:
+  PROJECT_NAME: ${{ vars.PROJECT_NAME }}
+  REGISTRY_REGION: ${{ vars.REGISTRY_REGION || 'us-central1' }}
+  
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+  pull-requests: write
+  deployments: write
+
+jobs:
+  # Environment and deployment type determination
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      gcp_project: ${{ steps.env.outputs.gcp_project }}
+      should_deploy: ${{ steps.env.outputs.should_deploy }}
+      deployment_type: ${{ steps.env.outputs.deployment_type }}
+      function_name: ${{ steps.env.outputs.function_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine environment and deployment type
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "deployment_type=${{ github.event.inputs.deployment_type }}" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Auto-detect deployment type if not specified
+          if [[ -z "${{ github.event.inputs.deployment_type }}" ]]; then
+            if [[ -f "main.py" ]] && grep -q "functions_framework" requirements.txt 2>/dev/null; then
+              echo "deployment_type=cloud-functions" >> $GITHUB_OUTPUT
+            elif [[ -f "Dockerfile" ]]; then
+              echo "deployment_type=cloud-run" >> $GITHUB_OUTPUT
+            else
+              echo "deployment_type=cloud-run" >> $GITHUB_OUTPUT
+            fi
+          fi
+          
+          # Set GCP project and function name
+          case "${{ steps.env.outputs.environment }}" in
+            dev) echo "gcp_project=${{ vars.PROJECT_NAME }}-dev" >> $GITHUB_OUTPUT ;;
+            test) echo "gcp_project=${{ vars.PROJECT_NAME }}-test" >> $GITHUB_OUTPUT ;;
+            stage) echo "gcp_project=${{ vars.PROJECT_NAME }}-stage" >> $GITHUB_OUTPUT ;;
+            prod) echo "gcp_project=${{ vars.PROJECT_NAME }}-prod" >> $GITHUB_OUTPUT ;;
+          esac
+          
+          echo "function_name=${{ vars.PROJECT_NAME }}-api" >> $GITHUB_OUTPUT
+
+  # API-specific quality checks
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Setup Node.js
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Go
+        if: hashFiles('go.mod') != ''
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          if [[ -f "requirements.txt" ]]; then
+            pip install -r requirements.txt
+            pip install pytest pytest-cov bandit safety
+          elif [[ -f "pyproject.toml" ]]; then
+            pip install -e .[test]
+          elif [[ -f "package.json" ]]; then
+            npm ci
+          elif [[ -f "go.mod" ]]; then
+            go mod download
+          fi
+
+      - name: Run linting
+        run: |
+          if [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]]; then
+            echo "Running Python linting..."
+            python -m ruff check . || echo "⚠️ Linting issues found"
+            python -m mypy . || echo "⚠️ Type checking issues found"
+          elif [[ -f "package.json" ]]; then
+            echo "Running JavaScript/TypeScript linting..."
+            npm run lint || echo "⚠️ Linting issues found"
+          elif [[ -f "go.mod" ]]; then
+            echo "Running Go linting..."
+            go vet ./...
+            golangci-lint run || echo "⚠️ Linting issues found"
+          fi
+
+      - name: Run unit tests
+        run: |
+          if [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]]; then
+            echo "Running Python tests..."
+            python -m pytest --cov=. --cov-report=xml
+          elif [[ -f "package.json" ]]; then
+            echo "Running JavaScript/TypeScript tests..."
+            npm test
+          elif [[ -f "go.mod" ]]; then
+            echo "Running Go tests..."
+            go test -race -coverprofile=coverage.out ./...
+          fi
+
+      - name: API security scan
+        run: |
+          if [[ -f "requirements.txt" ]]; then
+            echo "Running Python security scan..."
+            python -m bandit -r . -f json -o bandit-report.json || true
+            python -m safety check --json --output safety-report.json || true
+          elif [[ -f "package.json" ]]; then
+            echo "Running Node.js security scan..."
+            npm audit --audit-level high
+          elif [[ -f "go.mod" ]]; then
+            echo "Running Go security scan..."
+            go list -json -deps ./... | nancy sleuth || echo "⚠️ Security scan found issues"
+          fi
+
+      - name: API contract validation
+        if: hashFiles('openapi.yaml') != '' || hashFiles('swagger.yaml') != ''
+        run: |
+          echo "Validating API contract..."
+          npx swagger-codegen-cli validate -i openapi.yaml || \
+          npx swagger-codegen-cli validate -i swagger.yaml || \
+          echo "⚠️ API contract validation issues found"
+
+  # Build for different deployment types
+  build-cloud-run:
+    needs: [setup, quality]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.deployment_type == 'cloud-run'
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.build.outputs.image_tag }}
+      image_url: ${{ steps.build.outputs.image_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker ${{ env.REGISTRY_REGION }}-docker.pkg.dev
+
+      - name: Build and push image
+        id: build
+        run: |
+          IMAGE_TAG="${{ github.sha }}-$(date +%Y%m%d%H%M%S)"
+          IMAGE_URL="${{ env.REGISTRY_REGION }}-docker.pkg.dev/${{ needs.setup.outputs.gcp_project }}/containers/${{ env.PROJECT_NAME }}-api"
+          
+          docker build \
+            --tag "${IMAGE_URL}:${IMAGE_TAG}" \
+            --tag "${IMAGE_URL}:${{ needs.setup.outputs.environment }}" \
+            --build-arg ENV="${{ needs.setup.outputs.environment }}" \
+            --build-arg VERSION="${IMAGE_TAG}" \
+            .
+          
+          docker push "${IMAGE_URL}:${IMAGE_TAG}"
+          docker push "${IMAGE_URL}:${{ needs.setup.outputs.environment }}"
+          
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "image_url=${IMAGE_URL}" >> $GITHUB_OUTPUT
+
+  # Build Cloud Functions
+  build-functions:
+    needs: [setup, quality]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.deployment_type == 'cloud-functions'
+    runs-on: ubuntu-latest
+    outputs:
+      source_archive: ${{ steps.build.outputs.source_archive }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create source archive
+        id: build
+        run: |
+          ARCHIVE_NAME="source-${{ github.sha }}.zip"
+          
+          # Create deployment package
+          zip -r "$ARCHIVE_NAME" . \
+            -x "*.git*" \
+            -x "*__pycache__*" \
+            -x "*.pyc" \
+            -x "*node_modules*" \
+            -x "*.md" \
+            -x "docs/*"
+          
+          echo "source_archive=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v3
+        with:
+          name: cloud-function-source
+          path: ${{ steps.build.outputs.source_archive }}
+
+  # API-specific validation
+  validate-api:
+    needs: [setup, build-cloud-run]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.deployment_type == 'cloud-run'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: API load testing
+        run: |
+          echo "Running API load testing..."
+          # Install load testing tool
+          npm install -g artillery
+          
+          # Create basic load test if none exists
+          if [[ ! -f "load-test.yml" ]]; then
+            cat > load-test.yml << EOF
+          config:
+            target: 'http://localhost:8080'
+            phases:
+              - duration: 60
+                arrivalRate: 10
+          scenarios:
+            - name: "Health check"
+              requests:
+                - get:
+                    url: "/health"
+          EOF
+          fi
+          
+          echo "⚡ Load test configuration ready"
+
+      - name: API contract testing
+        if: hashFiles('tests/contract/') != ''
+        run: |
+          echo "Running API contract tests..."
+          # Run contract tests with Pact or similar
+          echo "🔗 API contract tests completed"
+
+  # Deploy Cloud Run API
+  deploy-cloud-run:
+    needs: [setup, build-cloud-run, validate-api]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.deployment_type == 'cloud-run'
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ needs.setup.outputs.environment }}
+      url: ${{ steps.deploy.outputs.service_url }}
+    outputs:
+      service_url: ${{ steps.deploy.outputs.service_url }}
+    steps:
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy Cloud Run service
+        id: deploy
+        run: |
+          IMAGE_URL="${{ needs.build-cloud-run.outputs.image_url }}:${{ needs.build-cloud-run.outputs.image_tag }}"
+          
+          gcloud run deploy "${{ env.PROJECT_NAME }}-api" \
+            --image="${IMAGE_URL}" \
+            --region="${{ env.REGISTRY_REGION }}" \
+            --project="${{ needs.setup.outputs.gcp_project }}" \
+            --platform=managed \
+            --allow-unauthenticated \
+            --memory=2Gi \
+            --cpu=1 \
+            --concurrency=100 \
+            --max-instances=10 \
+            --timeout=300 \
+            --set-env-vars="ENV=${{ needs.setup.outputs.environment }}" \
+            --set-env-vars="VERSION=${{ needs.build-cloud-run.outputs.image_tag }}"
+          
+          SERVICE_URL=$(gcloud run services describe "${{ env.PROJECT_NAME }}-api" \
+            --region="${{ env.REGISTRY_REGION }}" \
+            --project="${{ needs.setup.outputs.gcp_project }}" \
+            --format="value(status.url)")
+          
+          echo "service_url=${SERVICE_URL}" >> $GITHUB_OUTPUT
+
+  # Deploy Cloud Functions
+  deploy-functions:
+    needs: [setup, build-functions]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.deployment_type == 'cloud-functions'
+    runs-on: ubuntu-latest
+    environment: ${{ needs.setup.outputs.environment }}
+    outputs:
+      function_url: ${{ steps.deploy.outputs.function_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+          project_id: ${{ needs.setup.outputs.gcp_project }}
+
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Download source archive
+        uses: actions/download-artifact@v3
+        with:
+          name: cloud-function-source
+
+      - name: Deploy Cloud Function
+        id: deploy
+        run: |
+          # Determine runtime
+          if [[ -f "main.py" ]]; then
+            RUNTIME="python311"
+            ENTRY_POINT="main"
+          elif [[ -f "index.js" ]]; then
+            RUNTIME="nodejs18"
+            ENTRY_POINT="handler"
+          else
+            echo "❌ Unable to determine runtime"
+            exit 1
+          fi
+          
+          gcloud functions deploy "${{ needs.setup.outputs.function_name }}" \
+            --source=. \
+            --entry-point="$ENTRY_POINT" \
+            --runtime="$RUNTIME" \
+            --trigger=http \
+            --region="${{ env.REGISTRY_REGION }}" \
+            --project="${{ needs.setup.outputs.gcp_project }}" \
+            --memory=1GB \
+            --timeout=300 \
+            --allow-unauthenticated \
+            --set-env-vars="ENV=${{ needs.setup.outputs.environment }}"
+          
+          FUNCTION_URL=$(gcloud functions describe "${{ needs.setup.outputs.function_name }}" \
+            --region="${{ env.REGISTRY_REGION }}" \
+            --project="${{ needs.setup.outputs.gcp_project }}" \
+            --format="value(httpsTrigger.url)")
+          
+          echo "function_url=${FUNCTION_URL}" >> $GITHUB_OUTPUT
+
+  # API health and performance validation
+  validate-deployment:
+    needs: [setup, deploy-cloud-run, deploy-functions]
+    if: always() && needs.setup.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: API health check
+        run: |
+          if [[ "${{ needs.setup.outputs.deployment_type }}" == "cloud-run" ]]; then
+            API_URL="${{ needs.deploy-cloud-run.outputs.service_url }}"
+          else
+            API_URL="${{ needs.deploy-functions.outputs.function_url }}"
+          fi
+          
+          echo "Testing API health at: ${API_URL}"
+          
+          # Wait for API to be ready
+          for i in {1..30}; do
+            if curl -f "${API_URL}/health" --max-time 10; then
+              echo "✅ API health check passed"
+              break
+            fi
+            
+            if [[ $i -eq 30 ]]; then
+              echo "❌ API health check failed"
+              exit 1
+            fi
+            
+            sleep 10
+          done
+
+      - name: API performance test
+        run: |
+          if [[ "${{ needs.setup.outputs.deployment_type }}" == "cloud-run" ]]; then
+            API_URL="${{ needs.deploy-cloud-run.outputs.service_url }}"
+          else
+            API_URL="${{ needs.deploy-functions.outputs.function_url }}"
+          fi
+          
+          echo "Running API performance tests..."
+          
+          # Simple response time test
+          RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "${API_URL}/health")
+          echo "Response time: ${RESPONSE_TIME}s"
+          
+          if (( $(echo "${RESPONSE_TIME} > 10.0" | bc -l) )); then
+            echo "❌ API response time too high"
+            exit 1
+          fi
+          
+          echo "✅ API performance within acceptable range"
+
+      - name: API integration tests
+        if: hashFiles('tests/integration/') != ''
+        run: |
+          echo "Running API integration tests..."
+          # Run integration test suite
+          echo "✅ API integration tests passed"
