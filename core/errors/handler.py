@@ -40,8 +40,10 @@ class ErrorCategory(Enum):
     CONFIGURATION = "configuration"
     EXTERNAL_SERVICE = "external_service"
     RESOURCE = "resource"
+    RESOURCE_EXHAUSTED = "resource_exhausted"
     TIMEOUT = "timeout"
     RATE_LIMIT = "rate_limit"
+    UNAVAILABLE = "unavailable"
     UNKNOWN = "unknown"
 
 
