@@ -5,30 +5,35 @@ This module implements comprehensive container orchestration capabilities for th
 ## PIPES Methodology Implementation
 
 ### **P - Provision Infrastructure**
+
 - **GKE Clusters**: Autopilot and Standard modes with multi-zone deployment
 - **Node Pools**: Specialized node pools for different workload types
 - **Container Registry**: Artifact Registry repositories with cleanup policies
 - **Persistent Storage**: Dynamic provisioning with multiple storage classes
 
 ### **I - Integration Systems & Services**
+
 - **Service Mesh**: Optional Istio integration with advanced traffic management
 - **Load Balancing**: GCP Load Balancers with health checking
 - **Networking**: VPC-native clusters with private cluster options
 - **Secret Management**: Integration with Secret Manager and Kubernetes secrets
 
 ### **P - Protect & Secure**
+
 - **Workload Identity**: Google Cloud IAM integration for pods
 - **Binary Authorization**: Container image attestation and policy enforcement
 - **Network Policies**: Microsegmentation and traffic control
 - **Pod Security Standards**: Security contexts and admission control
 
 ### **E - Evolve & Scale**
+
 - **Horizontal Pod Autoscaling**: CPU, memory, and custom metrics scaling
 - **Cluster Autoscaling**: Node auto-provisioning and scaling
 - **Vertical Pod Autoscaling**: Right-sizing recommendations and automation
 - **Multi-zone Distribution**: High availability and fault tolerance
 
 ### **S - Standardize & Automate**
+
 - **Helm Integration**: Standardized application packaging and deployment
 - **GitOps Ready**: Configuration management and continuous deployment
 - **Monitoring Integration**: Prometheus, Grafana, and Cloud Operations
@@ -80,12 +85,14 @@ This module implements comprehensive container orchestration capabilities for th
 ## Supported Deployment Modes
 
 ### GKE Autopilot Mode
+
 - **Fully Managed**: Google manages nodes, networking, and security
 - **Pay-per-Pod**: Cost optimization with per-pod pricing
 - **Security by Default**: Built-in security best practices
 - **Simplified Operations**: Reduced operational overhead
 
 ### GKE Standard Mode
+
 - **Node Control**: Full control over node configuration
 - **Custom Node Pools**: Specialized configurations for different workloads
 - **Advanced Networking**: Custom VPC configurations and policies
@@ -94,18 +101,21 @@ This module implements comprehensive container orchestration capabilities for th
 ## Container Services
 
 ### Agent-Cage Runtime
+
 - **Multi-Agent Support**: All 12 Genesis agent types
 - **Container Isolation**: Secure agent execution environments
 - **Resource Management**: CPU, memory, and storage allocation
 - **Health Monitoring**: Comprehensive health checks and metrics
 
 ### Claude-Talk MCP Server
+
 - **Session Management**: Persistent and ephemeral sessions
 - **Container Scaling**: Session-based horizontal scaling
 - **API Gateway**: External access with rate limiting
 - **Integration**: Seamless agent-cage communication
 
 ### Supporting Infrastructure
+
 - **Redis Cluster**: Session storage and caching
 - **PostgreSQL**: Metadata and configuration storage
 - **Monitoring Stack**: Prometheus, Grafana, Alertmanager
@@ -366,17 +376,20 @@ spec:
 ## Security Features
 
 ### Workload Identity
+
 - **GCP IAM Integration**: Kubernetes service accounts mapped to GCP service accounts
 - **No Service Account Keys**: Eliminates the need for static credentials
 - **Fine-grained Permissions**: Least privilege access for each workload
 
 ### Network Security
+
 - **Private Clusters**: Nodes without external IP addresses
 - **Authorized Networks**: Restricted API server access
 - **Network Policies**: Microsegmentation between pods
 - **VPC-native Networking**: Direct integration with GCP networking
 
 ### Pod Security
+
 - **Security Contexts**: Non-root containers with read-only filesystems
 - **Pod Security Standards**: Enforced security profiles
 - **Resource Limits**: CPU and memory constraints
@@ -385,18 +398,21 @@ spec:
 ## Monitoring and Observability
 
 ### Built-in Monitoring
+
 - **Cloud Operations**: Native GCP monitoring integration
 - **Prometheus**: Custom metrics collection and alerting
 - **Grafana**: Visualization dashboards
 - **Distributed Tracing**: Request flow tracking
 
 ### Key Metrics
+
 - **Cluster Health**: Node status, resource utilization
 - **Pod Metrics**: CPU, memory, network, storage usage
 - **Application Metrics**: Custom business metrics
 - **SLI/SLO Tracking**: Service level objective monitoring
 
 ### Alerting
+
 - **Infrastructure Alerts**: Node failures, resource exhaustion
 - **Application Alerts**: Service unavailability, high error rates
 - **Security Alerts**: Policy violations, unauthorized access
@@ -405,17 +421,20 @@ spec:
 ## Cost Optimization
 
 ### Cluster Cost Optimization
+
 - **Autopilot Mode**: Pay-per-pod pricing model
 - **Spot Instances**: Up to 80% cost savings for fault-tolerant workloads
 - **Cluster Autoscaling**: Automatic node provisioning and de-provisioning
 - **Right-sizing**: VPA recommendations for optimal resource allocation
 
 ### Storage Cost Optimization
+
 - **Storage Classes**: Standard, SSD, and regional persistent disks
 - **Ephemeral Storage**: EmptyDir volumes for temporary data
 - **Container Image Optimization**: Multi-stage builds and layer caching
 
 ### Network Cost Optimization
+
 - **Regional Clusters**: Reduced cross-zone traffic costs
 - **Private Clusters**: Eliminated internet egress costs
 - **Load Balancer Optimization**: Efficient traffic distribution
@@ -425,6 +444,7 @@ spec:
 ### Common Issues
 
 #### Pods Stuck in Pending State
+
 ```bash
 # Check node resources
 kubectl describe nodes
@@ -437,6 +457,7 @@ kubectl describe quota -n <namespace>
 ```
 
 #### Network Connectivity Issues
+
 ```bash
 # Test DNS resolution
 kubectl run -it --rm debug --image=busybox --restart=Never -- nslookup kubernetes.default
@@ -449,6 +470,7 @@ kubectl run -it --rm debug --image=nicolaka/netshoot --restart=Never -- bash
 ```
 
 #### Image Pull Issues
+
 ```bash
 # Check service account permissions
 kubectl get serviceaccount <sa-name> -o yaml
@@ -463,6 +485,7 @@ docker pull <image-url>
 ### Performance Optimization
 
 #### Resource Optimization
+
 ```bash
 # Check resource utilization
 kubectl top nodes
@@ -476,6 +499,7 @@ kubectl get hpa -A
 ```
 
 #### Storage Performance
+
 ```bash
 # Check PVC status
 kubectl get pvc -A
@@ -506,6 +530,7 @@ kubectl get volumeattachment
 ## CLI Commands Reference
 
 ### Cluster Management
+
 ```bash
 # Create cluster
 g container create-cluster genesis-prod --autopilot --region us-central1
@@ -518,6 +543,7 @@ g container delete-cluster genesis-dev --environment dev
 ```
 
 ### Deployment Management
+
 ```bash
 # Deploy service
 g container deploy --service agent-cage --version latest --replicas 3
@@ -530,6 +556,7 @@ g container list-deployments
 ```
 
 ### Service Management
+
 ```bash
 # List services
 g container list-services
@@ -539,6 +566,7 @@ g container describe service agent-cage-service
 ```
 
 ### Registry Management
+
 ```bash
 # List repositories
 g container registry list-repositories
@@ -551,6 +579,7 @@ g container registry pull claude-talk:v1.2.3
 ```
 
 ### Monitoring and Debugging
+
 ```bash
 # View logs
 g container logs --service agent-cage --follow
@@ -589,24 +618,28 @@ g container exec --pod agent-cage-abc123 --command "/bin/bash"
 ## Best Practices
 
 ### Deployment Best Practices
+
 - Use resource requests and limits
 - Implement health checks for all containers
 - Use multi-stage Docker builds for smaller images
 - Tag images with specific versions, not `latest`
 
 ### Security Best Practices
+
 - Enable Workload Identity
 - Use private clusters in production
 - Implement network policies
 - Regularly scan container images
 
 ### Operational Best Practices
+
 - Monitor resource utilization continuously
 - Set up comprehensive alerting
 - Implement automated backup strategies
 - Document incident response procedures
 
 ### Cost Management Best Practices
+
 - Use preemptible nodes for development
 - Implement cluster autoscaling
 - Monitor costs regularly with budgets and alerts

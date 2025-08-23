@@ -5,23 +5,7 @@
  * Implements PIPES methodology for scalable container infrastructure
  */
 
-terraform {
-  required_version = ">= 1.5"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.23"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = "~> 2.11"
-    }
-  }
-}
+# Terraform version constraints moved to versions.tf
 
 locals {
   # Standard labels following Genesis patterns
@@ -132,21 +116,15 @@ resource "google_container_cluster" "main" {
             auto_upgrade = var.enable_auto_upgrade
           }
 
-          disk_size_gb = var.auto_provisioning_disk_size
-          disk_type    = var.auto_provisioning_disk_type
-          image_type   = var.auto_provisioning_image_type
+          # Disk configuration for auto-provisioning
+          # disk_size_gb is now configured at the node level
         }
       }
     }
   }
 
-  # Autopilot mode
-  dynamic "enable_autopilot" {
-    for_each = var.enable_autopilot ? [1] : []
-    content {
-      enabled = true
-    }
-  }
+  # Autopilot mode (configured via cluster_autoscaling)
+  enable_autopilot = var.enable_autopilot
 
   # Workload identity
   dynamic "workload_identity_config" {
@@ -170,9 +148,7 @@ resource "google_container_cluster" "main" {
       disabled = !var.enable_network_policy
     }
 
-    istio_config {
-      disabled = !var.enable_istio_addon
-    }
+    # Istio addon (deprecated - use service mesh instead)
 
     dns_cache_config {
       enabled = var.enable_dns_cache
@@ -231,13 +207,8 @@ resource "google_container_cluster" "main" {
     }
   }
 
-  # Pod security policy
-  dynamic "pod_security_policy_config" {
-    for_each = var.enable_pod_security_policy ? [1] : []
-    content {
-      enabled = true
-    }
-  }
+  # Pod security policy (deprecated in Kubernetes 1.21+ and removed in 1.25+)
+  # Use Pod Security Standards instead
 
   # Resource usage export config
   dynamic "resource_usage_export_config" {
@@ -304,11 +275,9 @@ resource "google_container_cluster" "main" {
   monitoring_config {
     enable_components = var.monitoring_components
 
-    dynamic "managed_prometheus_config" {
-      for_each = var.enable_managed_prometheus ? [1] : []
-      content {
-        enabled = true
-      }
+    # Managed Prometheus configuration
+    managed_prometheus {
+      enabled = var.enable_managed_prometheus
     }
 
     dynamic "advanced_datapath_observability_config" {
@@ -417,13 +386,8 @@ resource "google_container_node_pool" "pools" {
     preemptible = lookup(each.value, "preemptible", false)
     spot        = lookup(each.value, "spot", false)
 
-    # Local SSDs
-    dynamic "local_ssd_config" {
-      for_each = lookup(each.value, "local_ssd_count", 0) > 0 ? [1] : []
-      content {
-        count = each.value.local_ssd_count
-      }
-    }
+    # Local SSDs (deprecated - configure via node config)
+    local_ssd_count = lookup(each.value, "local_ssd_count", 0)
 
     # Guest accelerators (GPUs)
     dynamic "guest_accelerator" {
@@ -502,15 +466,8 @@ resource "google_container_node_pool" "pools" {
       max_unavailable = lookup(each.value, "max_unavailable", 0)
 
       strategy = lookup(each.value, "upgrade_strategy", "SURGE")
-      blue_green_node_pool_config {
-        node_pool_soak_duration = lookup(each.value, "node_pool_soak_duration", "0s")
-
-        standard_rollout_policy {
-          batch_percentage    = lookup(each.value, "batch_percentage", 100)
-          batch_node_count    = lookup(each.value, "batch_node_count", null)
-          batch_soak_duration = lookup(each.value, "batch_soak_duration", "0s")
-        }
-      }
+      # Blue-green deployment configuration (deprecated)
+      # Use node pool versioning and upgrade strategies instead
     }
   }
 

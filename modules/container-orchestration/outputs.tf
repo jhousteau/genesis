@@ -8,19 +8,19 @@
 output "cluster" {
   description = "GKE cluster information"
   value = {
-    id                = google_container_cluster.main.id
-    name              = google_container_cluster.main.name
-    location          = google_container_cluster.main.location
-    zone              = google_container_cluster.main.location
-    region            = var.region
-    endpoint          = google_container_cluster.main.endpoint
-    master_version    = google_container_cluster.main.master_version
-    node_version      = google_container_cluster.main.node_version
+    id                     = google_container_cluster.main.id
+    name                   = google_container_cluster.main.name
+    location               = google_container_cluster.main.location
+    zone                   = google_container_cluster.main.location
+    region                 = var.region
+    endpoint               = google_container_cluster.main.endpoint
+    master_version         = google_container_cluster.main.master_version
+    node_version           = google_container_cluster.main.node_version
     cluster_ca_certificate = base64decode(google_container_cluster.main.master_auth.0.cluster_ca_certificate)
 
     # Network configuration
-    network                    = google_container_cluster.main.network
-    subnetwork                = google_container_cluster.main.subnetwork
+    network                       = google_container_cluster.main.network
+    subnetwork                    = google_container_cluster.main.subnetwork
     cluster_secondary_range_name  = google_container_cluster.main.ip_allocation_policy.0.cluster_secondary_range_name
     services_secondary_range_name = google_container_cluster.main.ip_allocation_policy.0.services_secondary_range_name
 
@@ -28,7 +28,7 @@ output "cluster" {
     private_cluster_config = var.enable_private_cluster ? {
       enable_private_nodes    = google_container_cluster.main.private_cluster_config.0.enable_private_nodes
       enable_private_endpoint = google_container_cluster.main.private_cluster_config.0.enable_private_endpoint
-      master_ipv4_cidr_block = google_container_cluster.main.private_cluster_config.0.master_ipv4_cidr_block
+      master_ipv4_cidr_block  = google_container_cluster.main.private_cluster_config.0.master_ipv4_cidr_block
     } : null
 
     # Workload identity
@@ -38,7 +38,7 @@ output "cluster" {
 
     # Labels and metadata
     resource_labels = google_container_cluster.main.resource_labels
-    self_link      = google_container_cluster.main.self_link
+    self_link       = google_container_cluster.main.self_link
   }
 
   sensitive = true
@@ -49,34 +49,34 @@ output "node_pools" {
   description = "GKE node pool information"
   value = {
     for k, v in google_container_node_pool.pools : k => {
-      id              = v.id
-      name            = v.name
-      location        = v.location
-      cluster         = v.cluster
-      initial_node_count = v.initial_node_count
-      node_count      = v.node_count
-      version         = v.version
-      instance_group_urls = v.instance_group_urls
+      id                          = v.id
+      name                        = v.name
+      location                    = v.location
+      cluster                     = v.cluster
+      initial_node_count          = v.initial_node_count
+      node_count                  = v.node_count
+      version                     = v.version
+      instance_group_urls         = v.instance_group_urls
       managed_instance_group_urls = v.managed_instance_group_urls
 
       # Node configuration
       node_config = {
         machine_type    = v.node_config.0.machine_type
-        disk_size_gb   = v.node_config.0.disk_size_gb
-        disk_type      = v.node_config.0.disk_type
-        image_type     = v.node_config.0.image_type
-        labels         = v.node_config.0.labels
-        tags           = v.node_config.0.tags
+        disk_size_gb    = v.node_config.0.disk_size_gb
+        disk_type       = v.node_config.0.disk_type
+        image_type      = v.node_config.0.image_type
+        labels          = v.node_config.0.labels
+        tags            = v.node_config.0.tags
         service_account = v.node_config.0.service_account
-        oauth_scopes   = v.node_config.0.oauth_scopes
-        preemptible    = v.node_config.0.preemptible
-        spot           = v.node_config.0.spot
+        oauth_scopes    = v.node_config.0.oauth_scopes
+        preemptible     = v.node_config.0.preemptible
+        spot            = v.node_config.0.spot
       }
 
       # Autoscaling configuration
       autoscaling = length(v.autoscaling) > 0 ? {
-        min_node_count = v.autoscaling.0.min_node_count
-        max_node_count = v.autoscaling.0.max_node_count
+        min_node_count  = v.autoscaling.0.min_node_count
+        max_node_count  = v.autoscaling.0.max_node_count
         location_policy = v.autoscaling.0.location_policy
       } : null
 
@@ -108,7 +108,7 @@ output "container_repositories" {
       # Repository URLs
       repository_url = "${v.location}-docker.pkg.dev/${var.project_id}/${v.repository_id}"
       docker_config = {
-        registry = "${v.location}-docker.pkg.dev"
+        registry   = "${v.location}-docker.pkg.dev"
         repository = "${var.project_id}/${v.repository_id}"
       }
 
@@ -121,12 +121,12 @@ output "container_repositories" {
 output "service_mesh" {
   description = "Service mesh (Istio) configuration and status"
   value = var.enable_service_mesh ? {
-    enabled          = true
+    enabled             = true
     installation_method = var.use_helm_for_istio ? "helm" : "gcp-managed"
-    namespace        = local.service_mesh_config.namespace
-    istio_version    = var.istio_version
-    mesh_id          = var.mesh_id
-    cluster_network  = var.cluster_network
+    namespace           = local.service_mesh_config.namespace
+    istio_version       = var.istio_version
+    mesh_id             = var.mesh_id
+    cluster_network     = var.cluster_network
 
     # Helm release information
     istio_base = var.use_helm_for_istio ? {
@@ -149,8 +149,16 @@ output "service_mesh" {
       version   = helm_release.istio_ingress[0].version
       status    = helm_release.istio_ingress[0].status
     } : null
-  } : {
-    enabled = false
+    } : {
+    enabled             = false
+    installation_method = null
+    namespace           = null
+    istio_version       = null
+    mesh_id             = null
+    cluster_network     = null
+    istio_base          = null
+    istiod              = null
+    istio_ingress       = null
   }
 }
 
@@ -159,19 +167,16 @@ output "kubernetes_config" {
   description = "Kubernetes cluster connection configuration"
   value = {
     # Connection details
-    host     = "https://${google_container_cluster.main.endpoint}"
-    username = google_container_cluster.main.master_auth.0.username
-    password = google_container_cluster.main.master_auth.0.password
+    host = "https://${google_container_cluster.main.endpoint}"
+    # Note: username/password authentication deprecated - use service accounts and tokens instead
 
     # Certificate data
     cluster_ca_certificate = google_container_cluster.main.master_auth.0.cluster_ca_certificate
     client_certificate     = google_container_cluster.main.master_auth.0.client_certificate
-    client_key            = google_container_cluster.main.master_auth.0.client_key
+    client_key             = google_container_cluster.main.master_auth.0.client_key
 
     # kubectl configuration command
-    kubectl_config_command = var.regional_cluster ?
-      "gcloud container clusters get-credentials ${google_container_cluster.main.name} --region ${var.region} --project ${var.project_id}" :
-      "gcloud container clusters get-credentials ${google_container_cluster.main.name} --zone ${var.zone} --project ${var.project_id}"
+    kubectl_config_command = var.regional_cluster ? "gcloud container clusters get-credentials ${google_container_cluster.main.name} --region ${var.region} --project ${var.project_id}" : "gcloud container clusters get-credentials ${google_container_cluster.main.name} --zone ${var.zone} --project ${var.project_id}"
   }
 
   sensitive = true
@@ -182,9 +187,9 @@ output "kubernetes_namespaces" {
   description = "Created Kubernetes namespaces"
   value = {
     for k, v in kubernetes_namespace.namespaces : k => {
-      name = v.metadata.0.name
-      uid  = v.metadata.0.uid
-      labels = v.metadata.0.labels
+      name        = v.metadata.0.name
+      uid         = v.metadata.0.uid
+      labels      = v.metadata.0.labels
       annotations = v.metadata.0.annotations
     }
   }
@@ -194,15 +199,15 @@ output "kubernetes_namespaces" {
 output "security_config" {
   description = "Security configuration summary"
   value = {
-    private_cluster             = var.enable_private_cluster
-    private_endpoint           = var.enable_private_endpoint
-    workload_identity          = var.enable_workload_identity
-    binary_authorization       = var.enable_binary_authorization
-    database_encryption        = var.enable_database_encryption
-    shielded_nodes            = var.enable_shielded_nodes
-    network_policy            = var.enable_network_policy
-    pod_security_policy       = var.enable_pod_security_policy
-    security_posture          = var.enable_security_posture
+    private_cluster      = var.enable_private_cluster
+    private_endpoint     = var.enable_private_endpoint
+    workload_identity    = var.enable_workload_identity
+    binary_authorization = var.enable_binary_authorization
+    database_encryption  = var.enable_database_encryption
+    shielded_nodes       = var.enable_shielded_nodes
+    network_policy       = var.enable_network_policy
+    pod_security_policy  = var.enable_pod_security_policy
+    security_posture     = var.enable_security_posture
 
     master_authorized_networks = var.master_authorized_networks
 
@@ -216,11 +221,11 @@ output "observability_config" {
   description = "Monitoring and logging configuration"
   value = {
     monitoring_components = var.monitoring_components
-    logging_components   = var.logging_components
+    logging_components    = var.logging_components
 
     managed_prometheus              = var.enable_managed_prometheus
     advanced_datapath_observability = var.enable_advanced_datapath_observability
-    resource_usage_export          = var.enable_resource_usage_export
+    resource_usage_export           = var.enable_resource_usage_export
 
     # BigQuery export configuration
     resource_usage_bigquery_dataset = var.enable_resource_usage_export ? var.resource_usage_bigquery_dataset : null
@@ -231,15 +236,15 @@ output "observability_config" {
 output "cost_optimization" {
   description = "Cost optimization settings and estimates"
   value = {
-    autopilot_enabled = var.enable_autopilot
-    cluster_autoscaling = var.enable_cluster_autoscaling
+    autopilot_enabled      = var.enable_autopilot
+    cluster_autoscaling    = var.enable_cluster_autoscaling
     node_auto_provisioning = var.enable_node_auto_provisioning
 
     # Node pool cost settings
     node_pool_settings = {
       for k, v in local.node_pools : k => {
-        preemptible = lookup(v, "preemptible", false)
-        spot        = lookup(v, "spot", false)
+        preemptible  = lookup(v, "preemptible", false)
+        spot         = lookup(v, "spot", false)
         machine_type = lookup(v, "machine_type", "e2-medium")
         autoscaling = {
           enabled   = lookup(v, "enable_autoscaling", var.default_enable_node_autoscaling)
@@ -251,7 +256,7 @@ output "cost_optimization" {
 
     # Estimated monthly costs (approximations)
     estimated_monthly_cost_usd = {
-      cluster_management = var.enable_autopilot ? 0 : 73.00  # Standard cluster management fee
+      cluster_management = var.enable_autopilot ? 0 : 73.00 # Standard cluster management fee
 
       # Basic node cost estimation per node pool
       node_pools = {
@@ -262,8 +267,8 @@ output "cost_optimization" {
           preemptible  = lookup(v, "preemptible", false)
           # Rough cost estimation - actual costs may vary significantly
           estimated_per_node_monthly = lookup(v, "preemptible", false) ? 15.0 : 50.0
-          estimated_min_monthly = (lookup(v, "min_nodes", 0) * (lookup(v, "preemptible", false) ? 15.0 : 50.0))
-          estimated_max_monthly = (lookup(v, "max_nodes", 10) * (lookup(v, "preemptible", false) ? 15.0 : 50.0))
+          estimated_min_monthly      = (lookup(v, "min_nodes", 0) * (lookup(v, "preemptible", false) ? 15.0 : 50.0))
+          estimated_max_monthly      = (lookup(v, "max_nodes", 10) * (lookup(v, "preemptible", false) ? 15.0 : 50.0))
         }
       }
     }
@@ -277,30 +282,30 @@ output "integration_endpoints" {
     # Container registry endpoints
     container_registries = {
       for k, v in google_artifact_registry_repository.repositories : k => {
-        endpoint = "${v.location}-docker.pkg.dev"
+        endpoint   = "${v.location}-docker.pkg.dev"
         repository = "${var.project_id}/${v.repository_id}"
-        full_url = "${v.location}-docker.pkg.dev/${var.project_id}/${v.repository_id}"
+        full_url   = "${v.location}-docker.pkg.dev/${var.project_id}/${v.repository_id}"
       }
     }
 
     # Kubernetes API endpoint
     kubernetes_api = {
-      endpoint = "https://${google_container_cluster.main.endpoint}"
+      endpoint     = "https://${google_container_cluster.main.endpoint}"
       cluster_name = google_container_cluster.main.name
-      location = google_container_cluster.main.location
+      location     = google_container_cluster.main.location
     }
 
     # Service mesh endpoints
     service_mesh_endpoints = var.enable_service_mesh ? {
       istio_system_namespace = local.service_mesh_config.namespace
-      mesh_id = var.mesh_id
-      cluster_network = var.cluster_network
+      mesh_id                = var.mesh_id
+      cluster_network        = var.cluster_network
     } : null
 
     # Load balancer integration points
     load_balancer_backends = {
       for k, v in google_container_node_pool.pools : k => {
-        instance_group_urls = v.instance_group_urls
+        instance_group_urls         = v.instance_group_urls
         managed_instance_group_urls = v.managed_instance_group_urls
       }
     }
@@ -311,9 +316,9 @@ output "integration_endpoints" {
 output "operational_info" {
   description = "Operational information for cluster management"
   value = {
-    project_id   = var.project_id
-    environment  = var.environment
-    name_prefix  = var.name_prefix
+    project_id  = var.project_id
+    environment = var.environment
+    name_prefix = var.name_prefix
 
     cluster_info = {
       name         = google_container_cluster.main.name
@@ -324,9 +329,9 @@ output "operational_info" {
       is_autopilot = var.enable_autopilot
     }
 
-    node_pools_count = length(google_container_node_pool.pools)
+    node_pools_count   = length(google_container_node_pool.pools)
     repositories_count = length(google_artifact_registry_repository.repositories)
-    namespaces_count = length(kubernetes_namespace.namespaces)
+    namespaces_count   = length(kubernetes_namespace.namespaces)
 
     maintenance_policy = var.maintenance_policy
 
@@ -341,9 +346,7 @@ output "cli_commands" {
   description = "Useful CLI commands for cluster management"
   value = {
     # kubectl configuration
-    configure_kubectl = var.regional_cluster ?
-      "gcloud container clusters get-credentials ${google_container_cluster.main.name} --region ${var.region} --project ${var.project_id}" :
-      "gcloud container clusters get-credentials ${google_container_cluster.main.name} --zone ${var.zone} --project ${var.project_id}"
+    configure_kubectl = var.regional_cluster ? "gcloud container clusters get-credentials ${google_container_cluster.main.name} --region ${var.region} --project ${var.project_id}" : "gcloud container clusters get-credentials ${google_container_cluster.main.name} --zone ${var.zone} --project ${var.project_id}"
 
     # Container registry authentication
     configure_docker = "gcloud auth configure-docker ${var.region}-docker.pkg.dev"
@@ -357,14 +360,14 @@ output "cli_commands" {
     # Service mesh commands (if enabled)
     istio_commands = var.enable_service_mesh ? {
       check_installation = "kubectl get pods -n ${local.service_mesh_config.namespace}"
-      istio_version = "kubectl get pods -n ${local.service_mesh_config.namespace} -o jsonpath='{.items[0].spec.containers[0].image}'"
+      istio_version      = "kubectl get pods -n ${local.service_mesh_config.namespace} -o jsonpath='{.items[0].spec.containers[0].image}'"
     } : null
 
     # Monitoring commands
     monitoring_commands = {
       check_system_pods = "kubectl get pods -n kube-system"
-      check_monitoring = "kubectl get pods -n gmp-system"  # For managed Prometheus
-      view_logs = "kubectl logs -n kube-system -l component=kube-apiserver"
+      check_monitoring  = "kubectl get pods -n gmp-system" # For managed Prometheus
+      view_logs         = "kubectl logs -n kube-system -l component=kube-apiserver"
     }
   }
 }
@@ -374,19 +377,19 @@ output "container_orchestration_summary" {
   description = "Complete summary of container orchestration deployment"
   value = {
     cluster = {
-      name       = google_container_cluster.main.name
-      location   = google_container_cluster.main.location
-      endpoint   = google_container_cluster.main.endpoint
-      version    = google_container_cluster.main.master_version
-      autopilot  = var.enable_autopilot
+      name      = google_container_cluster.main.name
+      location  = google_container_cluster.main.location
+      endpoint  = google_container_cluster.main.endpoint
+      version   = google_container_cluster.main.master_version
+      autopilot = var.enable_autopilot
     }
 
-    node_pools = length(google_container_node_pool.pools)
+    node_pools   = length(google_container_node_pool.pools)
     repositories = length(google_artifact_registry_repository.repositories)
-    namespaces = length(kubernetes_namespace.namespaces)
+    namespaces   = length(kubernetes_namespace.namespaces)
 
     features = {
-      private_cluster    = var.enable_private_cluster
+      private_cluster   = var.enable_private_cluster
       workload_identity = var.enable_workload_identity
       service_mesh      = var.enable_service_mesh
       binary_auth       = var.enable_binary_authorization
@@ -402,12 +405,12 @@ output "container_orchestration_summary" {
     }
 
     security = {
-      shielded_nodes = var.enable_shielded_nodes
-      encryption = var.enable_database_encryption
+      shielded_nodes   = var.enable_shielded_nodes
+      encryption       = var.enable_database_encryption
       private_endpoint = var.enable_private_endpoint
     }
 
-    created_at = timestamp()
+    created_at      = timestamp()
     resource_labels = local.merged_labels
   }
 }
