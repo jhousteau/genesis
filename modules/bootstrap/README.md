@@ -2,7 +2,9 @@
 
 ## Overview
 
-This Terraform module provides a comprehensive bootstrap solution for Google Cloud Platform projects. It handles project creation, API enablement, IAM configuration, budget alerts, and essential service setup following GCP best practices and terraform-google-modules patterns.
+This Terraform module provides a comprehensive bootstrap solution for Google Cloud Platform projects.
+It handles project creation, API enablement, IAM configuration, budget alerts, and essential service
+setup following GCP best practices and terraform-google-modules patterns.
 
 ## Features
 
@@ -26,7 +28,7 @@ module "bootstrap" {
   billing_account = "ABCDEF-GHIJKL-MNOPQR"
   project_prefix  = "my-project"
   default_region  = "us-central1"
-  
+
   labels = {
     team        = "platform"
     environment = "production"
@@ -50,11 +52,11 @@ module "bootstrap" {
   project_name            = "Platform Bootstrap Project"
   random_project_id       = true
   random_project_id_length = 4
-  
+
   # Location Configuration
   default_region = "us-central1"
   default_zone   = "us-central1-a"
-  
+
   # API Configuration
   activate_apis = [
     "serviceusage.googleapis.com",
@@ -74,7 +76,7 @@ module "bootstrap" {
     "firestore.googleapis.com",
     "firebase.googleapis.com"
   ]
-  
+
   # Service Identity Configuration
   activate_api_identities = [
     {
@@ -86,7 +88,7 @@ module "bootstrap" {
       roles = ["roles/storage.admin", "roles/artifactregistry.admin"]
     }
   ]
-  
+
   # Service Account Configuration
   create_default_service_account = true
   default_service_account_name   = "bootstrap-sa"
@@ -95,15 +97,15 @@ module "bootstrap" {
     "roles/resourcemanager.projectIamAdmin",
     "roles/billing.user"
   ]
-  
+
   # Budget Configuration
   budget_amount             = 1000
   budget_alert_percentages  = [0.5, 0.75, 0.9, 1.0, 1.1]
   budget_notification_email = "billing@example.com"
-  
+
   # Network Configuration
   auto_create_network = false
-  
+
   # Labels
   labels = {
     environment     = "production"
@@ -111,7 +113,7 @@ module "bootstrap" {
     cost_center    = "engineering"
     data_classification = "public"
   }
-  
+
   # Organization Policies
   org_policies = {
     "compute.disableSerialPortAccess" = {
@@ -124,7 +126,7 @@ module "bootstrap" {
       deny = ["all"]
     }
   }
-  
+
   # Essential Contacts
   essential_contacts = {
     security = {
@@ -136,7 +138,7 @@ module "bootstrap" {
       notification_categories = ["BILLING", "SUSPENSION"]
     }
   }
-  
+
   # Audit Logging
   audit_log_config = {
     data_access = [
@@ -150,7 +152,7 @@ module "bootstrap" {
       }
     ]
   }
-  
+
   # Service Configuration
   disable_services_on_destroy = false
   disable_dependent_services = false
@@ -264,6 +266,7 @@ The module enables the following APIs by default:
 ## State Storage
 
 When `create_default_service_account` is enabled, the module creates a GCS bucket for storing Terraform state with:
+
 - Versioning enabled
 - Uniform bucket-level access
 - Lifecycle rules to manage old versions
@@ -282,16 +285,19 @@ When `create_default_service_account` is enabled, the module creates a GCS bucke
 ### From Manual Setup
 
 1. Import existing project:
+
    ```bash
    terraform import module.bootstrap.google_project.project PROJECT_ID
    ```
 
 2. Import enabled APIs:
+
    ```bash
    terraform import module.bootstrap.google_project_service.apis[\"compute.googleapis.com\"] PROJECT_ID/compute.googleapis.com
    ```
 
 3. Review and apply changes:
+
    ```bash
    terraform plan
    terraform apply
@@ -308,6 +314,7 @@ When `create_default_service_account` is enabled, the module creates a GCS bucke
 ### Debug Mode
 
 Enable debug logging:
+
 ```bash
 export TF_LOG=DEBUG
 terraform apply
@@ -316,6 +323,7 @@ terraform apply
 ## Contributing
 
 Contributions are welcome! Please ensure:
+
 1. Code follows terraform-google-modules style guide
 2. All variables have descriptions and validation
 3. Examples are provided for new features

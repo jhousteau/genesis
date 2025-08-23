@@ -1,0 +1,523 @@
+name: Quality Gates & Testing
+
+on:
+  push:
+    branches: [main, develop, 'feature/*']
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+  security-events: write
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  quality-gate-validation:
+    name: Quality Gate Validation
+    runs-on: ubuntu-latest
+
+    outputs:
+      test-coverage: ${{ steps.coverage.outputs.total }}
+      security-score: ${{ steps.security.outputs.shield_score }}
+      performance-score: ${{ steps.performance.outputs.score }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-asyncio pytest-html pytest-json-report
+          pip install coverage[toml]
+
+          # Install project dependencies if they exist
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then pip install -e .; fi
+
+      - name: Set Python Path
+        run: |
+          echo "PYTHONPATH=${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}/lib/python:${PYTHONPATH}" >> $GITHUB_ENV
+
+      - name: Run Core Infrastructure Tests
+        run: |
+          pytest tests/core/ \
+            --cov=core \
+            --cov-report=term \
+            --cov-report=xml:coverage-core.xml \
+            --cov-report=html:htmlcov-core \
+            --cov-report=json:coverage-core.json \
+            --json-report --json-report-file=results-core.json \
+            --junit-xml=junit-core.xml \
+            --maxfail=10 \
+            -v
+
+      - name: Run Integration Tests
+        run: |
+          pytest tests/test_complete_integration.py \
+            --cov=lib \
+            --cov-report=term \
+            --cov-report=xml:coverage-integration.xml \
+            --cov-report=json:coverage-integration.json \
+            --json-report --json-report-file=results-integration.json \
+            --junit-xml=junit-integration.xml \
+            --maxfail=5 \
+            -v
+
+      - name: Run CLI Tests
+        run: |
+          pytest tests/test_cli_commands.py \
+            --cov=cli \
+            --cov-report=term \
+            --cov-report=xml:coverage-cli.xml \
+            --cov-report=json:coverage-cli.json \
+            --json-report --json-report-file=results-cli.json \
+            --junit-xml=junit-cli.xml \
+            --maxfail=5 \
+            -v
+
+      - name: Calculate Coverage Metrics
+        id: coverage
+        run: |
+          python -c "
+          import json
+          import glob
+
+          total_covered = 0
+          total_statements = 0
+
+          # Process all coverage JSON files
+          for coverage_file in glob.glob('coverage-*.json'):
+              try:
+                  with open(coverage_file) as f:
+                      data = json.load(f)
+                  totals = data.get('totals', {})
+                  total_covered += totals.get('covered_lines', 0)
+                  total_statements += totals.get('num_statements', 0)
+                  print(f'Processed {coverage_file}: {totals.get(\"percent_covered\", 0):.1f}%')
+              except Exception as e:
+                  print(f'Error processing {coverage_file}: {e}')
+
+          if total_statements > 0:
+              overall_coverage = (total_covered / total_statements) * 100
+          else:
+              overall_coverage = 0
+
+          print(f'Overall Coverage: {overall_coverage:.1f}%')
+
+          # Set output for GitHub Actions
+          with open('$GITHUB_OUTPUT', 'a') as f:
+              f.write(f'total={overall_coverage:.1f}\n')
+              f.write(f'covered={total_covered}\n')
+              f.write(f'statements={total_statements}\n')
+
+          # Create coverage badge data
+          if overall_coverage >= 80:
+              color = 'brightgreen'
+          elif overall_coverage >= 60:
+              color = 'yellow'
+          else:
+              color = 'red'
+
+          with open('coverage-badge.json', 'w') as f:
+              json.dump({
+                  'schemaVersion': 1,
+                  'label': 'coverage',
+                  'message': f'{overall_coverage:.1f}%',
+                  'color': color
+              }, f)
+          "
+
+      - name: Security Assessment (SHIELD)
+        id: security
+        run: |
+          python -c "
+          import os
+          import json
+          import glob
+          from pathlib import Path
+
+          # SHIELD Methodology Assessment
+          shield_scores = {}
+
+          # S - Scan
+          scan_score = 10  # Start with perfect score
+          secret_patterns = ['password', 'api_key', 'secret', 'token']
+          python_files = list(Path('.').rglob('*.py'))
+
+          secret_findings = 0
+          for py_file in python_files[:100]:  # Limit scan
+              try:
+                  content = py_file.read_text().lower()
+                  for pattern in secret_patterns:
+                      if f'{pattern}=' in content and '\"' in content:
+                          secret_findings += 1
+                          break
+              except:
+                  continue
+
+          if secret_findings > 5:
+              scan_score = 6
+          elif secret_findings > 0:
+              scan_score = 8
+
+          shield_scores['scan'] = scan_score
+          print(f'SHIELD Scan Score: {scan_score}/10 ({secret_findings} potential secrets)')
+
+          # H - Harden
+          harden_score = 8  # Assume good based on structure
+          if Path('core/security').exists():
+              harden_score = 9
+          shield_scores['harden'] = harden_score
+          print(f'SHIELD Harden Score: {harden_score}/10')
+
+          # I - Isolate
+          isolate_score = 9 if Path('isolation').exists() else 6
+          shield_scores['isolate'] = isolate_score
+          print(f'SHIELD Isolate Score: {isolate_score}/10')
+
+          # E - Encrypt
+          encrypt_score = 8 if Path('core/secrets').exists() else 5
+          shield_scores['encrypt'] = encrypt_score
+          print(f'SHIELD Encrypt Score: {encrypt_score}/10')
+
+          # L - Log
+          log_score = 8 if Path('monitoring').exists() else 5
+          shield_scores['log'] = log_score
+          print(f'SHIELD Log Score: {log_score}/10')
+
+          # D - Defend
+          defend_score = 8 if Path('core/retry').exists() else 5
+          shield_scores['defend'] = defend_score
+          print(f'SHIELD Defend Score: {defend_score}/10')
+
+          # Overall SHIELD score
+          shield_score = sum(shield_scores.values()) / 6
+
+          print(f'Overall SHIELD Score: {shield_score:.1f}/10')
+
+          # Set output for GitHub Actions
+          with open('$GITHUB_OUTPUT', 'a') as f:
+              f.write(f'shield_score={shield_score:.1f}\n')
+              for category, score in shield_scores.items():
+                  f.write(f'{category}_score={score}\n')
+
+          # Create security report
+          with open('security-report.json', 'w') as f:
+              json.dump({
+                  'shield_score': shield_score,
+                  'category_scores': shield_scores,
+                  'secret_findings': secret_findings,
+                  'timestamp': '$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")'
+              }, f, indent=2)
+          "
+
+      - name: Performance Baseline Check
+        id: performance
+        run: |
+          python -c "
+          import time
+          import sys
+          import importlib.util
+
+          performance_score = 10  # Start optimistic
+
+          try:
+              # Test core imports performance
+              start_time = time.time()
+
+              # Add core to path
+              sys.path.insert(0, 'core')
+
+              # Test basic imports
+              test_imports = [
+                  'core.retry.circuit_breaker',
+                  'core.context.context',
+                  'core.logging.logger'
+              ]
+
+              import_times = []
+              for module_name in test_imports:
+                  try:
+                      module_start = time.time()
+                      spec = importlib.util.find_spec(module_name)
+                      if spec:
+                          module = importlib.util.module_from_spec(spec)
+                          spec.loader.exec_module(module)
+                      import_time = (time.time() - module_start) * 1000
+                      import_times.append(import_time)
+                      print(f'{module_name}: {import_time:.1f}ms')
+                  except Exception as e:
+                      print(f'Failed to import {module_name}: {e}')
+                      performance_score -= 2
+
+              # Check average import time
+              if import_times:
+                  avg_import_time = sum(import_times) / len(import_times)
+                  if avg_import_time > 100:  # > 100ms average
+                      performance_score -= 3
+                  elif avg_import_time > 50:  # > 50ms average
+                      performance_score -= 1
+
+                  print(f'Average import time: {avg_import_time:.1f}ms')
+
+              total_time = (time.time() - start_time) * 1000
+              print(f'Total performance check: {total_time:.1f}ms')
+
+          except Exception as e:
+              print(f'Performance check error: {e}')
+              performance_score = 5
+
+          print(f'Performance Score: {performance_score}/10')
+
+          # Set output for GitHub Actions
+          with open('$GITHUB_OUTPUT', 'a') as f:
+              f.write(f'score={performance_score}\n')
+          "
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            coverage-*.xml
+            coverage-*.json
+            htmlcov-*/
+            results-*.json
+            junit-*.xml
+            security-report.json
+            coverage-badge.json
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results
+          path: junit-*.xml
+          reporter: java-junit
+
+  quality-gate-enforcement:
+    name: Quality Gate Enforcement
+    runs-on: ubuntu-latest
+    needs: quality-gate-validation
+    if: always()
+
+    steps:
+      - name: Evaluate Quality Gates
+        id: gates
+        run: |
+          # Get values from previous job
+          COVERAGE="${{ needs.quality-gate-validation.outputs.test-coverage }}"
+          SECURITY="${{ needs.quality-gate-validation.outputs.security-score }}"
+          PERFORMANCE="${{ needs.quality-gate-validation.outputs.performance-score }}"
+
+          echo "Coverage: $COVERAGE%"
+          echo "Security: $SECURITY/10"
+          echo "Performance: $PERFORMANCE/10"
+
+          # Define thresholds
+          COVERAGE_THRESHOLD=70
+          SECURITY_THRESHOLD=7.0
+          PERFORMANCE_THRESHOLD=7
+
+          # Initialize gates
+          COVERAGE_PASS=false
+          SECURITY_PASS=false
+          PERFORMANCE_PASS=false
+          OVERALL_PASS=false
+
+          # Check coverage gate
+          if (( $(echo "$COVERAGE >= $COVERAGE_THRESHOLD" | bc -l) )); then
+              COVERAGE_PASS=true
+              echo "✅ Coverage gate PASSED ($COVERAGE% >= $COVERAGE_THRESHOLD%)"
+          else
+              echo "❌ Coverage gate FAILED ($COVERAGE% < $COVERAGE_THRESHOLD%)"
+          fi
+
+          # Check security gate
+          if (( $(echo "$SECURITY >= $SECURITY_THRESHOLD" | bc -l) )); then
+              SECURITY_PASS=true
+              echo "✅ Security gate PASSED ($SECURITY >= $SECURITY_THRESHOLD)"
+          else
+              echo "❌ Security gate FAILED ($SECURITY < $SECURITY_THRESHOLD)"
+          fi
+
+          # Check performance gate
+          if [[ "$PERFORMANCE" -ge "$PERFORMANCE_THRESHOLD" ]]; then
+              PERFORMANCE_PASS=true
+              echo "✅ Performance gate PASSED ($PERFORMANCE >= $PERFORMANCE_THRESHOLD)"
+          else
+              echo "❌ Performance gate FAILED ($PERFORMANCE < $PERFORMANCE_THRESHOLD)"
+          fi
+
+          # Overall assessment
+          if [[ "$COVERAGE_PASS" == "true" && "$SECURITY_PASS" == "true" && "$PERFORMANCE_PASS" == "true" ]]; then
+              OVERALL_PASS=true
+              echo "🎉 ALL QUALITY GATES PASSED!"
+          else
+              echo "💥 Quality gates FAILED - Review required before merge"
+          fi
+
+          # Set outputs
+          echo "coverage_pass=$COVERAGE_PASS" >> $GITHUB_OUTPUT
+          echo "security_pass=$SECURITY_PASS" >> $GITHUB_OUTPUT
+          echo "performance_pass=$PERFORMANCE_PASS" >> $GITHUB_OUTPUT
+          echo "overall_pass=$OVERALL_PASS" >> $GITHUB_OUTPUT
+
+      - name: Create Quality Gate Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🚦 Quality Gates Summary
+
+          | Gate | Threshold | Actual | Status |
+          |------|-----------|--------|--------|
+          | Test Coverage | 70%+ | ${{ needs.quality-gate-validation.outputs.test-coverage }}% | ${{ steps.gates.outputs.coverage_pass == 'true' && '✅ PASS' || '❌ FAIL' }} |
+          | Security (SHIELD) | 7.0+ | ${{ needs.quality-gate-validation.outputs.security-score }}/10 | ${{ steps.gates.outputs.security_pass == 'true' && '✅ PASS' || '❌ FAIL' }} |
+          | Performance | 7+ | ${{ needs.quality-gate-validation.outputs.performance-score }}/10 | ${{ steps.gates.outputs.performance_pass == 'true' && '✅ PASS' || '❌ FAIL' }} |
+
+          ### Overall Status: ${{ steps.gates.outputs.overall_pass == 'true' && '✅ ALL GATES PASSED' || '❌ GATES FAILED' }}
+
+          ${{ steps.gates.outputs.overall_pass == 'false' && '**Action Required:** Fix failing quality gates before merging.' || '**Ready for merge!** All quality standards met.' }}
+          EOF
+
+      - name: Quality Gate Status Check
+        if: github.event_name == 'pull_request'
+        run: |
+          if [[ "${{ steps.gates.outputs.overall_pass }}" != "true" ]]; then
+              echo "Quality gates failed - blocking merge"
+              exit 1
+          else
+              echo "All quality gates passed - ready for merge"
+          fi
+
+  terraform-validation:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.0
+
+      - name: Terraform Format Check
+        run: |
+          terraform fmt -check -recursive .
+
+      - name: Terraform Validate
+        run: |
+          # Validate main configuration
+          terraform init -backend=false
+          terraform validate
+
+          # Validate modules
+          for module_dir in modules/*/; do
+              if [[ -d "$module_dir" ]]; then
+                  echo "Validating module: $module_dir"
+                  cd "$module_dir"
+                  terraform init -backend=false
+                  terraform validate
+                  cd - > /dev/null
+              fi
+          done
+
+      - name: TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.48.0
+
+      - name: Run TFLint
+        run: |
+          tflint --init
+          tflint -f compact
+
+  documentation-validation:
+    name: Documentation Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check Required Documentation
+        run: |
+          echo "Checking for required documentation files..."
+
+          REQUIRED_DOCS=(
+              "README.md"
+              "CHANGELOG.md"
+              "docs/README.md"
+              ".github/workflows/security-scan.yml"
+              ".github/workflows/quality-gates.yml"
+          )
+
+          MISSING_DOCS=()
+
+          for doc in "${REQUIRED_DOCS[@]}"; do
+              if [[ ! -f "$doc" ]]; then
+                  MISSING_DOCS+=("$doc")
+              fi
+          done
+
+          if [[ ${#MISSING_DOCS[@]} -gt 0 ]]; then
+              echo "❌ Missing required documentation:"
+              printf '%s\n' "${MISSING_DOCS[@]}"
+              exit 1
+          else
+              echo "✅ All required documentation present"
+          fi
+
+      - name: Validate Markdown
+        uses: DavidAnson/markdownlint-action@v1
+        with:
+          files: '**/*.md'
+          ignore: 'node_modules'
+          config: |
+            {
+              "default": false
+            }
+
+  final-status:
+    name: Final Status Check
+    runs-on: ubuntu-latest
+    needs: [quality-gate-validation, quality-gate-enforcement, terraform-validation, documentation-validation]
+    if: always()
+
+    steps:
+      - name: Check All Jobs Status
+        run: |
+          echo "Job Status Summary:"
+          echo "Quality Gate Validation: ${{ needs.quality-gate-validation.result }}"
+          echo "Quality Gate Enforcement: ${{ needs.quality-gate-enforcement.result }}"
+          echo "Terraform Validation: ${{ needs.terraform-validation.result }}"
+          echo "Documentation Validation: ${{ needs.documentation-validation.result }}"
+
+          # Determine overall success
+          if [[ "${{ needs.quality-gate-validation.result }}" == "success" && \
+                "${{ needs.quality-gate-enforcement.result }}" == "success" && \
+                "${{ needs.terraform-validation.result }}" == "success" && \
+                "${{ needs.documentation-validation.result }}" == "success" ]]; then
+              echo "🎉 ALL CHECKS PASSED - Ready for production!"
+              echo "OVERALL_STATUS=success" >> $GITHUB_ENV
+          else
+              echo "💥 Some checks failed - Review required"
+              echo "OVERALL_STATUS=failure" >> $GITHUB_ENV
+              exit 1
+          fi

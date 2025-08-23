@@ -21,12 +21,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from core.errors.handler import ErrorCategory, GenesisError
-from core.retry.circuit_breaker import (
-    CircuitBreaker,
-    CircuitBreakerError,
-    CircuitBreakerMetrics,
-    CircuitBreakerState,
-)
+from core.retry.circuit_breaker import (CircuitBreaker, CircuitBreakerError,
+                                        CircuitBreakerMetrics,
+                                        CircuitBreakerState)
 
 
 class TestCircuitBreakerState:
@@ -347,7 +344,7 @@ class TestCircuitBreaker:
         assert circuit_breaker.state == CircuitBreakerState.OPEN
 
     def test_half_open_max_calls_limit(self):
-        """Test half-open max calls limit."""
+        """Test half-open max calls limit and transition to closed."""
         cb = CircuitBreaker(
             failure_threshold=1,
             timeout=0.05,
@@ -360,23 +357,28 @@ class TestCircuitBreaker:
         with pytest.raises(Exception):
             cb.call(lambda: exec('raise Exception("error")'))
 
+        assert cb.state == CircuitBreakerState.OPEN
+
         # Wait for timeout
         time.sleep(0.06)
 
-        # Should allow limited calls in half-open
+        # Should allow limited calls in half-open, then transition to closed
         results = []
-        for i in range(3):  # Try 3 calls, only 2 should be allowed
+        for i in range(3):
             try:
                 result = cb.call(lambda x=i: f"call-{x}")
                 results.append(result)
             except CircuitBreakerError:
                 results.append("blocked")
 
-        # First 2 should succeed, third should be blocked
+        # All calls should succeed: first 2 in half-open (triggering transition to closed), third in closed state
         assert len(results) == 3
         assert results[0] == "call-0"
         assert results[1] == "call-1"
-        assert results[2] == "blocked"
+        assert results[2] == "call-2"
+
+        # Circuit should be closed after successful calls
+        assert cb.state == CircuitBreakerState.CLOSED
 
     @pytest.mark.asyncio
     async def test_async_call_execution(self, circuit_breaker):

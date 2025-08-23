@@ -181,9 +181,9 @@ resource "google_billing_budget" "budget" {
 
   budget_filter {
     projects               = ["projects/${google_project.project.number}"]
-    services              = var.budget_filters.services
-    subaccounts           = var.budget_filters.subaccounts
-    regions               = var.budget_filters.regions
+    services               = var.budget_filters.services
+    subaccounts            = var.budget_filters.subaccounts
+    regions                = var.budget_filters.regions
     credit_types_treatment = var.budget_filters.credit_types_treatment
 
     dynamic "labels" {
@@ -213,7 +213,7 @@ resource "google_billing_budget" "budget" {
 
   all_updates_rule {
     schema_version                   = "1.0"
-    pubsub_topic                    = length(var.budget_notification_channels) > 0 ? null : null
+    pubsub_topic                     = length(var.budget_notification_channels) > 0 ? null : null
     monitoring_notification_channels = var.budget_notification_channels
   }
 
@@ -289,9 +289,9 @@ resource "google_project_organization_policy" "org_policies" {
 resource "google_essential_contacts_contact" "contacts" {
   for_each = var.essential_contacts
 
-  parent                          = "projects/${google_project.project.project_id}"
-  email                          = each.value.email
-  language_tag                   = "en"
+  parent                              = "projects/${google_project.project.project_id}"
+  email                               = each.value.email
+  language_tag                        = "en"
   notification_category_subscriptions = each.value.notification_categories
 
   depends_on = [
@@ -353,7 +353,7 @@ resource "google_storage_bucket" "bootstrap_state" {
   location = var.default_region
 
   uniform_bucket_level_access = true
-  force_destroy              = false
+  force_destroy               = false
 
   versioning {
     enabled = true
@@ -387,11 +387,11 @@ resource "google_storage_bucket_object" "bootstrap_config" {
     project_number  = google_project.project.number
     organization_id = var.org_id
     billing_account = var.billing_account
-    region         = var.default_region
-    zone           = local.default_zone
-    labels         = local.merged_labels
-    enabled_apis   = local.activate_apis
-    created_at     = timestamp()
+    region          = var.default_region
+    zone            = local.default_zone
+    labels          = local.merged_labels
+    enabled_apis    = local.activate_apis
+    created_at      = timestamp()
   })
 
   depends_on = [
@@ -472,7 +472,7 @@ resource "google_scc_project_custom_module" "security_modules" {
     if var.enable_security_center
   }
 
-  project     = google_project.project.project_id
+  project      = google_project.project.project_id
   display_name = each.value.display_name
   description  = each.value.description
 
@@ -490,9 +490,9 @@ resource "google_scc_project_custom_module" "security_modules" {
         }
       }
     }
-    description = each.value.description
+    description    = each.value.description
     recommendation = "Review and remediate the security finding"
-    severity = "MEDIUM"
+    severity       = "MEDIUM"
   }
 
   depends_on = [
@@ -519,11 +519,11 @@ resource "google_logging_project_sink" "sinks" {
   }
 
   name                   = each.value.name
-  project               = google_project.project.project_id
-  destination           = each.value.destination
-  filter                = each.value.filter
-  description           = each.value.description
-  disabled              = each.value.disabled
+  project                = google_project.project.project_id
+  destination            = each.value.destination
+  filter                 = each.value.filter
+  description            = each.value.description
+  disabled               = each.value.disabled
   unique_writer_identity = each.value.unique_writer_identity
 
   dynamic "bigquery_options" {
@@ -609,9 +609,9 @@ resource "google_monitoring_alert_policy" "budget_alerts" {
     display_name = "Budget threshold exceeded"
 
     condition_threshold {
-      filter         = "resource.type=\"billing_account\""
-      duration       = "300s"
-      comparison     = "COMPARISON_GREATER_THAN"
+      filter          = "resource.type=\"billing_account\""
+      duration        = "300s"
+      comparison      = "COMPARISON_GREATER_THAN"
       threshold_value = var.budget_amount * 0.8
 
       aggregations {
@@ -664,7 +664,7 @@ resource "google_storage_bucket" "bootstrap_state_replica" {
   location = each.value
 
   uniform_bucket_level_access = true
-  force_destroy              = false
+  force_destroy               = false
 
   versioning {
     enabled = true
@@ -680,7 +680,7 @@ resource "google_storage_bucket" "bootstrap_state_replica" {
   }
 
   labels = merge(local.merged_labels, {
-    purpose = "bootstrap-replica"
+    purpose        = "bootstrap-replica"
     primary_region = var.multi_region_config.primary_region
   })
 
@@ -805,8 +805,8 @@ resource "google_compute_security_policy" "security_policies" {
     if var.network_security.enable_cloud_armor
   }
 
-  project = google_project.project.project_id
-  name    = "${var.project_prefix}-${each.value.name}"
+  project     = google_project.project.project_id
+  name        = "${var.project_prefix}-${each.value.name}"
   description = each.value.description
 
   dynamic "rule" {
@@ -904,14 +904,14 @@ resource "google_logging_metric" "log_based_metrics" {
     if var.advanced_monitoring.enabled
   }
 
-  project = google_project.project.project_id
-  name    = each.value.name
-  filter  = each.value.filter
+  project     = google_project.project.project_id
+  name        = each.value.name
+  filter      = each.value.filter
   description = each.value.description
 
   metric_descriptor {
-    metric_kind = each.value.metric_descriptor.metric_kind
-    value_type  = each.value.metric_descriptor.value_type
+    metric_kind  = each.value.metric_descriptor.metric_kind
+    value_type   = each.value.metric_descriptor.value_type
     display_name = each.value.name
   }
 
@@ -938,9 +938,9 @@ resource "google_monitoring_alert_policy" "advanced_alerts" {
       display_name = conditions.value.display_name
 
       condition_threshold {
-        filter         = conditions.value.filter
-        duration       = conditions.value.duration
-        comparison     = conditions.value.comparison
+        filter          = conditions.value.filter
+        duration        = conditions.value.duration
+        comparison      = conditions.value.comparison
         threshold_value = conditions.value.threshold_value
 
         aggregations {
@@ -979,10 +979,10 @@ resource "google_cloud_scheduler_job" "backup_jobs" {
   http_target {
     uri         = "https://cloudfunctions.googleapis.com/v1/projects/${google_project.project.project_id}/locations/${each.value}/functions/backup-function:call"
     http_method = "POST"
-    body        = base64encode(jsonencode({
+    body = base64encode(jsonencode({
       source_region = var.multi_region_config.primary_region
       target_region = each.value
-      retention = var.disaster_recovery.retention_policy
+      retention     = var.disaster_recovery.retention_policy
     }))
 
     headers = {

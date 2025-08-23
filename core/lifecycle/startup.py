@@ -176,7 +176,7 @@ class StartupManager:
 
         self.logger.info(f"Startup manager initialized for service '{service_name}'")
 
-    def _register_builtin_hooks(self):
+    def _register_builtin_hooks(self) -> None:
         """Register built-in startup hooks"""
 
         # Environment validation
@@ -295,12 +295,14 @@ class StartupManager:
         self.dependencies.append(dependency)
         self.logger.debug(f"Registered dependency '{name}' ({dependency_type.value})")
 
-    def register_config_validator(self, validator: Callable[[], bool]):
+    def register_config_validator(self, validator: Callable[[], bool]) -> None:
         """Register a configuration validator function"""
         self.config_validators.append(validator)
         self.logger.debug("Registered configuration validator")
 
-    def register_health_check(self, name: str, check_function: Callable[[], bool]):
+    def register_health_check(
+        self, name: str, check_function: Callable[[], bool]
+    ) -> None:
         """Register a health check function"""
         self.health_checks[name] = check_function
         self.logger.debug(f"Registered health check '{name}'")
@@ -431,14 +433,14 @@ class StartupManager:
         # this would perform dependency resolution
         return sorted(hooks, key=lambda h: len(h.dependencies))
 
-    async def _execute_sync_hook_with_timeout(self, hook: StartupHook):
+    async def _execute_sync_hook_with_timeout(self, hook: StartupHook) -> Any:
         """Execute a synchronous hook with timeout in event loop"""
         loop = asyncio.get_event_loop()
         return await asyncio.wait_for(
             loop.run_in_executor(None, hook.callback), timeout=hook.timeout
         )
 
-    def _validate_environment(self):
+    def _validate_environment(self) -> None:
         """Validate basic environment setup"""
         self.logger.debug("Validating environment variables")
 
@@ -458,7 +460,7 @@ class StartupManager:
 
         self.logger.debug("Environment validation completed")
 
-    def _validate_configuration(self):
+    def _validate_configuration(self) -> None:
         """Run all registered configuration validators"""
         self.logger.debug("Validating service configuration")
 
@@ -480,7 +482,7 @@ class StartupManager:
             f"Configuration validation completed ({len(self.config_validators)} validators)"
         )
 
-    def _check_all_dependencies(self):
+    def _check_all_dependencies(self) -> None:
         """Check all registered dependencies"""
         self.logger.debug(f"Checking {len(self.dependencies)} dependencies")
 
@@ -543,7 +545,7 @@ class StartupManager:
         )
         return False
 
-    def _register_health_checks(self):
+    def _register_health_checks(self) -> None:
         """Register all health check endpoints"""
         self.logger.debug(f"Registering {len(self.health_checks)} health checks")
 
@@ -554,7 +556,7 @@ class StartupManager:
 
         self.logger.info("Health check endpoints registered")
 
-    def _warmup_service(self):
+    def _warmup_service(self) -> None:
         """Perform service warm-up operations"""
         self.logger.info(f"Starting {self.warmup_duration}s warm-up period")
 

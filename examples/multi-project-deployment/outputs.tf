@@ -54,7 +54,7 @@ output "total_deployment_summary" {
       try(length(module.json_based_deployment.project_ids), 0),
       try(length(module.environment_deployment.project_ids), 0),
     ])
-    
+
     deployments = {
       simple      = try(module.simple_multi_project.summary, null)
       complex     = try(module.complex_multi_project.summary, null)

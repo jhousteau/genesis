@@ -416,3 +416,87 @@ projects:
         gcp_project: test_project_20250822_083005-prod
         gcloud_home: ~/.gcloud/test_project_20250822_083005-prod
         approval_required: true
+  test-integration-project:
+    path: /var/folders/cq/tphwsyqs6pv4f2k71xk3nm980000gn/T/bootstrap_test_j6fjo30f/test-integration-project
+    type: api
+    language: auto
+    cloud_provider: gcp
+    team: unknown
+    criticality: medium
+    environments:
+      dev:
+        gcp_project: test-integration-project-dev
+        gcloud_home: ~/.gcloud/test-integration-project-dev
+      test:
+        gcp_project: test-integration-project-test
+        gcloud_home: ~/.gcloud/test-integration-project-test
+      prod:
+        gcp_project: test-integration-project-prod
+        gcloud_home: ~/.gcloud/test-integration-project-prod
+        approval_required: true
+    intelligence:
+      auto_fix_enabled: true
+      optimization_enabled: true
+      predictions_enabled: true
+      recommendations_enabled: true
+audit_log:
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''intelligence'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''path'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''intelligence'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''path'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''intelligence'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''path'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''intelligence'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''intelligence'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''path'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''intelligence'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''path'']'
+- timestamp: '2024-08-20T00:00:00Z'
+  action: project_updated
+  user: system
+  project: test-integration-project
+  details: 'Updated fields: [''intelligence'']'

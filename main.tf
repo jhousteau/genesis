@@ -67,7 +67,7 @@ module "service_accounts" {
   source = "./modules/service-accounts"
   count  = var.create_terraform_sa ? 1 : 0
 
-  project_id        = var.project_id
+  project_id = var.project_id
   service_accounts = [{
     account_id   = var.terraform_sa_name
     display_name = "Terraform Service Account"
@@ -126,7 +126,7 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   project                            = var.project_id
   workload_identity_pool_id          = google_iam_workload_identity_pool.github[0].workload_identity_pool_id
   workload_identity_pool_provider_id = "github-provider-${var.environment}"
-  display_name                        = "GitHub Provider ${var.environment}"
+  display_name                       = "GitHub Provider ${var.environment}"
 
   attribute_mapping = {
     "google.subject"       = "assertion.sub"

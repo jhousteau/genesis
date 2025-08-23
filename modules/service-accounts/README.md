@@ -174,28 +174,36 @@ module "service_accounts" {
 ## Service Account Types
 
 ### Terraform Deployer Account
+
 Designed for infrastructure provisioning and management:
+
 - Project IAM administration
 - Resource creation and management
 - State storage access
 - Secret management
 
 ### CI/CD Pipeline Account
+
 Optimized for continuous integration and deployment:
+
 - Build execution
 - Container registry access
 - Application deployment
 - Artifact management
 
 ### Monitoring Account
+
 Focused on observability and monitoring:
+
 - Metric collection
 - Log aggregation
 - Trace collection
 - Error reporting
 
 ### Application Runtime Account
+
 Minimal permissions for application execution:
+
 - Storage access (read-only)
 - Secret access
 - Database connections
@@ -248,21 +256,25 @@ Minimal permissions for application execution:
 ### Minimal Roles by Use Case
 
 **Terraform Deployer**:
+
 - `roles/resourcemanager.projectIamAdmin` - Manage IAM policies
 - `roles/storage.admin` - Terraform state storage
 - `roles/serviceusage.serviceUsageAdmin` - Enable APIs
 
 **CI/CD Pipeline**:
+
 - `roles/cloudbuild.builds.editor` - Create and manage builds
 - `roles/artifactregistry.writer` - Push container images
 - `roles/run.developer` - Deploy to Cloud Run
 
 **Monitoring**:
+
 - `roles/monitoring.metricWriter` - Write metrics
 - `roles/logging.logWriter` - Write logs
 - `roles/cloudtrace.agent` - Send traces
 
 **Application Runtime**:
+
 - `roles/secretmanager.secretAccessor` - Read secrets
 - `roles/cloudsql.client` - Connect to Cloud SQL
 - `roles/pubsub.subscriber` - Subscribe to Pub/Sub topics
@@ -296,6 +308,7 @@ gcloud projects get-iam-policy PROJECT_ID --flatten="bindings[].members" \
 ## Examples Directory Structure
 
 For additional examples, see:
+
 - `examples/basic/` - Simple service account creation
 - `examples/multi-project/` - Cross-project service accounts
 - `examples/with-impersonation/` - Impersonation setup
@@ -308,6 +321,7 @@ Apache 2.0
 ## Contributing
 
 Contributions are welcome! Please ensure:
+
 1. Code follows Terraform best practices
 2. Documentation is updated
 3. Examples are provided for new features

@@ -1,6 +1,6 @@
 /**
  * Data Module - Outputs
- * 
+ *
  * Export data infrastructure information for use by other modules
  */
 
@@ -398,13 +398,11 @@ output "connection_info" {
         private_ip_address = instance.private_ip_address
         public_ip_address  = instance.public_ip_address
         # Connection string format for applications
-        private_connection_string = var.enable_private_ip ? 
-          "postgresql://username:password@${instance.private_ip_address}:5432/database" : null
-        public_connection_string = 
-          "postgresql://username:password@${instance.public_ip_address}:5432/database"
+        private_connection_string = var.enable_private_ip ? "postgresql://username:password@${instance.private_ip_address}:5432/database" : null
+        public_connection_string = "postgresql://username:password@${instance.public_ip_address}:5432/database"
       }
     }
-    
+
     redis_instances = {
       for instance_name, instance in google_redis_instance.redis_instances :
       instance_name => {
@@ -415,7 +413,7 @@ output "connection_info" {
         auth_string = instance.auth_string
       }
     }
-    
+
     memcached_instances = {
       for instance_name, instance in google_memcache_instance.memcached_instances :
       instance_name => {
@@ -424,7 +422,7 @@ output "connection_info" {
         connection_endpoint = instance.discovery_endpoint
       }
     }
-    
+
     firestore_databases = {
       for db_name, db in google_firestore_database.databases :
       db_name => {
@@ -450,28 +448,28 @@ output "data_infrastructure_summary" {
       users_total = length(google_sql_user.users)
       private_connectivity = var.enable_private_ip
     }
-    
+
     bigquery = {
       datasets_total = length(google_bigquery_dataset.datasets)
       tables_total = length(google_bigquery_table.tables)
       transfer_configs_total = length(google_bigquery_data_transfer_config.transfer_configs)
       datasets = [for dataset in google_bigquery_dataset.datasets : dataset.dataset_id]
     }
-    
+
     firestore = {
       databases_total = length(google_firestore_database.databases)
       indexes_total = length(google_firestore_index.indexes)
       backup_schedules_total = length(google_firestore_backup_schedule.backup_schedules)
       databases = [for db in google_firestore_database.databases : db.name]
     }
-    
+
     storage = {
       buckets_total = length(google_storage_bucket.buckets)
       notifications_total = length(google_storage_notification.bucket_notifications)
       iam_bindings_total = length(google_storage_bucket_iam_binding.bucket_bindings)
       buckets = [for bucket in google_storage_bucket.buckets : bucket.name]
     }
-    
+
     memorystore = {
       redis_instances_total = length(google_redis_instance.redis_instances)
       memcached_instances_total = length(google_memcache_instance.memcached_instances)
@@ -479,34 +477,34 @@ output "data_infrastructure_summary" {
       redis_instances = [for instance in google_redis_instance.redis_instances : instance.name]
       memcached_instances = [for instance in google_memcache_instance.memcached_instances : instance.name]
     }
-    
+
     dataflow = {
       jobs_total = length(google_dataflow_flex_template_job.dataflow_jobs)
       jobs = [for job in google_dataflow_flex_template_job.dataflow_jobs : job.name]
     }
-    
+
     pubsub = {
       topics_total = length(google_pubsub_topic.data_topics)
       subscriptions_total = length(google_pubsub_subscription.data_subscriptions)
       topics = [for topic in google_pubsub_topic.data_topics : topic.name]
     }
-    
+
     data_catalog = {
       entry_groups_total = length(google_data_catalog_entry_group.entry_groups)
       entry_groups = [for group in google_data_catalog_entry_group.entry_groups : group.name]
     }
-    
+
     scheduler = {
       jobs_total = length(google_cloud_scheduler_job.data_jobs)
       jobs = [for job in google_cloud_scheduler_job.data_jobs : job.name]
     }
-    
+
     network = {
       private_ip_enabled = var.enable_private_ip
       network_id = var.network_id
       subnet_id = var.subnet_id
     }
-    
+
     labels_applied = local.merged_labels
     created_at = timestamp()
   }

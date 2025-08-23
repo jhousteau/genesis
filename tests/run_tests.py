@@ -236,9 +236,9 @@ class TestRunner:
         except subprocess.TimeoutExpired:
             result["end_time"] = datetime.now()
             result["duration"] = suite_config.get("timeout", 600)
-            result["error_output"] = (
-                f"Test suite timed out after {suite_config.get('timeout', 600)} seconds"
-            )
+            result[
+                "error_output"
+            ] = f"Test suite timed out after {suite_config.get('timeout', 600)} seconds"
             result["success"] = False
 
         except Exception as e:
@@ -281,20 +281,37 @@ class TestRunner:
             for pattern in self.config["coverage"]["exclude_patterns"]:
                 args.append(f"--cov-omit={pattern}")
 
-        # Output formats
-        args.extend(
-            [
-                "--html=" + str(self.reports_dir / f"report_{suite_name}.html"),
-                "--json-report",
-                "--json-report-file="
-                + str(self.reports_dir / f"report_{suite_name}.json"),
-                "--junit-xml=" + str(self.reports_dir / f"junit_{suite_name}.xml"),
-            ]
-        )
+        # Output formats (only add if plugins are available)
+        try:
+            import pytest_html
 
-        # Parallel execution
+            args.append("--html=" + str(self.reports_dir / f"report_{suite_name}.html"))
+        except ImportError:
+            pass
+
+        try:
+            import pytest_json_report
+
+            args.extend(
+                [
+                    "--json-report",
+                    "--json-report-file="
+                    + str(self.reports_dir / f"report_{suite_name}.json"),
+                ]
+            )
+        except ImportError:
+            pass
+
+        args.append("--junit-xml=" + str(self.reports_dir / f"junit_{suite_name}.xml"))
+
+        # Parallel execution (only if pytest-xdist is available)
         if suite_config.get("parallel", False):
-            args.extend(["-n", "auto"])
+            try:
+                import xdist
+
+                args.extend(["-n", "auto"])
+            except ImportError:
+                pass
 
         # Additional pytest arguments
         args.extend(["--tb=short", "--strict-markers", "--strict-config"])

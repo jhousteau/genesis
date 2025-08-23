@@ -26,7 +26,7 @@ module "workload_identity" {
     github = {
       provider_id  = "github-actions"
       display_name = "GitHub Actions Provider"
-      
+
       github = {
         organization = "my-org"
         repositories = ["my-repo", "another-repo"]
@@ -40,7 +40,7 @@ module "workload_identity" {
       service_account_id = "github-deploy-sa"
       display_name      = "GitHub Actions Deploy SA"
       project_roles     = ["roles/storage.admin", "roles/run.admin"]
-      
+
       bindings = [{
         provider_id = "github-actions"
       }]
@@ -101,7 +101,7 @@ module "workload_identity" {
     frontend = {
       service_account_id = "frontend-deploy"
       project_roles      = ["roles/run.admin"]
-      
+
       bindings = [{
         provider_id = "github"
       }]
@@ -110,7 +110,7 @@ module "workload_identity" {
     backend = {
       service_account_id = "backend-deploy"
       project_roles      = ["roles/cloudsql.client"]
-      
+
       bindings = [{
         provider_id = "gitlab"
       }]
@@ -119,7 +119,7 @@ module "workload_identity" {
     infra = {
       service_account_id = "terraform-deploy"
       project_roles      = ["roles/editor"]
-      
+
       bindings = [
         {
           provider_id = "azure-devops"
@@ -152,13 +152,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.WI_PROVIDER }}
           service_account: ${{ vars.SERVICE_ACCOUNT }}
-      
+
       - name: Deploy
         run: gcloud run deploy my-service --image gcr.io/my-project/my-app
 ```
@@ -205,14 +205,14 @@ steps:
   - script: |
       # Get the Azure DevOps JWT token
       echo $SYSTEM_ACCESSTOKEN > token.txt
-      
+
       # Create credential configuration
       gcloud iam workload-identity-pools create-cred-config \
         $(WI_PROVIDER) \
         --service-account=$(SERVICE_ACCOUNT) \
         --credential-source-file=token.txt \
         --output-file=gcp-credentials.json
-      
+
       # Authenticate
       gcloud auth login --cred-file=gcp-credentials.json
     displayName: Authenticate with GCP
@@ -269,7 +269,7 @@ Always use attribute conditions to restrict access:
 providers = {
   github = {
     provider_id = "github"
-    
+
     # Automatic conditions based on configuration
     github = {
       organization = "my-org"        # Only from this org
@@ -277,7 +277,7 @@ providers = {
       branches     = ["main"]        # Only from protected branches
       environments = ["production"]  # Only from specific environments
     }
-    
+
     # Or custom attribute condition
     attribute_condition = <<-EOT
       assertion.repository_owner == 'my-org' &&
@@ -297,13 +297,13 @@ Grant only necessary permissions:
 service_accounts = {
   deploy = {
     service_account_id = "minimal-deploy-sa"
-    
+
     # Only required project roles
     project_roles = [
       "roles/run.developer",     # Deploy to Cloud Run
       "roles/storage.objectUser" # Read artifacts
     ]
-    
+
     # Bind with specific conditions
     bindings = [{
       provider_id = "github"
@@ -321,10 +321,10 @@ Use different pools or providers for different environments:
 # Production pool
 module "prod_workload_identity" {
   source = "./modules/workload-identity"
-  
+
   project_id = "prod-project"
   pool_id    = "prod-ci-pool"
-  
+
   providers = {
     github_prod = {
       provider_id = "github-prod"
@@ -341,10 +341,10 @@ module "prod_workload_identity" {
 # Development pool
 module "dev_workload_identity" {
   source = "./modules/workload-identity"
-  
+
   project_id = "dev-project"
   pool_id    = "dev-ci-pool"
-  
+
   providers = {
     github_dev = {
       provider_id = "github-dev"
@@ -367,14 +367,14 @@ providers = {
   custom = {
     provider_id = "custom-provider"
     issuer_uri  = "https://my-oidc-provider.com"
-    
+
     attribute_mapping = {
       "google.subject"      = "assertion.sub"
       "attribute.user"      = "assertion.email"
       "attribute.team"      = "assertion.team"
       "attribute.env"       = "assertion.environment"
     }
-    
+
     attribute_condition = "assertion.team in ['platform', 'devops']"
   }
 }
@@ -387,7 +387,7 @@ service_accounts = {
   existing = {
     create_new     = false
     existing_email = "existing-sa@my-project.iam.gserviceaccount.com"
-    
+
     bindings = [{
       provider_id = "github"
     }]

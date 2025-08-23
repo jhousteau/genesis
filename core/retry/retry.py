@@ -21,10 +21,10 @@ import random
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Awaitable, Callable, Optional, Set, Type, TypeVar, Union
+from typing import (Any, Awaitable, Callable, Optional, Set, Type, TypeVar,
+                    Union)
 
 from ..errors.handler import ErrorCategory, GenesisError
-
 # Import Genesis core components
 from ..logging.logger import GenesisLogger
 
@@ -205,10 +205,11 @@ class RetryExecutor:
             try:
                 # Log retry attempt
                 if attempt > 0:
+                    func_name = getattr(func, "__name__", "unknown_function")
                     self._logger.info(
                         f"Retry attempt {attempt + 1}/{self.policy.max_attempts}",
                         extra={
-                            "function": func.__name__,
+                            "function": func_name,
                             "attempt": attempt + 1,
                             "max_attempts": self.policy.max_attempts,
                         },
@@ -220,10 +221,11 @@ class RetryExecutor:
                 # Check if result indicates retry needed
                 if self.should_retry(None, result, attempt):
                     delay = self.calculate_delay(attempt)
+                    func_name = getattr(func, "__name__", "unknown_function")
                     self._logger.warning(
                         f"Result-based retry needed, waiting {delay:.2f}s",
                         extra={
-                            "function": func.__name__,
+                            "function": func_name,
                             "attempt": attempt + 1,
                             "delay": delay,
                             "result": str(result)[:100],  # Truncate for logging
@@ -235,10 +237,11 @@ class RetryExecutor:
 
                 # Success!
                 if attempt > 0:
+                    func_name = getattr(func, "__name__", "unknown_function")
                     self._logger.info(
                         f"Retry succeeded on attempt {attempt + 1}",
                         extra={
-                            "function": func.__name__,
+                            "function": func_name,
                             "attempt": attempt + 1,
                             "total_attempts": attempt + 1,
                         },
@@ -251,10 +254,11 @@ class RetryExecutor:
 
                 # Check if should retry
                 if not self.should_retry(e, None, attempt):
+                    func_name = getattr(func, "__name__", "unknown_function")
                     self._logger.error(
-                        f"Non-retryable exception in {func.__name__}",
+                        f"Non-retryable exception in {func_name}",
                         extra={
-                            "function": func.__name__,
+                            "function": func_name,
                             "attempt": attempt + 1,
                             "exception_type": type(e).__name__,
                             "exception_message": str(e),
@@ -266,10 +270,11 @@ class RetryExecutor:
                 delay = self.calculate_delay(attempt + 1)
 
                 # Log retry
+                func_name = getattr(func, "__name__", "unknown_function")
                 self._logger.warning(
-                    f"Exception in {func.__name__}, retrying in {delay:.2f}s",
+                    f"Exception in {func_name}, retrying in {delay:.2f}s",
                     extra={
-                        "function": func.__name__,
+                        "function": func_name,
                         "attempt": attempt + 1,
                         "max_attempts": self.policy.max_attempts,
                         "delay": delay,

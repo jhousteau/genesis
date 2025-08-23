@@ -3,7 +3,7 @@
 
 terraform {
   required_version = ">= 1.5"
-  
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -21,13 +21,13 @@ provider "google" {
 # Example 1: Simple multi-project deployment
 module "simple_multi_project" {
   source = "../../modules/multi-project"
-  
+
   deployment_name = "simple-deployment"
   project_group   = "example-projects"
-  
+
   # Set organization or folder
-  org_id = var.organization_id  # or use folder_id
-  
+  org_id = var.organization_id # or use folder_id
+
   # Default settings for all projects
   default_region = "us-central1"
   default_labels = {
@@ -35,7 +35,7 @@ module "simple_multi_project" {
     environment = "development"
     team        = "platform"
   }
-  
+
   # List of projects to create
   projects = [
     {
@@ -62,11 +62,11 @@ module "simple_multi_project" {
 # Example 2: Complex multi-project with different configurations
 module "complex_multi_project" {
   source = "../../modules/multi-project"
-  
+
   deployment_name = "production-infrastructure"
   project_group   = "production-apps"
   org_id          = var.organization_id
-  
+
   # Configure default Workload Identity Federation
   default_wif_providers = {
     github = {
@@ -77,7 +77,7 @@ module "complex_multi_project" {
       }
     }
   }
-  
+
   projects = [
     # Frontend application project
     {
@@ -85,19 +85,19 @@ module "complex_multi_project" {
       billing_account = var.billing_account
       environment     = "production"
       budget_amount   = 2000
-      
+
       labels = {
         application = "frontend"
         tier        = "web"
       }
-      
+
       activate_apis = [
         "firebase.googleapis.com",
         "firebasehosting.googleapis.com",
         "firebasestorage.googleapis.com",
         "identitytoolkit.googleapis.com",
       ]
-      
+
       custom_service_accounts = {
         frontend = {
           account_id   = "frontend-app"
@@ -108,7 +108,7 @@ module "complex_multi_project" {
           ]
         }
       }
-      
+
       # Frontend-specific WIF configuration
       workload_identity_providers = {
         github = {
@@ -122,7 +122,7 @@ module "complex_multi_project" {
           }
         }
       }
-      
+
       create_network = true
       network_name   = "frontend-vpc"
       subnets = [{
@@ -131,19 +131,19 @@ module "complex_multi_project" {
         region = "us-central1"
       }]
     },
-    
+
     # Backend API project
     {
       project_id      = "${var.project_prefix}-backend"
       billing_account = var.billing_account
       environment     = "production"
       budget_amount   = 3000
-      
+
       labels = {
         application = "backend"
         tier        = "api"
       }
-      
+
       activate_apis = [
         "run.googleapis.com",
         "cloudsql.googleapis.com",
@@ -151,7 +151,7 @@ module "complex_multi_project" {
         "secretmanager.googleapis.com",
         "cloudtasks.googleapis.com",
       ]
-      
+
       custom_service_accounts = {
         api = {
           account_id   = "backend-api"
@@ -171,7 +171,7 @@ module "complex_multi_project" {
           ]
         }
       }
-      
+
       workload_identity_providers = {
         github = {
           provider_id   = "github-actions"
@@ -184,7 +184,7 @@ module "complex_multi_project" {
           }
         }
       }
-      
+
       create_network   = true
       network_name     = "backend-vpc"
       enable_flow_logs = true
@@ -201,19 +201,19 @@ module "complex_multi_project" {
         }
       ]
     },
-    
+
     # Data analytics project
     {
       project_id      = "${var.project_prefix}-analytics"
       billing_account = var.billing_account
       environment     = "production"
       budget_amount   = 5000
-      
+
       labels = {
         application = "analytics"
         tier        = "data"
       }
-      
+
       activate_apis = [
         "bigquery.googleapis.com",
         "dataflow.googleapis.com",
@@ -221,7 +221,7 @@ module "complex_multi_project" {
         "datacatalog.googleapis.com",
         "dataplex.googleapis.com",
       ]
-      
+
       # Analytics needs more permissions
       terraform_sa_roles = [
         "roles/bigquery.admin",
@@ -229,7 +229,7 @@ module "complex_multi_project" {
         "roles/composer.admin",
         "roles/storage.admin",
       ]
-      
+
       custom_service_accounts = {
         etl = {
           account_id   = "etl-pipeline"
@@ -249,14 +249,14 @@ module "complex_multi_project" {
           ]
         }
       }
-      
+
       # Different state bucket settings for analytics
-      state_bucket_location = "us"  # Multi-region for analytics
-      storage_class        = "STANDARD"
+      state_bucket_location = "us" # Multi-region for analytics
+      storage_class         = "STANDARD"
       lifecycle_rules = [
         {
           action = {
-            type = "SetStorageClass"
+            type          = "SetStorageClass"
             storage_class = "NEARLINE"
           }
           condition = {
@@ -265,7 +265,7 @@ module "complex_multi_project" {
         },
         {
           action = {
-            type = "SetStorageClass"
+            type          = "SetStorageClass"
             storage_class = "COLDLINE"
           }
           condition = {
@@ -274,19 +274,19 @@ module "complex_multi_project" {
         }
       ]
     },
-    
+
     # Shared services project
     {
       project_id      = "${var.project_prefix}-shared"
       billing_account = var.billing_account
       environment     = "production"
       budget_amount   = 1500
-      
+
       labels = {
         application = "shared"
         tier        = "infrastructure"
       }
-      
+
       activate_apis = [
         "artifactregistry.googleapis.com",
         "containerscanning.googleapis.com",
@@ -294,7 +294,7 @@ module "complex_multi_project" {
         "certificatemanager.googleapis.com",
         "dns.googleapis.com",
       ]
-      
+
       custom_service_accounts = {
         registry = {
           account_id   = "artifact-registry"
@@ -305,7 +305,7 @@ module "complex_multi_project" {
           ]
         }
       }
-      
+
       # Shared services accessible from all repos
       workload_identity_providers = {
         github = {
@@ -321,12 +321,12 @@ module "complex_multi_project" {
       }
     }
   ]
-  
+
   # Enable all features
   create_state_buckets     = true
   create_service_accounts  = true
   enable_workload_identity = true
-  
+
   # Deployment settings
   parallel_deployments     = true
   error_on_partial_failure = false
@@ -336,7 +336,7 @@ module "complex_multi_project" {
 locals {
   # Load project list from JSON file
   project_data = jsondecode(file("${path.module}/projects.json"))
-  
+
   # Transform to required format
   projects_from_json = [for p in local.project_data.projects : {
     project_id      = p.id
@@ -351,22 +351,22 @@ locals {
 
 module "json_based_deployment" {
   source = "../../modules/multi-project"
-  
+
   deployment_name = "json-deployment"
   project_group   = local.project_data.group
   org_id          = local.project_data.organization
-  
+
   projects = local.projects_from_json
 }
 
 # Example 4: Environment-based deployment
 module "environment_deployment" {
   source = "../../modules/multi-project"
-  
+
   deployment_name = "environment-based"
   project_group   = "all-environments"
   org_id          = var.organization_id
-  
+
   projects = concat(
     # Development projects
     [for i in range(var.dev_project_count) : {
@@ -379,7 +379,7 @@ module "environment_deployment" {
         auto_delete = "true"
       }
     }],
-    
+
     # Staging projects
     [for i in range(var.staging_project_count) : {
       project_id      = "${var.project_prefix}-staging-${i + 1}"
@@ -390,7 +390,7 @@ module "environment_deployment" {
         environment = "staging"
       }
     }],
-    
+
     # Production projects
     [for i in range(var.prod_project_count) : {
       project_id      = "${var.project_prefix}-prod-${i + 1}"

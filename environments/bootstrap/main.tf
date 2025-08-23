@@ -150,11 +150,11 @@ module "github_workload_identity" {
   source = "../../modules/workload-identity"
   count  = var.enable_workload_identity ? 1 : 0
 
-  project_id    = google_project.bootstrap.project_id
-  pool_id       = "github-pool"
-  provider_id   = "github-provider"
-  github_org    = var.github_org
-  github_repo   = var.github_repo
+  project_id  = google_project.bootstrap.project_id
+  pool_id     = "github-pool"
+  provider_id = "github-provider"
+  github_org  = var.github_org
+  github_repo = var.github_repo
 
   service_account_email = google_service_account.terraform.email
 

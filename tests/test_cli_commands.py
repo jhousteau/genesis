@@ -17,52 +17,55 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "bin"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "setup-project"))
 sys.path.insert(0, str(Path(__file__).parent.parent / "lib" / "python"))
 
-# Import the CLI module
-import importlib.util
-
-spec = importlib.util.spec_from_file_location(
-    "bootstrap", Path(__file__).parent.parent / "bin" / "bootstrap"
-)
-bootstrap_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(bootstrap_module)
-BootstrapCLI = bootstrap_module.BootstrapCLI
+# Import the CLI module - now handled by conftest.py fixtures
+# This will be provided by the bootstrap_cli fixture
 
 
+@pytest.mark.cli
 class TestBootstrapCLIInit:
     """Test CLI initialization"""
 
-    def test_cli_initialization(self):
+    def test_cli_initialization(self, bootstrap_cli):
         """Test that CLI initializes correctly"""
-        cli = BootstrapCLI()
+        cli = bootstrap_cli
 
         assert cli.bootstrap_root is not None
         assert cli.projects_dir.exists()
         assert cli.registry_file is not None
         assert cli.setup_project is not None
 
-    def test_cli_creates_projects_directory(self):
+    def test_cli_creates_projects_directory(self, temp_dir):
         """Test that CLI creates projects directory if it doesn't exist"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            test_root = Path(tmpdir) / "test_bootstrap"
-            test_root.mkdir()
+        test_root = temp_dir / "test_bootstrap"
+        test_root.mkdir()
 
-            with patch("pathlib.Path.resolve") as mock_resolve:
-                mock_resolve.return_value = test_root
+        with patch("pathlib.Path.resolve") as mock_resolve:
+            mock_resolve.return_value = test_root
 
-                cli = BootstrapCLI()
-                assert (test_root / "projects").exists()
+            # Import here to avoid import issues
+            import importlib.util
+            from pathlib import Path
+
+            spec = importlib.util.spec_from_file_location(
+                "bootstrap", Path(__file__).parent.parent / "bin" / "bootstrap"
+            )
+            bootstrap_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(bootstrap_module)
+
+            cli = bootstrap_module.BootstrapCLI()
+            assert (test_root / "projects").exists()
 
 
+@pytest.mark.cli
 class TestNewCommand:
     """Test 'bootstrap new' command"""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self, bootstrap_cli, temp_dir):
         """Setup test environment"""
-        self.cli = BootstrapCLI()
-        self.test_dir = tempfile.mkdtemp(prefix="test_new_")
+        self.cli = bootstrap_cli
+        self.test_dir = temp_dir
         yield
-        shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def test_new_project_basic(self):
         """Test creating a new project with basic options"""
