@@ -54,7 +54,9 @@ def test_capture_state_respects_gitignore(test_project):
 
     # Check that no files from gitignored dirs are present
     for excluded_path in excluded_paths:
-        assert excluded_path not in state.keys(), f"Found gitignored file {excluded_path} in state"
+        assert (
+            excluded_path not in state.keys()
+        ), f"Found gitignored file {excluded_path} in state"
 
 
 def test_capture_state_without_gitignore(tmp_path):

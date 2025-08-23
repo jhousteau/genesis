@@ -28,15 +28,23 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from core.lifecycle.manager import LifecycleManager  # Core classes
-from core.lifecycle.manager import (LifecycleMetrics, ServiceState,
-                                    configure_lifecycle_manager,
-                                    create_kubernetes_probes,
-                                    get_lifecycle_manager)
-from core.lifecycle.startup import (DependencyCheck, DependencyType,
-                                    StartupHook, StartupManager,
-                                    StartupMetrics, StartupPhase,
-                                    StartupStatus)
+from core.lifecycle.manager import (
+    LifecycleManager,  # Core classes
+    LifecycleMetrics,
+    ServiceState,
+    configure_lifecycle_manager,
+    create_kubernetes_probes,
+    get_lifecycle_manager,
+)
+from core.lifecycle.startup import (
+    DependencyCheck,
+    DependencyType,
+    StartupHook,
+    StartupManager,
+    StartupMetrics,
+    StartupPhase,
+    StartupStatus,
+)
 
 
 class TestServiceState:

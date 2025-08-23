@@ -25,10 +25,14 @@ Example:
 
 import logging
 
-from .circuit_breaker import (CircuitBreaker, CircuitBreakerError,
-                              CircuitBreakerState)
-from .policies import (AGGRESSIVE_POLICY, CONSERVATIVE_POLICY, DEFAULT_POLICY,
-                       create_policy, create_circuit_breaker_policy)
+from .circuit_breaker import CircuitBreaker, CircuitBreakerError, CircuitBreakerState
+from .policies import (
+    AGGRESSIVE_POLICY,
+    CONSERVATIVE_POLICY,
+    DEFAULT_POLICY,
+    create_policy,
+    create_circuit_breaker_policy,
+)
 # Import main components (will be implemented)
 from .retry import (BackoffStrategy, RetryExecutor, RetryPolicy, retry,
                     retry_async)

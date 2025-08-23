@@ -26,10 +26,21 @@ from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
 
 # Genesis Core imports
-from core import (AGGRESSIVE_POLICY, CircuitBreaker, Context, HealthCheck,
-                  HealthStatus, HTTPHealthCheck, TraceContext, configure_core,
-                  context_span, get_health_registry, get_logger, handle_error,
-                  retry_async)
+from core import (
+    AGGRESSIVE_POLICY,
+    CircuitBreaker,
+    Context,
+    HealthCheck,
+    HealthStatus,
+    HTTPHealthCheck,
+    TraceContext,
+    configure_core,
+    context_span,
+    get_health_registry,
+    get_logger,
+    handle_error,
+    retry_async,
+)
 
 
 @dataclass
