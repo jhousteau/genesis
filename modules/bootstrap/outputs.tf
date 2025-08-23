@@ -174,7 +174,7 @@ output "essential_contacts" {
   value = {
     for k, v in google_essential_contacts_contact.contacts :
     k => {
-      email                = v.email
+      email                   = v.email
       notification_categories = v.notification_category_subscriptions
     }
   }
@@ -187,7 +187,7 @@ output "org_policies" {
     for k, v in google_project_organization_policy.org_policies :
     k => {
       constraint = v.constraint
-      project   = v.project
+      project    = v.project
     }
   }
 }
@@ -208,10 +208,10 @@ output "terraform_backend_config" {
 output "budget_details" {
   description = "Detailed budget configuration and status"
   value = var.budget_amount != null ? {
-    name            = google_billing_budget.budget[0].name
-    amount          = var.budget_amount
-    calendar_period = var.budget_calendar_period
-    alert_percentages = var.budget_alert_percentages
+    name                  = google_billing_budget.budget[0].name
+    amount                = var.budget_amount
+    calendar_period       = var.budget_calendar_period
+    alert_percentages     = var.budget_alert_percentages
     notification_channels = var.budget_notification_channels
   } : null
 }
@@ -283,8 +283,8 @@ output "logging_sinks" {
     for sink_name, sink in google_logging_project_sink.sinks :
     sink_name => {
       name                   = sink.name
-      destination           = sink.destination
-      filter                = sink.filter
+      destination            = sink.destination
+      filter                 = sink.filter
       unique_writer_identity = sink.unique_writer_identity
       writer_identity        = sink.writer_identity
     }
@@ -319,9 +319,9 @@ output "vpc_service_controls" {
 output "audit_config" {
   description = "Project audit logging configuration"
   value = length(var.audit_log_config.data_access) > 0 ? {
-    enabled        = true
+    enabled          = true
     data_access_logs = var.audit_log_config.data_access
-  } : {
+    } : {
     enabled = false
   }
 }
@@ -334,8 +334,8 @@ output "multi_region_buckets" {
   value = {
     for region, bucket in google_storage_bucket.bootstrap_state_replica :
     region => {
-      name = bucket.name
-      url  = bucket.url
+      name     = bucket.name
+      url      = bucket.url
       location = bucket.location
     }
   }
@@ -349,8 +349,8 @@ output "cmek_keys" {
     keys = {
       for service, key in google_kms_crypto_key.bootstrap_keys :
       service => {
-        name = key.name
-        id   = key.id
+        name    = key.name
+        id      = key.id
         purpose = key.purpose
       }
     }
@@ -443,10 +443,10 @@ output "backup_jobs" {
 output "cost_anomaly_budget" {
   description = "Cost anomaly detection budget configuration"
   value = var.cost_optimization.cost_anomaly_detection.enabled && var.budget_amount != null ? {
-    name            = google_billing_budget.cost_anomaly_budget[0].name
-    display_name    = google_billing_budget.cost_anomaly_budget[0].display_name
-    threshold       = var.cost_optimization.cost_anomaly_detection.threshold_percentage
-    notifications   = var.cost_optimization.cost_anomaly_detection.notification_channels
+    name          = google_billing_budget.cost_anomaly_budget[0].name
+    display_name  = google_billing_budget.cost_anomaly_budget[0].display_name
+    threshold     = var.cost_optimization.cost_anomaly_detection.threshold_percentage
+    notifications = var.cost_optimization.cost_anomaly_detection.notification_channels
   } : null
 }
 
@@ -479,9 +479,9 @@ output "binary_authorization" {
 output "vulnerability_scanning" {
   description = "Container vulnerability scanning configuration"
   value = var.enhanced_security.vulnerability_scanning.enabled ? {
-    note_name   = google_container_analysis_note.vulnerability_note[0].name
-    project     = google_container_analysis_note.vulnerability_note[0].project
-    frequency   = var.enhanced_security.vulnerability_scanning.scan_frequency
+    note_name = google_container_analysis_note.vulnerability_note[0].name
+    project   = google_container_analysis_note.vulnerability_note[0].project
+    frequency = var.enhanced_security.vulnerability_scanning.scan_frequency
   } : null
 }
 
@@ -513,13 +513,13 @@ output "enhanced_project_summary" {
     }
     security = {
       enhanced_features = {
-        binary_authorization     = var.enhanced_security.enable_binary_authorization
-        workload_identity       = var.enhanced_security.enable_workload_identity
+        binary_authorization   = var.enhanced_security.enable_binary_authorization
+        workload_identity      = var.enhanced_security.enable_workload_identity
         shielded_vms           = var.enhanced_security.enable_shielded_vms
         os_login               = var.enhanced_security.enable_os_login
         confidential_computing = var.enhanced_security.enable_confidential_computing
         vulnerability_scanning = var.enhanced_security.vulnerability_scanning.enabled
-        cmek_enabled          = var.enhanced_security.cmek_config.enabled
+        cmek_enabled           = var.enhanced_security.cmek_config.enabled
       }
       security_center_enabled = var.enable_security_center
       vpc_service_controls    = var.vpc_service_controls != null
@@ -528,17 +528,17 @@ output "enhanced_project_summary" {
     }
     compliance = {
       automation_enabled = var.compliance_automation.enabled
-      frameworks        = var.compliance_automation.frameworks
-      auto_remediation  = var.compliance_automation.auto_remediation
+      frameworks         = var.compliance_automation.frameworks
+      auto_remediation   = var.compliance_automation.auto_remediation
       policy_enforcement = var.compliance_automation.policy_enforcement
     }
     cost_optimization = {
       committed_use_discounts = var.cost_optimization.enable_committed_use_discounts
       sustained_use_discounts = var.cost_optimization.enable_sustained_use_discounts
-      preemptible_instances  = var.cost_optimization.enable_preemptible_instances
-      anomaly_detection      = var.cost_optimization.cost_anomaly_detection.enabled
-      resource_right_sizing  = var.cost_optimization.resource_right_sizing
-      idle_detection         = var.cost_optimization.idle_resource_detection
+      preemptible_instances   = var.cost_optimization.enable_preemptible_instances
+      anomaly_detection       = var.cost_optimization.cost_anomaly_detection.enabled
+      resource_right_sizing   = var.cost_optimization.resource_right_sizing
+      idle_detection          = var.cost_optimization.idle_resource_detection
     }
     monitoring = {
       workspace_enabled    = var.enable_monitoring_workspace
@@ -547,31 +547,31 @@ output "enhanced_project_summary" {
       custom_metrics_count = length(var.advanced_monitoring.custom_metrics)
       log_metrics_count    = length(var.advanced_monitoring.log_based_metrics)
       alert_policies_count = length(var.advanced_monitoring.alerting_policies)
-      logging_sinks       = length(var.logging_sinks)
+      logging_sinks        = length(var.logging_sinks)
     }
     disaster_recovery = {
-      enabled               = var.disaster_recovery.enabled
+      enabled                  = var.disaster_recovery.enabled
       cross_region_replication = var.disaster_recovery.cross_region_replication.enabled
-      automated_failover    = var.disaster_recovery.failover_config.automated_failover
-      rto                  = var.disaster_recovery.failover_config.recovery_time_objective
-      rpo                  = var.disaster_recovery.failover_config.recovery_point_objective
+      automated_failover       = var.disaster_recovery.failover_config.automated_failover
+      rto                      = var.disaster_recovery.failover_config.recovery_time_objective
+      rpo                      = var.disaster_recovery.failover_config.recovery_point_objective
     }
     network_security = {
-      private_google_access    = var.network_security.enable_private_google_access
-      private_service_connect  = var.network_security.enable_private_service_connect
+      private_google_access   = var.network_security.enable_private_google_access
+      private_service_connect = var.network_security.enable_private_service_connect
       cloud_armor             = var.network_security.enable_cloud_armor
       ddos_protection         = var.network_security.enable_ddos_protection
       firewall_rules_count    = length(var.network_security.firewall_rules)
     }
     advanced_iam = {
-      conditions_enabled       = var.advanced_iam.enable_iam_conditions
-      custom_roles_count      = length(var.advanced_iam.custom_roles)
-      conditional_bindings    = length(var.advanced_iam.conditional_bindings)
-      impersonation_enabled   = var.advanced_iam.service_account_impersonation.enabled
+      conditions_enabled    = var.advanced_iam.enable_iam_conditions
+      custom_roles_count    = length(var.advanced_iam.custom_roles)
+      conditional_bindings  = length(var.advanced_iam.conditional_bindings)
+      impersonation_enabled = var.advanced_iam.service_account_impersonation.enabled
     }
-    apis_enabled    = length(local.activate_apis)
-    labels_applied  = local.merged_labels
-    created_at      = timestamp()
+    apis_enabled   = length(local.activate_apis)
+    labels_applied = local.merged_labels
+    created_at     = timestamp()
   }
 }
 
@@ -606,8 +606,8 @@ output "project_summary" {
       alerts_enabled    = var.enable_monitoring_alerts
       logging_sinks     = length(var.logging_sinks)
     }
-    apis_enabled    = length(local.activate_apis)
-    labels_applied  = local.merged_labels
-    created_at      = timestamp()
+    apis_enabled   = length(local.activate_apis)
+    labels_applied = local.merged_labels
+    created_at     = timestamp()
   }
 }

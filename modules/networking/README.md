@@ -23,11 +23,11 @@ This module provides comprehensive networking infrastructure for Google Cloud Pl
 ```hcl
 module "networking" {
   source = "./modules/networking"
-  
+
   project_id   = "my-project-id"
   name_prefix  = "prod"
   environment  = "production"
-  
+
   subnets = [
     {
       name              = "web-subnet"
@@ -59,15 +59,15 @@ module "networking" {
 ```hcl
 module "networking" {
   source = "./modules/networking"
-  
+
   project_id   = "my-project-id"
   name_prefix  = "secure"
   environment  = "production"
-  
+
   # VPC Configuration
   routing_mode = "GLOBAL"
   enable_ipv6  = false
-  
+
   # Subnets
   subnets = [
     {
@@ -85,7 +85,7 @@ module "networking" {
       enable_flow_logs      = true
     }
   ]
-  
+
   # NAT Gateway
   nat_gateways = [
     {
@@ -93,7 +93,7 @@ module "networking" {
       region = "us-central1"
     }
   ]
-  
+
   # Firewall Rules
   firewall_rules = [
     {
@@ -123,7 +123,7 @@ module "networking" {
       ]
     }
   ]
-  
+
   # DNS
   dns_zones = [
     {
@@ -141,11 +141,11 @@ module "networking" {
 ```hcl
 module "networking" {
   source = "./modules/networking"
-  
+
   project_id   = "my-project-id"
   name_prefix  = "global"
   environment  = "production"
-  
+
   # Multi-region configuration
   multi_region_config = {
     enabled               = true
@@ -153,7 +153,7 @@ module "networking" {
     secondary_region     = "us-east1"
     enable_cross_region_lb = true
   }
-  
+
   # Subnets in multiple regions
   subnets = [
     {
@@ -167,7 +167,7 @@ module "networking" {
       ip_cidr_range = "10.0.2.0/24"
     }
   ]
-  
+
   # NAT gateways in both regions
   nat_gateways = [
     {
@@ -187,11 +187,11 @@ module "networking" {
 ```hcl
 module "networking" {
   source = "./modules/networking"
-  
+
   project_id   = "my-project-id"
   name_prefix  = "vpn-connected"
   environment  = "production"
-  
+
   # VPN Gateways
   vpn_gateways = [
     {
@@ -307,7 +307,7 @@ module "networking" {
 
 module "compute" {
   source = "./modules/compute"
-  
+
   network_id    = module.networking.network_id
   subnet_ids    = module.networking.subnet_ids
   # compute configuration
@@ -319,7 +319,7 @@ module "compute" {
 ```hcl
 module "security" {
   source = "./modules/security"
-  
+
   network_id     = module.networking.network_id
   firewall_rules = module.networking.firewall_rules
   # security configuration

@@ -209,8 +209,8 @@ variable "org_policies" {
   description = "Map of organization policies to apply to the project"
   type = map(object({
     enforce = optional(bool)
-    allow = optional(list(string), [])
-    deny  = optional(list(string), [])
+    allow   = optional(list(string), [])
+    deny    = optional(list(string), [])
   }))
   default = {}
 }
@@ -245,7 +245,7 @@ variable "default_service_account_roles" {
 variable "essential_contacts" {
   description = "Map of essential contacts for the project by notification category"
   type = map(object({
-    email                    = string
+    email                   = string
     notification_categories = list(string)
   }))
   default = {}
@@ -328,10 +328,10 @@ variable "budget_custom_period" {
 variable "budget_filters" {
   description = "Budget filters for services, regions, labels, etc."
   type = object({
-    services              = optional(list(string), [])
-    subaccounts          = optional(list(string), [])
-    regions              = optional(list(string), [])
-    labels               = optional(map(list(string)), {})
+    services               = optional(list(string), [])
+    subaccounts            = optional(list(string), [])
+    regions                = optional(list(string), [])
+    labels                 = optional(map(list(string)), {})
     credit_types_treatment = optional(string, "INCLUDE_ALL_CREDITS")
   })
   default = {}
@@ -417,10 +417,10 @@ variable "logging_sinks" {
   description = "Logging sinks configuration for the project"
   type = list(object({
     name                   = string
-    destination           = string
-    filter                = optional(string, "")
-    description           = optional(string)
-    disabled              = optional(bool, false)
+    destination            = string
+    filter                 = optional(string, "")
+    description            = optional(string)
+    disabled               = optional(bool, false)
     unique_writer_identity = optional(bool, true)
     bigquery_options = optional(object({
       use_partitioned_tables = optional(bool, false)
@@ -452,11 +452,11 @@ variable "enable_private_service_connect" {
 variable "quota_overrides" {
   description = "Service quota overrides for the project"
   type = list(object({
-    service     = string
-    metric      = string
-    limit       = string
-    value       = number
-    dimensions  = optional(map(string), {})
+    service    = string
+    metric     = string
+    limit      = string
+    value      = number
+    dimensions = optional(map(string), {})
   }))
   default = []
 }
@@ -477,34 +477,34 @@ variable "advanced_iam" {
   type = object({
     enable_iam_conditions = bool
     custom_roles = list(object({
-      role_id = string
-      title = string
+      role_id     = string
+      title       = string
       description = string
       permissions = list(string)
-      stage = string
+      stage       = string
     }))
     conditional_bindings = list(object({
-      role = string
+      role    = string
       members = list(string)
       condition = object({
-        title = string
+        title       = string
         description = string
-        expression = string
+        expression  = string
       })
     }))
     service_account_impersonation = object({
-      enabled = bool
-      allowed_impersonators = list(string)
+      enabled                 = bool
+      allowed_impersonators   = list(string)
       target_service_accounts = list(string)
     })
   })
   default = {
     enable_iam_conditions = false
-    custom_roles = []
-    conditional_bindings = []
+    custom_roles          = []
+    conditional_bindings  = []
     service_account_impersonation = {
-      enabled = false
-      allowed_impersonators = []
+      enabled                 = false
+      allowed_impersonators   = []
       target_service_accounts = []
     }
   }
@@ -514,10 +514,10 @@ variable "advanced_iam" {
 variable "vpc_service_controls" {
   description = "VPC Service Controls configuration"
   type = object({
-    perimeter_name = string
-    resources      = optional(list(string), [])
+    perimeter_name      = string
+    resources           = optional(list(string), [])
     restricted_services = optional(list(string), [])
-    access_levels = optional(list(string), [])
+    access_levels       = optional(list(string), [])
     vpc_accessible_services = optional(object({
       enable_restriction = bool
       allowed_services   = list(string)
@@ -530,22 +530,22 @@ variable "vpc_service_controls" {
 variable "multi_region_config" {
   description = "Multi-region configuration for enhanced availability and disaster recovery"
   type = object({
-    enabled = bool
-    primary_region = string
+    enabled           = bool
+    primary_region    = string
     secondary_regions = list(string)
     replication_config = optional(object({
-      storage_replication = bool
+      storage_replication   = bool
       backup_retention_days = number
-      cross_region_backup = bool
-    }), {
-      storage_replication = true
+      cross_region_backup   = bool
+      }), {
+      storage_replication   = true
       backup_retention_days = 30
-      cross_region_backup = true
+      cross_region_backup   = true
     })
   })
   default = {
-    enabled = false
-    primary_region = "us-central1"
+    enabled           = false
+    primary_region    = "us-central1"
     secondary_regions = ["us-east1", "us-west1"]
   }
 }
@@ -556,28 +556,28 @@ variable "cost_optimization" {
   type = object({
     enable_committed_use_discounts = bool
     enable_sustained_use_discounts = bool
-    enable_preemptible_instances = bool
-    resource_right_sizing = bool
-    idle_resource_detection = bool
+    enable_preemptible_instances   = bool
+    resource_right_sizing          = bool
+    idle_resource_detection        = bool
     cost_anomaly_detection = object({
-      enabled = bool
-      threshold_percentage = number
+      enabled               = bool
+      threshold_percentage  = number
       notification_channels = list(string)
     })
     resource_quotas = map(object({
-      limit = number
+      limit  = number
       metric = string
     }))
   })
   default = {
     enable_committed_use_discounts = false
     enable_sustained_use_discounts = true
-    enable_preemptible_instances = false
-    resource_right_sizing = true
-    idle_resource_detection = true
+    enable_preemptible_instances   = false
+    resource_right_sizing          = true
+    idle_resource_detection        = true
     cost_anomaly_detection = {
-      enabled = false
-      threshold_percentage = 20
+      enabled               = false
+      threshold_percentage  = 20
       notification_channels = []
     }
     resource_quotas = {}
@@ -588,52 +588,52 @@ variable "cost_optimization" {
 variable "enhanced_security" {
   description = "Enhanced security configuration"
   type = object({
-    enable_binary_authorization = bool
-    enable_workload_identity = bool
-    enable_shielded_vms = bool
-    enable_os_login = bool
+    enable_binary_authorization   = bool
+    enable_workload_identity      = bool
+    enable_shielded_vms           = bool
+    enable_os_login               = bool
     enable_confidential_computing = bool
     vulnerability_scanning = object({
-      enabled = bool
-      scan_frequency = string
+      enabled               = bool
+      scan_frequency        = string
       notification_channels = list(string)
     })
     security_policies = list(object({
-      name = string
+      name        = string
       description = string
       rules = list(object({
-        action = string
+        action   = string
         priority = number
         match = object({
           src_ip_ranges = list(string)
-          expr = optional(string)
+          expr          = optional(string)
         })
       }))
     }))
     cmek_config = object({
-      enabled = bool
-      key_ring_location = string
+      enabled             = bool
+      key_ring_location   = string
       key_rotation_period = string
-      services = list(string)
+      services            = list(string)
     })
   })
   default = {
-    enable_binary_authorization = false
-    enable_workload_identity = true
-    enable_shielded_vms = true
-    enable_os_login = true
+    enable_binary_authorization   = false
+    enable_workload_identity      = true
+    enable_shielded_vms           = true
+    enable_os_login               = true
     enable_confidential_computing = false
     vulnerability_scanning = {
-      enabled = false
-      scan_frequency = "DAILY"
+      enabled               = false
+      scan_frequency        = "DAILY"
       notification_channels = []
     }
     security_policies = []
     cmek_config = {
-      enabled = false
-      key_ring_location = "global"
+      enabled             = false
+      key_ring_location   = "global"
       key_rotation_period = "7776000s"
-      services = ["storage.googleapis.com", "bigquery.googleapis.com"]
+      services            = ["storage.googleapis.com", "bigquery.googleapis.com"]
     }
   }
 }
@@ -642,45 +642,45 @@ variable "enhanced_security" {
 variable "compliance_automation" {
   description = "Compliance automation configuration"
   type = object({
-    enabled = bool
-    frameworks = list(string)
+    enabled          = bool
+    frameworks       = list(string)
     auto_remediation = bool
     compliance_scanning = object({
-      enabled = bool
+      enabled        = bool
       scan_frequency = string
       remediation_config = object({
-        auto_fix_low_severity = bool
+        auto_fix_low_severity    = bool
         auto_fix_medium_severity = bool
-        notification_channels = list(string)
+        notification_channels    = list(string)
       })
     })
     policy_enforcement = object({
       enforce_resource_locations = bool
-      enforce_resource_naming = bool
-      enforce_encryption = bool
-      allowed_locations = list(string)
-      naming_convention = string
+      enforce_resource_naming    = bool
+      enforce_encryption         = bool
+      allowed_locations          = list(string)
+      naming_convention          = string
     })
   })
   default = {
-    enabled = false
-    frameworks = ["CIS", "PCI-DSS", "SOC2"]
+    enabled          = false
+    frameworks       = ["CIS", "PCI-DSS", "SOC2"]
     auto_remediation = false
     compliance_scanning = {
-      enabled = false
+      enabled        = false
       scan_frequency = "DAILY"
       remediation_config = {
-        auto_fix_low_severity = false
+        auto_fix_low_severity    = false
         auto_fix_medium_severity = false
-        notification_channels = []
+        notification_channels    = []
       }
     }
     policy_enforcement = {
       enforce_resource_locations = false
-      enforce_resource_naming = false
-      enforce_encryption = false
-      allowed_locations = ["us-central1", "us-east1"]
-      naming_convention = "^[a-z][a-z0-9-]*[a-z0-9]$"
+      enforce_resource_naming    = false
+      enforce_encryption         = false
+      allowed_locations          = ["us-central1", "us-east1"]
+      naming_convention          = "^[a-z][a-z0-9-]*[a-z0-9]$"
     }
   }
 }
@@ -689,45 +689,45 @@ variable "compliance_automation" {
 variable "network_security" {
   description = "Advanced network security configuration"
   type = object({
-    enable_private_google_access = bool
+    enable_private_google_access   = bool
     enable_private_service_connect = bool
-    enable_cloud_armor = bool
-    enable_ddos_protection = bool
+    enable_cloud_armor             = bool
+    enable_ddos_protection         = bool
     firewall_rules = list(object({
-      name = string
-      direction = string
-      priority = number
+      name          = string
+      direction     = string
+      priority      = number
       source_ranges = list(string)
-      target_tags = list(string)
+      target_tags   = list(string)
       allow = list(object({
         protocol = string
-        ports = list(string)
+        ports    = list(string)
       }))
       deny = list(object({
         protocol = string
-        ports = list(string)
+        ports    = list(string)
       }))
     }))
     network_endpoints = object({
-      enable_global_load_balancing = bool
+      enable_global_load_balancing   = bool
       enable_regional_load_balancing = bool
       ssl_certificates = list(object({
-        name = string
+        name    = string
         domains = list(string)
         managed = bool
       }))
     })
   })
   default = {
-    enable_private_google_access = true
+    enable_private_google_access   = true
     enable_private_service_connect = false
-    enable_cloud_armor = false
-    enable_ddos_protection = false
-    firewall_rules = []
+    enable_cloud_armor             = false
+    enable_ddos_protection         = false
+    firewall_rules                 = []
     network_endpoints = {
-      enable_global_load_balancing = false
+      enable_global_load_balancing   = false
       enable_regional_load_balancing = false
-      ssl_certificates = []
+      ssl_certificates               = []
     }
   }
 }
@@ -736,44 +736,44 @@ variable "network_security" {
 variable "disaster_recovery" {
   description = "Disaster recovery configuration"
   type = object({
-    enabled = bool
+    enabled         = bool
     backup_schedule = string
     retention_policy = object({
-      daily_backups = number
-      weekly_backups = number
+      daily_backups   = number
+      weekly_backups  = number
       monthly_backups = number
-      yearly_backups = number
+      yearly_backups  = number
     })
     cross_region_replication = object({
-      enabled = bool
-      target_regions = list(string)
+      enabled              = bool
+      target_regions       = list(string)
       replication_schedule = string
     })
     failover_config = object({
-      automated_failover = bool
-      failover_threshold = number
-      recovery_time_objective = string
+      automated_failover       = bool
+      failover_threshold       = number
+      recovery_time_objective  = string
       recovery_point_objective = string
     })
   })
   default = {
-    enabled = false
+    enabled         = false
     backup_schedule = "0 2 * * *"
     retention_policy = {
-      daily_backups = 7
-      weekly_backups = 4
+      daily_backups   = 7
+      weekly_backups  = 4
       monthly_backups = 12
-      yearly_backups = 7
+      yearly_backups  = 7
     }
     cross_region_replication = {
-      enabled = false
-      target_regions = []
+      enabled              = false
+      target_regions       = []
       replication_schedule = "0 4 * * *"
     }
     failover_config = {
-      automated_failover = false
-      failover_threshold = 95
-      recovery_time_objective = "4h"
+      automated_failover       = false
+      failover_threshold       = 95
+      recovery_time_objective  = "4h"
       recovery_point_objective = "1h"
     }
   }
@@ -785,48 +785,48 @@ variable "advanced_monitoring" {
   type = object({
     enabled = bool
     custom_metrics = list(object({
-      name = string
+      name        = string
       description = string
       metric_kind = string
-      value_type = string
-      labels = map(string)
+      value_type  = string
+      labels      = map(string)
     }))
     sli_slo_config = object({
-      enabled = bool
+      enabled             = bool
       availability_target = number
-      latency_target = number
-      error_rate_target = number
+      latency_target      = number
+      error_rate_target   = number
     })
     alerting_policies = list(object({
-      name = string
+      name        = string
       description = string
       conditions = list(object({
-        display_name = string
-        filter = string
-        comparison = string
+        display_name    = string
+        filter          = string
+        comparison      = string
         threshold_value = number
-        duration = string
+        duration        = string
       }))
       notification_channels = list(string)
     }))
     log_based_metrics = list(object({
-      name = string
+      name        = string
       description = string
-      filter = string
+      filter      = string
       metric_descriptor = object({
         metric_kind = string
-        value_type = string
+        value_type  = string
       })
     }))
   })
   default = {
-    enabled = false
+    enabled        = false
     custom_metrics = []
     sli_slo_config = {
-      enabled = false
+      enabled             = false
       availability_target = 99.9
-      latency_target = 100
-      error_rate_target = 1.0
+      latency_target      = 100
+      error_rate_target   = 1.0
     }
     alerting_policies = []
     log_based_metrics = []

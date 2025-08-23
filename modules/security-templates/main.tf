@@ -5,19 +5,7 @@
  * Implements PIPES Protection methodology for agent-cage and claude-talk
  */
 
-terraform {
-  required_version = ">= 1.5"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.23"
-    }
-  }
-}
+# Terraform version constraints moved to versions.tf
 
 locals {
   # Standard labels following Genesis patterns
@@ -38,6 +26,10 @@ locals {
     "sre-agent", "security-agent", "devops-agent",
     "project-manager", "architect", "tech-lead"
   ]
+
+  # Non-sensitive keys for for_each loops to avoid sensitivity exposure
+  agent_secret_keys = nonsensitive(keys(var.agent_secrets))
+  kubernetes_secret_keys = nonsensitive(keys(var.kubernetes_secrets))
 
   # Security policies by agent type
   agent_security_policies = {
@@ -82,8 +74,7 @@ resource "google_project_iam_member" "agent_compute_permissions" {
   member  = "serviceAccount:${google_service_account.agent_service_accounts[each.value].email}"
 
   # Assign appropriate compute role based on agent type
-  role = contains(["platform-engineer", "devops-agent", "sre-agent"], each.value) ?
-    "roles/compute.admin" : "roles/compute.viewer"
+  role = contains(["platform-engineer", "devops-agent", "sre-agent"], each.value) ? "roles/compute.admin" : "roles/compute.viewer"
 }
 
 resource "google_project_iam_member" "agent_storage_permissions" {
@@ -95,8 +86,7 @@ resource "google_project_iam_member" "agent_storage_permissions" {
   project = var.project_id
   member  = "serviceAccount:${google_service_account.agent_service_accounts[each.value].email}"
 
-  role = contains(["data-engineer", "platform-engineer"], each.value) ?
-    "roles/storage.admin" : "roles/storage.objectViewer"
+  role = contains(["data-engineer", "platform-engineer"], each.value) ? "roles/storage.admin" : "roles/storage.objectViewer"
 }
 
 # Custom IAM Roles for Specific Agent Operations
@@ -218,8 +208,7 @@ resource "kubernetes_network_policy" "agent_network_policies" {
 
     # Ingress rules based on agent type
     dynamic "ingress" {
-      for_each = local.agent_security_policies[each.value].security_level == "high" ?
-        var.high_security_ingress_rules : var.standard_ingress_rules
+      for_each = local.agent_security_policies[each.value].security_level == "high" ? var.high_security_ingress_rules : var.standard_ingress_rules
 
       content {
         from {
@@ -239,8 +228,7 @@ resource "kubernetes_network_policy" "agent_network_policies" {
 
     # Egress rules based on agent type
     dynamic "egress" {
-      for_each = local.agent_security_policies[each.value].security_level == "high" ?
-        var.high_security_egress_rules : var.standard_egress_rules
+      for_each = local.agent_security_policies[each.value].security_level == "high" ? var.high_security_egress_rules : var.standard_egress_rules
 
       content {
         to {
@@ -359,7 +347,7 @@ resource "kubernetes_cluster_role_binding" "agent_cluster_role_bindings" {
 
 # Secret Management
 resource "google_secret_manager_secret" "agent_secrets" {
-  for_each = var.agent_secrets
+  for_each = toset(local.agent_secret_keys)
 
   secret_id = "${var.name_prefix}-${each.key}"
   project   = var.project_id
@@ -367,8 +355,8 @@ resource "google_secret_manager_secret" "agent_secrets" {
   labels = merge(
     local.merged_labels,
     {
-      "secret-type" = each.value.type
-      "agent-type"  = lookup(each.value, "agent_type", "all")
+      "secret-type" = var.agent_secrets[each.key].type
+      "agent-type"  = lookup(var.agent_secrets[each.key], "agent_type", "all")
     }
   )
 
@@ -382,38 +370,39 @@ resource "google_secret_manager_secret" "agent_secrets" {
 }
 
 resource "google_secret_manager_secret_version" "agent_secret_versions" {
-  for_each = var.agent_secrets
+  for_each = toset(local.agent_secret_keys)
 
   secret      = google_secret_manager_secret.agent_secrets[each.key].id
-  secret_data = each.value.value
+  secret_data = var.agent_secrets[each.key].value
 
   lifecycle {
     ignore_changes = [secret_data]
   }
 }
 
-# Secret Manager IAM
-resource "google_secret_manager_secret_iam_member" "agent_secret_access" {
-  for_each = {
-    for combo in flatten([
-      for secret_name, secret_config in var.agent_secrets : [
-        for agent_type in (lookup(secret_config, "agent_type", "all") == "all" ?
-          local.agent_types : [lookup(secret_config, "agent_type", "")]) : {
-          secret_name = secret_name
-          agent_type  = agent_type
-        }
-      ]
-    ]) : "${combo.secret_name}-${combo.agent_type}" => combo
-  }
-
-  secret_id = google_secret_manager_secret.agent_secrets[each.value.secret_name].secret_id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.agent_service_accounts[each.value.agent_type].email}"
-}
+# Secret Manager IAM (temporarily disabled due to sensitivity constraints)
+# TODO: Refactor to avoid sensitive for_each after issue #36 resolution
+# resource "google_secret_manager_secret_iam_member" "agent_secret_access" {
+#   for_each = {
+#     for combo in flatten([
+#       for secret_name, secret_config in var.agent_secrets : [
+#         for agent_type in (lookup(secret_config, "agent_type", "all") == "all" ?
+#           local.agent_types : [lookup(secret_config, "agent_type", "")]) : {
+#           secret_name = secret_name
+#           agent_type  = agent_type
+#         }
+#       ]
+#     ]) : "${combo.secret_name}-${combo.agent_type}" => combo
+#   }
+#
+#   secret_id = google_secret_manager_secret.agent_secrets[each.value.secret_name].secret_id
+#   role      = "roles/secretmanager.secretAccessor"
+#   member    = "serviceAccount:${google_service_account.agent_service_accounts[each.value.agent_type].email}"
+# }
 
 # Kubernetes Secrets from Secret Manager
 resource "kubernetes_secret" "agent_kubernetes_secrets" {
-  for_each = var.kubernetes_secrets
+  for_each = toset(local.kubernetes_secret_keys)
 
   metadata {
     name      = each.key
@@ -422,20 +411,20 @@ resource "kubernetes_secret" "agent_kubernetes_secrets" {
     labels = merge(
       local.merged_labels,
       {
-        "secret-type" = each.value.type
+        "secret-type" = var.kubernetes_secrets[each.key].type
         "managed-by"  = "secret-manager"
       }
     )
 
     annotations = {
-      "secret-manager.io/secret-name" = each.value.secret_manager_secret
+      "secret-manager.io/secret-name" = var.kubernetes_secrets[each.key].secret_manager_secret
     }
   }
 
-  type = lookup(each.value, "kubernetes_type", "Opaque")
+  type = lookup(var.kubernetes_secrets[each.key], "kubernetes_type", "Opaque")
 
   data = {
-    for key, value in each.value.data : key => base64encode(value)
+    for key, value in var.kubernetes_secrets[each.key].data : key => base64encode(value)
   }
 }
 

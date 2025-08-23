@@ -91,16 +91,16 @@ output "backend_config" {
   description = "Terraform backend configuration for other environments"
   value = {
     bucket = module.terraform_state_backend.bucket_name
-    prefix = "ENVIRONMENT_NAME/terraform/state"  # Replace ENVIRONMENT_NAME
+    prefix = "ENVIRONMENT_NAME/terraform/state" # Replace ENVIRONMENT_NAME
   }
 }
 
 # Instructions Output
 output "next_steps" {
   description = "Next steps after bootstrap"
-  value = <<-EOT
+  value       = <<-EOT
     Bootstrap complete! Next steps:
-    
+
     1. Save the Terraform service account key (if created) securely
     2. Update backend.tf in other environments with:
        bucket = "${module.terraform_state_backend.bucket_name}"

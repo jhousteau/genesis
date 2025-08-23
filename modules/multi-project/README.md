@@ -19,17 +19,17 @@ Deploy bootstrap configuration to multiple GCP projects simultaneously with a si
 ```hcl
 module "multi_project_bootstrap" {
   source = "./modules/multi-project"
-  
+
   org_id          = "123456789"
   default_region  = "us-central1"
-  
+
   projects = [
     {
       project_id      = "dev-project-1"
       billing_account = "01234-56789-ABCDEF"
     },
     {
-      project_id      = "dev-project-2"  
+      project_id      = "dev-project-2"
       billing_account = "01234-56789-ABCDEF"
     },
     {
@@ -46,24 +46,24 @@ module "multi_project_bootstrap" {
 ```hcl
 module "multi_project_bootstrap" {
   source = "./modules/multi-project"
-  
+
   deployment_name = "company-infrastructure"
   project_group   = "web-applications"
   org_id          = "123456789"
-  
+
   # Global defaults
   default_labels = {
     team        = "platform"
     cost_center = "engineering"
   }
-  
+
   default_apis = [
     "compute.googleapis.com",
     "storage.googleapis.com",
     "run.googleapis.com",
     "artifactregistry.googleapis.com",
   ]
-  
+
   # Configure Workload Identity Federation defaults
   default_wif_providers = {
     github = {
@@ -74,20 +74,20 @@ module "multi_project_bootstrap" {
       }
     }
   }
-  
+
   projects = [
     {
       project_id      = "frontend-dev"
       billing_account = "01234-56789-ABCDEF"
       environment     = "development"
       budget_amount   = 500
-      
+
       # Project-specific APIs
       activate_apis = [
         "firebase.googleapis.com",
         "firebasehosting.googleapis.com",
       ]
-      
+
       # Custom service accounts
       custom_service_accounts = {
         frontend = {
@@ -96,7 +96,7 @@ module "multi_project_bootstrap" {
           project_roles = ["roles/firebase.viewer"]
         }
       }
-      
+
       # Enable networking
       create_network = true
       subnets = [{
@@ -110,12 +110,12 @@ module "multi_project_bootstrap" {
       billing_account = "01234-56789-ABCDEF"
       environment     = "development"
       budget_amount   = 1000
-      
+
       activate_apis = [
         "cloudsql.googleapis.com",
         "redis.googleapis.com",
       ]
-      
+
       # Override WIF provider for this project
       workload_identity_providers = {
         github = {
@@ -128,7 +128,7 @@ module "multi_project_bootstrap" {
           }
         }
       }
-      
+
       create_network = true
       enable_flow_logs = true
     },
@@ -137,16 +137,16 @@ module "multi_project_bootstrap" {
       billing_account = "01234-56789-ABCDEF"
       environment     = "production"
       budget_amount   = 5000
-      
+
       activate_apis = [
         "bigquery.googleapis.com",
         "dataflow.googleapis.com",
         "composer.googleapis.com",
       ]
-      
+
       # Different storage class for data archival
       storage_class = "NEARLINE"
-      
+
       # Custom lifecycle rules for data retention
       lifecycle_rules = [{
         action = {
@@ -156,7 +156,7 @@ module "multi_project_bootstrap" {
           age = "365"
         }
       }]
-      
+
       # Larger SA roles for data processing
       terraform_sa_roles = [
         "roles/bigquery.admin",
@@ -165,12 +165,12 @@ module "multi_project_bootstrap" {
       ]
     }
   ]
-  
+
   # Feature flags
   create_state_buckets     = true
   create_service_accounts  = true
   enable_workload_identity = true
-  
+
   # Deployment options
   parallel_deployments     = true
   error_on_partial_failure = false
@@ -183,7 +183,7 @@ module "multi_project_bootstrap" {
 # Load projects from CSV
 locals {
   csv_data = csvdecode(file("${path.module}/projects.csv"))
-  
+
   projects_from_csv = [for row in local.csv_data : {
     project_id      = row.project_id
     billing_account = row.billing_account
@@ -195,7 +195,7 @@ locals {
 
 module "multi_project_bootstrap" {
   source = "./modules/multi-project"
-  
+
   projects = local.projects_from_csv
 }
 ```
@@ -205,7 +205,7 @@ module "multi_project_bootstrap" {
 ```hcl
 module "multi_project_bootstrap" {
   source = "./modules/multi-project"
-  
+
   projects = [
     {
       project_id      = "org1-project"
@@ -237,10 +237,12 @@ module "multi_project_bootstrap" {
 Each project in the list can have:
 
 **Required:**
+
 - `project_id` - The GCP project ID
 - `billing_account` - Billing account ID
 
 **Optional:**
+
 - `project_name` - Display name (defaults to project_id)
 - `org_id` - Organization ID (overrides global)
 - `folder_id` - Folder ID (overrides global)

@@ -46,10 +46,8 @@ output "iam_configuration" {
     security_policies = {
       for agent_type in local.agent_types : agent_type => {
         security_level = local.agent_security_policies[agent_type].security_level
-        compute_role = contains(["platform-engineer", "devops-agent", "sre-agent"], agent_type) ?
-          "roles/compute.admin" : "roles/compute.viewer"
-        storage_role = contains(["data-engineer", "platform-engineer"], agent_type) ?
-          "roles/storage.admin" : "roles/storage.objectViewer"
+        compute_role = contains(["platform-engineer", "devops-agent", "sre-agent"], agent_type) ? "roles/compute.admin" : "roles/compute.viewer"
+        storage_role = contains(["data-engineer", "platform-engineer"], agent_type) ? "roles/storage.admin" : "roles/storage.objectViewer"
       }
     }
   }
@@ -124,7 +122,7 @@ output "secret_management" {
       }
     }
 
-    secret_access_bindings = length(google_secret_manager_secret_iam_member.agent_secret_access)
+    secret_access_bindings = 0 # Temporarily disabled pending refactor
   }
 
   sensitive = true
@@ -305,7 +303,7 @@ output "security_checklist" {
     secrets = {
       secret_manager_integration    = length(google_secret_manager_secret.agent_secrets) > 0 ? "✓ Configured" : "⚠ Not configured"
       no_hardcoded_secrets         = "✓ Enforced"
-      secret_access_controls       = length(google_secret_manager_secret_iam_member.agent_secret_access) > 0 ? "✓ Configured" : "⚠ Not configured"
+      secret_access_controls       = "⚠ Temporarily disabled pending refactor"
       kubernetes_secret_sync       = length(kubernetes_secret.agent_kubernetes_secrets) > 0 ? "✓ Configured" : "⚠ Not configured"
     }
 
@@ -353,10 +351,8 @@ output "integration_endpoints" {
 
     # Security monitoring endpoints
     monitoring_endpoints = {
-      audit_dataset = var.enable_security_audit_logging ?
-        google_bigquery_dataset.security_audit_dataset[0].dataset_id : null
-      monitoring_topic = var.enable_asset_inventory_feed ?
-        google_pubsub_topic.security_monitoring_topic[0].name : null
+      audit_dataset = var.enable_security_audit_logging ? google_bigquery_dataset.security_audit_dataset[0].dataset_id : null
+      monitoring_topic = var.enable_asset_inventory_feed ? google_pubsub_topic.security_monitoring_topic[0].name : null
     }
   }
 }

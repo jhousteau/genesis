@@ -1,10 +1,12 @@
 # Genesis - Universal Cloud Platform
 
-A comprehensive, production-ready infrastructure platform for Google Cloud Platform with intelligent automation, comprehensive monitoring, and built-in security best practices.
+A comprehensive, production-ready infrastructure platform for Google Cloud Platform with intelligent automation,
+comprehensive monitoring, and built-in security best practices.
 
 ## 🚀 Features
 
 ### Core Capabilities
+
 - **Multi-Environment Support**: Isolated configurations for dev, test, staging, and production
 - **Intelligent Automation**: SOLVE integration for smart problem-solving and orchestration
 - **Security First**: Git branch protection, GCP environment isolation, and comprehensive security scanning
@@ -13,6 +15,7 @@ A comprehensive, production-ready infrastructure platform for Google Cloud Platf
 - **CI/CD Integration**: GitHub Actions, GitLab CI, and Cloud Build support
 
 ### Recent Additions
+
 - **Git Branch Protection**: Pre-commit and pre-push hooks to prevent direct commits to main
 - **GCloud Environment Isolation**: Per-repository isolated configurations preventing cross-contamination
 - **Smart Commit System**: Intelligent commit validation and quality gates
@@ -46,6 +49,7 @@ direnv allow
 ```
 
 The bootstrap will:
+
 - Set up isolated GCP configurations
 - Enable required APIs
 - Create Terraform backend storage
@@ -73,7 +77,7 @@ git commit -m "test" # Should fail on main branch
 
 ## 🏗️ Project Structure
 
-```
+```text
 genesis/
 ├── .envrc                    # Automatic environment configuration
 ├── .pre-commit-config.yaml   # Git hooks and validations
@@ -122,12 +126,14 @@ genesis/
 ## 🔒 Security Features
 
 ### Git Branch Protection
+
 - **Pre-commit hooks** prevent direct commits to main/master
 - **Pre-push hooks** block direct pushes to protected branches
 - **Quality gates** ensure code standards before commits
 - See [Git Branch Protection Guide](docs/04-guides/git-branch-protection.md)
 
 ### GCP Environment Isolation
+
 - **Isolated configurations** per environment and repository
 - **Automatic environment detection** and configuration
 - **Production safeguards** with confirmation requirements
@@ -135,6 +141,7 @@ genesis/
 - See [GCP Isolation Guide](docs/04-guides/gcp-isolation.md)
 
 ### Security Scanning
+
 - **Secret detection** with gitleaks
 - **Terraform security** validation
 - **Dependency scanning** for vulnerabilities
@@ -143,6 +150,7 @@ genesis/
 ## 🚀 Deployment
 
 ### Development Environment
+
 ```bash
 cd environments/dev
 terraform init
@@ -151,6 +159,7 @@ terraform apply
 ```
 
 ### Production Deployment
+
 ```bash
 # Production requires explicit confirmation
 ENVIRONMENT=prod direnv allow
@@ -237,6 +246,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📞 Support
 
 For support, please:
+
 1. Check the [documentation](docs/)
 2. Search [existing issues](https://github.com/jhousteau/genesis/issues)
 3. Create a new issue if needed

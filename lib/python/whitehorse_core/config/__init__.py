@@ -23,7 +23,22 @@ except ImportError:
 
         HAS_PYDANTIC = True
     except ImportError:
+        # Fallback implementations when Pydantic is not available
         HAS_PYDANTIC = False
+
+        def Field(default=None, description="", **kwargs):
+            """Fallback Field function"""
+            return default
+
+        def validator(*args, **kwargs):
+            """Fallback validator decorator"""
+            def decorator(func):
+                return func
+            return decorator
+
+        class BaseSettings:
+            """Fallback BaseSettings class"""
+            pass
 
 try:
     from google.cloud import secretmanager

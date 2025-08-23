@@ -1,6 +1,8 @@
 # Container Orchestration Module - Issue #31
 
-This module implements comprehensive container orchestration capabilities for the Genesis platform, specifically designed to support both agent-cage and claude-talk migrations. It follows the PIPES methodology for scalable, secure, and standardized container infrastructure.
+This module implements comprehensive container orchestration capabilities for the Genesis platform,
+specifically designed to support both agent-cage and claude-talk migrations. It follows the PIPES
+methodology for scalable, secure, and standardized container infrastructure.
 
 ## PIPES Methodology Implementation
 
@@ -41,7 +43,7 @@ This module implements comprehensive container orchestration capabilities for th
 
 ## Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                Container Orchestration                  │
 ├─────────────────────────────────────────────────────────┤
@@ -645,4 +647,6 @@ g container exec --pod agent-cage-abc123 --command "/bin/bash"
 - Monitor costs regularly with budgets and alerts
 - Right-size resources based on actual usage
 
-This container orchestration module provides a complete foundation for running Genesis agents and supporting services in a scalable, secure, and cost-effective manner while supporting both agent-cage and claude-talk migration requirements.
+This container orchestration module provides a complete foundation for running Genesis agents and
+supporting services in a scalable, secure, and cost-effective manner while supporting both
+agent-cage and claude-talk migration requirements.

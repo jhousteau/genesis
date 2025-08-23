@@ -5,30 +5,35 @@ This module implements comprehensive VM management capabilities for the Genesis 
 ## PIPES Methodology Implementation
 
 ### **P - Provision Infrastructure**
+
 - **Agent VM Templates**: Configurable instance templates for different agent types
 - **Managed Instance Groups**: Automated scaling and lifecycle management
 - **Resource Allocation**: Optimized machine types and disk configurations
 - **Multi-zone Distribution**: High availability across GCP zones
 
 ### **I - Integration Systems & Services**
+
 - **Genesis Framework**: Deep integration with existing Genesis patterns
 - **Network Integration**: VPC and subnet connectivity with firewall rules
 - **Service Account Integration**: Workload identity and IAM permissions
 - **Health Check Integration**: Automated health monitoring and healing
 
 ### **P - Protect & Secure**
+
 - **Shielded VMs**: Secure boot, vTPM, and integrity monitoring
 - **Disk Encryption**: KMS-based encryption for all persistent disks
 - **Network Security**: Firewall rules and network tag-based access control
 - **Confidential Computing**: Optional confidential VM support for sensitive workloads
 
 ### **E - Evolve & Scale**
+
 - **Autoscaling**: CPU and custom metric-based scaling policies
 - **Predictive Scaling**: Optional predictive autoscaling for proactive capacity management
 - **Rolling Updates**: Zero-downtime instance template updates
 - **Cost Optimization**: Preemptible instances and intelligent resource sizing
 
 ### **S - Standardize & Automate**
+
 - **Agent Types**: Standardized configurations for all 12 Genesis agent types
 - **Startup Scripts**: Automated agent environment setup and configuration
 - **Health Monitoring**: Standardized health check endpoints and monitoring
@@ -39,11 +44,13 @@ This module implements comprehensive VM management capabilities for the Genesis 
 The module supports all Genesis agent types with optimized configurations:
 
 ### Executive Level Agents
+
 - **project-manager**: Resource coordination and planning workloads
 - **architect**: System design and architectural analysis
 - **tech-lead**: Code review and quality assessment
 
 ### Implementation Level Agents
+
 - **platform-engineer**: Infrastructure and Terraform operations
 - **backend-developer**: API development and server-side processing
 - **frontend-developer**: UI/UX development and client-side operations
@@ -51,6 +58,7 @@ The module supports all Genesis agent types with optimized configurations:
 - **integration-agent**: Service integration and API orchestration
 
 ### Quality & Operations Level Agents
+
 - **qa-automation**: Testing and quality assurance automation
 - **sre-agent**: Site reliability and incident response
 - **security-agent**: Security scanning and compliance validation
@@ -182,18 +190,21 @@ module "vm_management_prod" {
 ## Agent-Specific Configurations
 
 ### Backend Developer Agents
+
 - **Tools**: Python, Node.js, Go development environments
 - **Resources**: 2-4 vCPUs, 8-16 GB RAM
 - **Storage**: 50 GB workspace disk for code repositories
 - **Networking**: Internal access with optional external IP
 
 ### Platform Engineer Agents
+
 - **Tools**: Terraform, Kubernetes, Helm, cloud SDKs
 - **Resources**: 4-8 vCPUs, 16-32 GB RAM
 - **Storage**: 100 GB workspace disk for infrastructure code
 - **Networking**: Full cloud API access and external connectivity
 
 ### Security Agents
+
 - **Tools**: Security scanners, compliance tools, monitoring
 - **Resources**: 2-4 vCPUs, 8-16 GB RAM
 - **Storage**: 50 GB for scan results and reports
@@ -202,11 +213,13 @@ module "vm_management_prod" {
 ## Monitoring and Health Checks
 
 ### Built-in Health Endpoints
+
 - **`/health`**: Basic health status and metadata
 - **`/metrics`**: Prometheus-compatible metrics
 - **`/status`**: Detailed agent runtime status
 
 ### Cloud Operations Integration
+
 - **Logging**: Structured logs to Cloud Logging
 - **Metrics**: Custom metrics to Cloud Monitoring
 - **Alerting**: Automated alerts for health failures
@@ -215,11 +228,13 @@ module "vm_management_prod" {
 ## Cost Optimization Features
 
 ### Preemptible Instances
+
 - **Development**: Default preemptible for cost savings
 - **Production**: Optional preemptible for non-critical workloads
 - **Automatic Restart**: Handles preemption gracefully
 
 ### Autoscaling Policies
+
 - **CPU-based**: Scale based on CPU utilization
 - **Custom Metrics**: Scale based on agent-specific metrics
 - **Schedule-based**: Predictive scaling for known patterns
@@ -228,16 +243,19 @@ module "vm_management_prod" {
 ## Security Features
 
 ### Encryption at Rest
+
 - **Boot Disks**: KMS encryption for all boot volumes
 - **Workspace Disks**: Separate encryption for persistent workspaces
 - **Key Management**: Integration with Cloud KMS
 
 ### Network Security
+
 - **Firewall Rules**: Agent-type specific access controls
 - **Network Tags**: Granular network policy enforcement
 - **Private IPs**: Internal-only communication when possible
 
 ### Compliance
+
 - **Shielded VMs**: Hardware-level security features
 - **OS Login**: Google-managed SSH access
 - **Audit Logging**: All VM operations logged for compliance
@@ -245,6 +263,7 @@ module "vm_management_prod" {
 ## CLI Integration
 
 ### VM Management Commands
+
 ```bash
 # Create agent pool
 g vm create-pool --type backend-developer --size 3
@@ -267,23 +286,27 @@ g vm agent-restart --instance agent-backend-001
 ## Variables Reference
 
 ### Core Configuration
+
 - **`project_id`**: GCP project ID for resources
 - **`region`**: Primary region for VM deployment
 - **`zones`**: List of zones for distribution
 - **`environment`**: Environment name (dev/staging/prod)
 
 ### Agent Templates
+
 - **`agent_vm_templates`**: List of agent VM template configurations
 - **`agent_pools`**: List of managed instance group configurations
 - **`default_agent_machine_type`**: Default machine type for agents
 
 ### Security Settings
+
 - **`enable_disk_encryption`**: Enable KMS disk encryption
 - **`enable_secure_boot`**: Enable Shielded VM secure boot
 - **`enable_vtpm`**: Enable virtual Trusted Platform Module
 - **`firewall_rules`**: Custom firewall rule definitions
 
 ### Scaling Configuration
+
 - **`default_enable_autoscaling`**: Enable autoscaling by default
 - **`default_min_replicas`**: Minimum instances per pool
 - **`default_max_replicas`**: Maximum instances per pool
@@ -292,17 +315,20 @@ g vm agent-restart --instance agent-backend-001
 ## Outputs Reference
 
 ### Resource Information
+
 - **`agent_vm_templates`**: VM template details and metadata
 - **`agent_pools`**: Managed instance group information
 - **`autoscalers`**: Autoscaling configuration and status
 - **`health_checks`**: Health check endpoint details
 
 ### Integration Points
+
 - **`instance_group_urls`**: URLs for load balancer backends
 - **`network_tags`**: Network tags for firewall rules
 - **`service_accounts`**: Service account configurations
 
 ### Monitoring Data
+
 - **`vm_management_summary`**: Complete deployment summary
 - **`cost_optimization`**: Cost settings and estimates
 - **`agent_configuration`**: Agent runtime configuration
@@ -318,16 +344,19 @@ g vm agent-restart --instance agent-backend-001
 ## Migration Path from Legacy Infrastructure
 
 ### Phase 1: Parallel Deployment
+
 1. Deploy VM management module alongside existing infrastructure
 2. Create agent pools with minimal instances
 3. Validate health checks and monitoring
 
 ### Phase 2: Agent Migration
+
 1. Configure agent-cage runtime on new VMs
 2. Test agent functionality and performance
 3. Gradually migrate agents from legacy to new infrastructure
 
 ### Phase 3: Legacy Decommission
+
 1. Scale down legacy infrastructure
 2. Update DNS and load balancer configurations
 3. Remove deprecated resources and configurations
@@ -337,6 +366,7 @@ g vm agent-restart --instance agent-backend-001
 ### Common Issues
 
 #### Health Check Failures
+
 ```bash
 # Check health endpoint manually
 curl http://VM_INTERNAL_IP:8080/health
@@ -346,6 +376,7 @@ gcloud logging read "resource.type=gce_instance AND jsonPayload.agent_type=backe
 ```
 
 #### Autoscaling Not Working
+
 ```bash
 # Check autoscaler status
 gcloud compute region-autoscalers describe AUTOSCALER_NAME --region=REGION
@@ -355,6 +386,7 @@ gcloud monitoring metrics list --filter="metric.type:compute.googleapis.com"
 ```
 
 #### Agent Startup Issues
+
 ```bash
 # Check startup script logs
 gcloud compute instances get-serial-port-output INSTANCE_NAME --zone=ZONE

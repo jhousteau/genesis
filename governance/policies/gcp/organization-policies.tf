@@ -32,7 +32,7 @@ variable "enforcement_level" {
   description = "Policy enforcement level: ENFORCED, DRYRUN"
   type        = string
   default     = "ENFORCED"
-  
+
   validation {
     condition     = contains(["ENFORCED", "DRYRUN"], var.enforcement_level)
     error_message = "Enforcement level must be either ENFORCED or DRYRUN."
@@ -563,7 +563,7 @@ output "applied_policies" {
     google_org_policy_policy.gke_legacy_abac.name,
     google_org_policy_policy.gke_basic_auth.name,
     google_org_policy_policy.appengine_enforce_https.name,
-    
+
     # Advanced Security Policies
     google_org_policy_policy.restrict_client_certificate_auth.name,
     google_org_policy_policy.disable_default_vpc.name,
@@ -572,26 +572,26 @@ output "applied_policies" {
     google_org_policy_policy.enforce_cloud_sql_ssl.name,
     google_org_policy_policy.restrict_load_balancer_creation.name,
     google_org_policy_policy.restrict_shared_vpc_subnetworks.name,
-    
+
     # Data Protection Policies
     google_org_policy_policy.restrict_dataset_location.name,
     google_org_policy_policy.require_cmek_encryption.name,
-    
+
     # Monitoring and Logging Policies
     google_org_policy_policy.enforce_audit_logs.name,
     google_org_policy_policy.restrict_log_sink_destinations.name,
-    
+
     # IAM and Security Policies
     google_org_policy_policy.restrict_iam_primitive_roles.name,
     google_org_policy_policy.require_mfa_for_privileged_access.name,
     google_org_policy_policy.restrict_cross_project_service_account_usage.name,
-    
+
     # Container and Serverless Policies
     google_org_policy_policy.gke_require_workload_identity.name,
     google_org_policy_policy.gke_disable_client_certificate_auth.name,
     google_org_policy_policy.gke_restrict_node_metadata.name,
     google_org_policy_policy.cloud_run_restrict_ingress.name,
-    
+
     # Compliance and Governance Policies
     google_org_policy_policy.enforce_data_residency.name,
     google_org_policy_policy.require_business_justification.name

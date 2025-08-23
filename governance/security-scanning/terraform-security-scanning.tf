@@ -35,9 +35,9 @@ variable "security_environment" {
   description = "Security scanning environment type"
   type        = string
   default     = "production"
-  
+
   validation {
-    condition = contains(["development", "staging", "production"], var.security_environment)
+    condition     = contains(["development", "staging", "production"], var.security_environment)
     error_message = "Security environment must be development, staging, or production."
   }
 }
@@ -45,7 +45,7 @@ variable "security_environment" {
 variable "scanning_schedule" {
   description = "Cron schedule for automated security scans"
   type        = string
-  default     = "0 2 * * *"  # Daily at 2 AM
+  default     = "0 2 * * *" # Daily at 2 AM
 }
 
 # Security Scanning Project
@@ -53,12 +53,12 @@ resource "google_project" "security_scanning_project" {
   name            = "security-scanning-${var.security_environment}"
   project_id      = var.project_id
   billing_account = var.billing_account
-  org_id         = var.organization_id
-  
+  org_id          = var.organization_id
+
   labels = {
     environment = var.security_environment
-    purpose    = "security-scanning"
-    automation = "enabled"
+    purpose     = "security-scanning"
+    automation  = "enabled"
     criticality = "high"
   }
 }
@@ -66,7 +66,7 @@ resource "google_project" "security_scanning_project" {
 # Enable required APIs
 resource "google_project_service" "security_apis" {
   project = google_project.security_scanning_project.project_id
-  
+
   for_each = toset([
     "aiplatform.googleapis.com",
     "bigquery.googleapis.com",
@@ -88,8 +88,8 @@ resource "google_project_service" "security_apis" {
     "storage.googleapis.com",
     "websecurityscanner.googleapis.com"
   ])
-  
-  service = each.value
+
+  service                    = each.value
   disable_dependent_services = true
 }
 
@@ -99,7 +99,7 @@ resource "google_compute_network" "security_vpc" {
   name                    = "security-scanning-vpc-${var.security_environment}"
   auto_create_subnetworks = false
   description             = "Secure VPC for security scanning infrastructure"
-  
+
   depends_on = [google_project_service.security_apis]
 }
 
@@ -109,20 +109,20 @@ resource "google_compute_subnetwork" "security_subnet" {
   ip_cidr_range = "10.20.0.0/24"
   region        = var.region
   network       = google_compute_network.security_vpc.name
-  
+
   private_ip_google_access = true
-  
+
   log_config {
     aggregation_interval = "INTERVAL_1_MIN"
-    flow_sampling       = 1.0
-    metadata           = "INCLUDE_ALL_METADATA"
+    flow_sampling        = 1.0
+    metadata             = "INCLUDE_ALL_METADATA"
   }
-  
+
   secondary_ip_range {
     range_name    = "security-pods"
     ip_cidr_range = "10.21.0.0/16"
   }
-  
+
   secondary_ip_range {
     range_name    = "security-services"
     ip_cidr_range = "10.22.0.0/16"
@@ -134,7 +134,7 @@ resource "google_kms_key_ring" "security_keyring" {
   project  = google_project.security_scanning_project.project_id
   name     = "security-scanning-keyring-${var.security_environment}"
   location = var.region
-  
+
   depends_on = [google_project_service.security_apis]
 }
 
@@ -142,17 +142,17 @@ resource "google_kms_crypto_key" "security_data_key" {
   name     = "security-data-encryption-key"
   key_ring = google_kms_key_ring.security_keyring.id
   purpose  = "ENCRYPT_DECRYPT"
-  
+
   version_template {
     algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
     protection_level = "HSM"
   }
-  
+
   lifecycle {
     prevent_destroy = true
   }
-  
-  rotation_period = "7776000s"  # 90 days
+
+  rotation_period = "7776000s" # 90 days
 }
 
 # GKE Cluster for container-based security scanning
@@ -160,49 +160,49 @@ resource "google_container_cluster" "security_cluster" {
   project  = google_project.security_scanning_project.project_id
   name     = "security-scanning-cluster"
   location = var.region
-  
+
   # Remove default node pool
   remove_default_node_pool = true
   initial_node_count       = 1
-  
+
   network    = google_compute_network.security_vpc.name
   subnetwork = google_compute_subnetwork.security_subnet.name
-  
+
   # Security configurations
   workload_identity_config {
     workload_pool = "${google_project.security_scanning_project.project_id}.svc.id.goog"
   }
-  
+
   network_policy {
     enabled = true
   }
-  
+
   database_encryption {
     state    = "ENCRYPTED"
     key_name = google_kms_crypto_key.security_data_key.id
   }
-  
+
   private_cluster_config {
     enable_private_nodes    = true
     enable_private_endpoint = false
     master_ipv4_cidr_block  = "172.16.0.0/28"
   }
-  
+
   ip_allocation_policy {
     cluster_secondary_range_name  = "security-pods"
     services_secondary_range_name = "security-services"
   }
-  
+
   master_auth {
     client_certificate_config {
       issue_client_certificate = false
     }
   }
-  
+
   # Enable security features
   enable_shielded_nodes = true
-  enable_legacy_abac   = false
-  
+  enable_legacy_abac    = false
+
   depends_on = [google_project_service.security_apis]
 }
 
@@ -213,39 +213,39 @@ resource "google_container_node_pool" "security_nodes" {
   location   = var.region
   cluster    = google_container_cluster.security_cluster.name
   node_count = 3
-  
+
   node_config {
     machine_type = "e2-standard-4"
-    
+
     # Security configurations
     shielded_instance_config {
       enable_secure_boot          = true
       enable_integrity_monitoring = true
     }
-    
+
     workload_metadata_config {
       mode = "GKE_METADATA"
     }
-    
+
     service_account = google_service_account.gke_nodes.email
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
-    
+
     labels = {
       purpose = "security-scanning"
     }
-    
+
     tags = ["security-scanner"]
-    
+
     disk_encryption_key = google_kms_crypto_key.security_data_key.id
   }
-  
+
   management {
     auto_repair  = true
     auto_upgrade = true
   }
-  
+
   upgrade_settings {
     max_surge       = 1
     max_unavailable = 0
@@ -275,7 +275,7 @@ resource "google_service_account" "vulnerability_manager" {
 resource "google_project_iam_binding" "security_scanner_permissions" {
   project = google_project.security_scanning_project.project_id
   role    = "roles/securitycenter.admin"
-  
+
   members = [
     "serviceAccount:${google_service_account.security_scanner.email}",
   ]
@@ -284,7 +284,7 @@ resource "google_project_iam_binding" "security_scanner_permissions" {
 resource "google_project_iam_binding" "vulnerability_scanner_permissions" {
   project = google_project.security_scanning_project.project_id
   role    = "roles/containeranalysis.admin"
-  
+
   members = [
     "serviceAccount:${google_service_account.vulnerability_manager.email}",
   ]
@@ -293,7 +293,7 @@ resource "google_project_iam_binding" "vulnerability_scanner_permissions" {
 resource "google_project_iam_binding" "web_scanner_permissions" {
   project = google_project.security_scanning_project.project_id
   role    = "roles/websecurityscanner.editor"
-  
+
   members = [
     "serviceAccount:${google_service_account.security_scanner.email}",
   ]
@@ -304,15 +304,15 @@ resource "google_bigquery_dataset" "security_dataset" {
   project    = google_project.security_scanning_project.project_id
   dataset_id = "security_scanning_results"
   location   = var.region
-  
+
   description                     = "Security scanning results and vulnerability data"
-  default_table_expiration_ms     = 31536000000  # 1 year
-  default_partition_expiration_ms = 2592000000   # 30 days
-  
+  default_table_expiration_ms     = 31536000000 # 1 year
+  default_partition_expiration_ms = 2592000000  # 30 days
+
   default_encryption_configuration {
     kms_key_name = google_kms_crypto_key.security_data_key.id
   }
-  
+
   labels = {
     purpose = "security-analytics"
   }
@@ -323,14 +323,14 @@ resource "google_bigquery_table" "vulnerability_scans" {
   project    = google_project.security_scanning_project.project_id
   dataset_id = google_bigquery_dataset.security_dataset.dataset_id
   table_id   = "vulnerability_scans"
-  
+
   time_partitioning {
     type  = "DAY"
     field = "scan_timestamp"
   }
-  
+
   clustering = ["severity", "scan_type", "target_type"]
-  
+
   schema = <<EOF
 [
   {
@@ -443,14 +443,14 @@ resource "google_bigquery_table" "compliance_scans" {
   project    = google_project.security_scanning_project.project_id
   dataset_id = google_bigquery_dataset.security_dataset.dataset_id
   table_id   = "compliance_scans"
-  
+
   time_partitioning {
     type  = "DAY"
     field = "scan_timestamp"
   }
-  
+
   clustering = ["compliance_framework", "control_category", "status"]
-  
+
   schema = <<EOF
 [
   {
@@ -518,28 +518,28 @@ EOF
 resource "google_pubsub_topic" "vulnerability_events" {
   project = google_project.security_scanning_project.project_id
   name    = "vulnerability-events"
-  
+
   kms_key_name = google_kms_crypto_key.security_data_key.id
-  
-  message_retention_duration = "604800s"  # 7 days
+
+  message_retention_duration = "604800s" # 7 days
 }
 
 resource "google_pubsub_topic" "scan_results" {
   project = google_project.security_scanning_project.project_id
   name    = "scan-results"
-  
+
   kms_key_name = google_kms_crypto_key.security_data_key.id
-  
-  message_retention_duration = "604800s"  # 7 days
+
+  message_retention_duration = "604800s" # 7 days
 }
 
 resource "google_pubsub_topic" "compliance_events" {
   project = google_project.security_scanning_project.project_id
   name    = "compliance-events"
-  
+
   kms_key_name = google_kms_crypto_key.security_data_key.id
-  
-  message_retention_duration = "604800s"  # 7 days
+
+  message_retention_duration = "604800s" # 7 days
 }
 
 # Pub/Sub subscriptions
@@ -547,14 +547,14 @@ resource "google_pubsub_subscription" "vulnerability_processing" {
   project = google_project.security_scanning_project.project_id
   name    = "vulnerability-processing"
   topic   = google_pubsub_topic.vulnerability_events.name
-  
+
   ack_deadline_seconds = 300
-  
+
   retry_policy {
     minimum_backoff = "10s"
     maximum_backoff = "600s"
   }
-  
+
   dead_letter_policy {
     dead_letter_topic     = google_pubsub_topic.security_dead_letter.id
     max_delivery_attempts = 5
@@ -564,7 +564,7 @@ resource "google_pubsub_subscription" "vulnerability_processing" {
 resource "google_pubsub_topic" "security_dead_letter" {
   project = google_project.security_scanning_project.project_id
   name    = "security-dead-letter"
-  
+
   kms_key_name = google_kms_crypto_key.security_data_key.id
 }
 
@@ -573,17 +573,17 @@ resource "google_storage_bucket" "security_artifacts" {
   project  = google_project.security_scanning_project.project_id
   name     = "${var.project_id}-security-artifacts-${var.security_environment}"
   location = var.region
-  
+
   uniform_bucket_level_access = true
-  
+
   versioning {
     enabled = true
   }
-  
+
   encryption {
     default_kms_key_name = google_kms_crypto_key.security_data_key.id
   }
-  
+
   lifecycle_rule {
     condition {
       age = 90
@@ -592,17 +592,17 @@ resource "google_storage_bucket" "security_artifacts" {
       type = "Delete"
     }
   }
-  
+
   lifecycle_rule {
     condition {
       age = 30
     }
     action {
-      type = "SetStorageClass"
+      type          = "SetStorageClass"
       storage_class = "NEARLINE"
     }
   }
-  
+
   labels = {
     purpose = "security-artifacts"
   }
@@ -612,17 +612,17 @@ resource "google_storage_bucket" "security_reports" {
   project  = google_project.security_scanning_project.project_id
   name     = "${var.project_id}-security-reports-${var.security_environment}"
   location = var.region
-  
+
   uniform_bucket_level_access = true
-  
+
   versioning {
     enabled = true
   }
-  
+
   encryption {
     default_kms_key_name = google_kms_crypto_key.security_data_key.id
   }
-  
+
   lifecycle_rule {
     condition {
       age = 365
@@ -631,17 +631,17 @@ resource "google_storage_bucket" "security_reports" {
       type = "Delete"
     }
   }
-  
+
   lifecycle_rule {
     condition {
       age = 30
     }
     action {
-      type = "SetStorageClass"
+      type          = "SetStorageClass"
       storage_class = "NEARLINE"
     }
   }
-  
+
   labels = {
     purpose = "security-reports"
   }
@@ -655,7 +655,7 @@ resource "google_cloud_scheduler_job" "vulnerability_scan" {
   description = "Automated daily vulnerability scan"
   schedule    = var.scanning_schedule
   time_zone   = "UTC"
-  
+
   pubsub_target {
     topic_name = google_pubsub_topic.scan_results.id
     data = base64encode(jsonencode({
@@ -671,14 +671,14 @@ resource "google_cloud_scheduler_job" "compliance_scan" {
   region      = var.region
   name        = "automated-compliance-scan"
   description = "Automated daily compliance scan"
-  schedule    = "0 3 * * *"  # Daily at 3 AM
+  schedule    = "0 3 * * *" # Daily at 3 AM
   time_zone   = "UTC"
-  
+
   pubsub_target {
     topic_name = google_pubsub_topic.compliance_events.id
     data = base64encode(jsonencode({
-      scan_type = "compliance"
-      trigger   = "scheduled"
+      scan_type  = "compliance"
+      trigger    = "scheduled"
       frameworks = ["CIS", "NIST", "SOC2"]
     }))
   }
@@ -702,30 +702,30 @@ resource "google_monitoring_alert_policy" "critical_vulnerability_detected" {
   project      = google_project.security_scanning_project.project_id
   display_name = "Critical Vulnerability Detected"
   description  = "Alert when critical vulnerabilities are detected"
-  
+
   conditions {
     display_name = "Critical Vulnerability Count"
-    
+
     condition_threshold {
-      filter         = "resource.type=\"global\""
-      duration       = "60s"
-      comparison     = "COMPARISON_GREATER_THAN"
+      filter          = "resource.type=\"global\""
+      duration        = "60s"
+      comparison      = "COMPARISON_GREATER_THAN"
       threshold_value = 0
-      
+
       aggregations {
         alignment_period   = "300s"
         per_series_aligner = "ALIGN_COUNT"
       }
     }
   }
-  
+
   notification_channels = [
     google_monitoring_notification_channel.security_team_email.name,
     google_monitoring_notification_channel.security_team_pagerduty.name,
   ]
-  
+
   alert_strategy {
-    auto_close = "86400s"  # 24 hours
+    auto_close = "86400s" # 24 hours
   }
 }
 
@@ -733,23 +733,23 @@ resource "google_monitoring_alert_policy" "scan_failure" {
   project      = google_project.security_scanning_project.project_id
   display_name = "Security Scan Failure"
   description  = "Alert when security scans fail"
-  
+
   conditions {
     display_name = "Scan Failure Rate"
-    
+
     condition_threshold {
-      filter         = "resource.type=\"cloud_function\""
-      duration       = "300s"
-      comparison     = "COMPARISON_GREATER_THAN"
+      filter          = "resource.type=\"cloud_function\""
+      duration        = "300s"
+      comparison      = "COMPARISON_GREATER_THAN"
       threshold_value = 0.1
-      
+
       aggregations {
         alignment_period   = "300s"
         per_series_aligner = "ALIGN_RATE"
       }
     }
   }
-  
+
   notification_channels = [
     google_monitoring_notification_channel.security_team_email.name,
   ]
@@ -759,7 +759,7 @@ resource "google_monitoring_notification_channel" "security_team_email" {
   project      = google_project.security_scanning_project.project_id
   display_name = "Security Team Email"
   type         = "email"
-  
+
   labels = {
     email_address = "security-team@company.com"
   }
@@ -769,11 +769,11 @@ resource "google_monitoring_notification_channel" "security_team_pagerduty" {
   project      = google_project.security_scanning_project.project_id
   display_name = "Security Team PagerDuty"
   type         = "pagerduty"
-  
+
   labels = {
     service_key = var.pagerduty_service_key
   }
-  
+
   sensitive_labels {
     service_key = var.pagerduty_service_key
   }
@@ -784,16 +784,16 @@ resource "google_compute_firewall" "security_internal_only" {
   project = google_project.security_scanning_project.project_id
   name    = "security-internal-only"
   network = google_compute_network.security_vpc.name
-  
+
   description = "Allow internal security scanning traffic only"
   direction   = "INGRESS"
   priority    = 1000
-  
+
   allow {
     protocol = "tcp"
     ports    = ["80", "443", "8080", "9000"]
   }
-  
+
   source_ranges = ["10.20.0.0/24"]
   target_tags   = ["security-scanner"]
 }
@@ -802,16 +802,16 @@ resource "google_compute_firewall" "security_egress_scanning" {
   project = google_project.security_scanning_project.project_id
   name    = "security-egress-scanning"
   network = google_compute_network.security_vpc.name
-  
+
   description = "Allow egress for security scanning activities"
   direction   = "EGRESS"
   priority    = 1000
-  
+
   allow {
     protocol = "tcp"
     ports    = ["80", "443"]
   }
-  
+
   destination_ranges = ["0.0.0.0/0"]
   source_tags        = ["security-scanner"]
 }
@@ -822,7 +822,7 @@ resource "google_project_iam_custom_role" "security_analyst" {
   role_id     = "security_analyst"
   title       = "Security Analyst"
   description = "Role for security analysts to view and analyze scan results"
-  
+
   permissions = [
     "bigquery.datasets.get",
     "bigquery.tables.get",
@@ -842,7 +842,7 @@ resource "google_project_iam_custom_role" "vulnerability_manager_role" {
   role_id     = "vulnerability_manager_role"
   title       = "Vulnerability Manager"
   description = "Role for managing vulnerability assessments and remediation"
-  
+
   permissions = [
     "bigquery.datasets.get",
     "bigquery.tables.get",
@@ -882,8 +882,8 @@ output "security_topics" {
   description = "Pub/Sub topics for security events"
   value = {
     vulnerability_events = google_pubsub_topic.vulnerability_events.name
-    scan_results        = google_pubsub_topic.scan_results.name
-    compliance_events   = google_pubsub_topic.compliance_events.name
+    scan_results         = google_pubsub_topic.scan_results.name
+    compliance_events    = google_pubsub_topic.compliance_events.name
   }
 }
 
@@ -898,8 +898,8 @@ output "security_buckets" {
 output "security_service_accounts" {
   description = "Security scanning service account emails"
   value = {
-    scanner            = google_service_account.security_scanner.email
-    vulnerability_mgr  = google_service_account.vulnerability_manager.email
+    scanner           = google_service_account.security_scanner.email
+    vulnerability_mgr = google_service_account.vulnerability_manager.email
     gke_nodes         = google_service_account.gke_nodes.email
   }
 }

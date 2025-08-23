@@ -1,6 +1,6 @@
 /**
  * Security Module Variables
- * 
+ *
  * Comprehensive security infrastructure configuration for GCP
  */
 
@@ -47,9 +47,9 @@ variable "kms_key_rings" {
     name     = string
     location = optional(string)
     keys = optional(list(object({
-      name             = string
-      purpose          = optional(string, "ENCRYPT_DECRYPT")
-      rotation_period  = optional(string, "7776000s") # 90 days
+      name            = string
+      purpose         = optional(string, "ENCRYPT_DECRYPT")
+      rotation_period = optional(string, "7776000s") # 90 days
       version_template = optional(object({
         algorithm        = string
         protection_level = optional(string, "SOFTWARE")
@@ -87,7 +87,7 @@ variable "kms_key_rings" {
 variable "secrets" {
   description = "Secret Manager secrets configuration"
   type = list(object({
-    name                = string
+    name               = string
     secret_data        = optional(string)
     replication_policy = optional(string, "auto") # auto or user_managed
     replica_locations = optional(list(object({
@@ -95,8 +95,8 @@ variable "secrets" {
       encryption_key = optional(string)
     })), [])
     encryption_key = optional(string)
-    expire_time   = optional(string)
-    ttl           = optional(string)
+    expire_time    = optional(string)
+    ttl            = optional(string)
     rotation = optional(object({
       next_rotation_time = optional(string)
       rotation_period    = optional(string)
@@ -201,9 +201,9 @@ variable "binary_authorization" {
     })
     admission_whitelist_patterns = optional(list(string), [])
     istio_service_identity_admission_rules = optional(list(object({
-      evaluation_mode             = string
-      enforcement_mode            = string
-      require_attestations_by     = list(string)
+      evaluation_mode         = string
+      enforcement_mode        = string
+      require_attestations_by = list(string)
     })), [])
     kubernetes_namespace_admission_rules = optional(list(object({
       namespace               = string
@@ -245,7 +245,7 @@ variable "binary_authorization" {
   validation {
     condition = contains([
       "ALWAYS_ALLOW",
-      "ALWAYS_DENY", 
+      "ALWAYS_DENY",
       "REQUIRE_ATTESTATION"
     ], var.binary_authorization.default_admission_rule.evaluation_mode)
     error_message = "Evaluation mode must be ALWAYS_ALLOW, ALWAYS_DENY, or REQUIRE_ATTESTATION"
@@ -276,14 +276,14 @@ variable "security_policies" {
         load_threshold              = optional(number, 0.1)
         confidence_threshold        = optional(number, 0.5)
         impacted_baseline_threshold = optional(number, 0.01)
-        expiration_sec             = optional(number, 600)
+        expiration_sec              = optional(number, 600)
       })
     }))
     advanced_options_config = optional(object({
       json_parsing                     = optional(string, "DISABLED")
       json_custom_config_content_types = optional(list(string), [])
-      log_level                       = optional(string, "NORMAL")
-      user_ip_request_headers         = optional(list(string), [])
+      log_level                        = optional(string, "NORMAL")
+      user_ip_request_headers          = optional(list(string), [])
     }))
     recaptcha_options_config = optional(object({
       redirect_site_key = string
@@ -345,8 +345,8 @@ variable "web_security_scanner" {
   type = object({
     enabled = bool
     scan_configs = list(object({
-      display_name   = string
-      starting_urls  = list(string)
+      display_name  = string
+      starting_urls = list(string)
       authentication = optional(object({
         google_account = optional(object({
           username = string
@@ -399,18 +399,18 @@ variable "vpc_security_controls" {
         conditions = list(object({
           ip_subnetworks         = optional(list(string), [])
           required_access_levels = optional(list(string), [])
-          members               = optional(list(string), [])
-          negate                = optional(bool, false)
-          regions               = optional(list(string), [])
+          members                = optional(list(string), [])
+          negate                 = optional(bool, false)
+          regions                = optional(list(string), [])
           device_policy = optional(object({
-            require_screen_lock                = optional(bool, false)
-            require_admin_approval            = optional(bool, false)
-            require_corp_owned                = optional(bool, false)
-            allowed_device_management_levels  = optional(list(string), [])
-            allowed_encryption_statuses       = optional(list(string), [])
+            require_screen_lock              = optional(bool, false)
+            require_admin_approval           = optional(bool, false)
+            require_corp_owned               = optional(bool, false)
+            allowed_device_management_levels = optional(list(string), [])
+            allowed_encryption_statuses      = optional(list(string), [])
             os_constraints = optional(list(object({
               os_type                    = string
-              minimum_version           = optional(string)
+              minimum_version            = optional(string)
               require_verified_chrome_os = optional(bool, false)
             })), [])
           }))
@@ -601,8 +601,8 @@ variable "dlp_config" {
             bytes_limit_per_file         = optional(number, 0)
             bytes_limit_per_file_percent = optional(number, 0)
             file_types                   = optional(list(string), [])
-            sample_method               = optional(string, "TOP")
-            files_limit_percent         = optional(number, 0)
+            sample_method                = optional(string, "TOP")
+            files_limit_percent          = optional(number, 0)
           }))
           big_query_options = optional(object({
             table_reference = object({
@@ -655,8 +655,8 @@ variable "dlp_config" {
           pub_sub = optional(object({
             topic = string
           }))
-          publish_summary_to_cscc                   = optional(bool, false)
-          publish_findings_to_cloud_data_catalog   = optional(bool, false)
+          publish_summary_to_cscc                = optional(bool, false)
+          publish_findings_to_cloud_data_catalog = optional(bool, false)
         })), [])
       })
     }))
@@ -728,24 +728,24 @@ variable "security_baseline" {
   description = "Security baseline configuration"
   type = object({
     enabled                        = bool
-    cis_benchmarks                = optional(bool, true)
-    nist_framework               = optional(bool, true)
-    iso_27001                    = optional(bool, false)
-    encryption_at_rest_required  = optional(bool, true)
+    cis_benchmarks                 = optional(bool, true)
+    nist_framework                 = optional(bool, true)
+    iso_27001                      = optional(bool, false)
+    encryption_at_rest_required    = optional(bool, true)
     encryption_in_transit_required = optional(bool, true)
-    mfa_required                 = optional(bool, true)
+    mfa_required                   = optional(bool, true)
     password_policy = optional(object({
-      min_length         = optional(number, 12)
-      require_uppercase  = optional(bool, true)
-      require_lowercase  = optional(bool, true)
-      require_numbers    = optional(bool, true)
-      require_symbols    = optional(bool, true)
+      min_length        = optional(number, 12)
+      require_uppercase = optional(bool, true)
+      require_lowercase = optional(bool, true)
+      require_numbers   = optional(bool, true)
+      require_symbols   = optional(bool, true)
       max_age_days      = optional(number, 90)
     }), {})
     session_management = optional(object({
       max_session_duration_hours = optional(number, 8)
-      idle_timeout_minutes      = optional(number, 60)
-      concurrent_sessions_limit = optional(number, 3)
+      idle_timeout_minutes       = optional(number, 60)
+      concurrent_sessions_limit  = optional(number, 3)
     }), {})
   })
   default = {
@@ -756,12 +756,12 @@ variable "security_baseline" {
 variable "threat_detection" {
   description = "Advanced threat detection configuration"
   type = object({
-    enabled                = bool
-    anomaly_detection     = optional(bool, true)
-    behavioral_analysis   = optional(bool, true)
-    machine_learning      = optional(bool, false)
-    threat_intelligence   = optional(bool, true)
-    real_time_monitoring  = optional(bool, true)
+    enabled              = bool
+    anomaly_detection    = optional(bool, true)
+    behavioral_analysis  = optional(bool, true)
+    machine_learning     = optional(bool, false)
+    threat_intelligence  = optional(bool, true)
+    real_time_monitoring = optional(bool, true)
     custom_rules = optional(list(object({
       name        = string
       description = string
@@ -787,12 +787,12 @@ variable "threat_detection" {
 variable "incident_response" {
   description = "Incident response automation configuration"
   type = object({
-    enabled                    = bool
-    auto_containment          = optional(bool, false)
-    auto_investigation        = optional(bool, true)
-    playbooks_enabled         = optional(bool, true)
-    forensics_enabled         = optional(bool, false)
-    recovery_automation       = optional(bool, false)
+    enabled             = bool
+    auto_containment    = optional(bool, false)
+    auto_investigation  = optional(bool, true)
+    playbooks_enabled   = optional(bool, true)
+    forensics_enabled   = optional(bool, false)
+    recovery_automation = optional(bool, false)
     escalation_policy = optional(object({
       level_1_timeout_minutes = optional(number, 15)
       level_2_timeout_minutes = optional(number, 60)

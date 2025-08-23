@@ -35,9 +35,9 @@ variable "audit_environment" {
   description = "Audit environment type"
   type        = string
   default     = "production"
-  
+
   validation {
-    condition = contains(["development", "staging", "production"], var.audit_environment)
+    condition     = contains(["development", "staging", "production"], var.audit_environment)
     error_message = "Audit environment must be development, staging, or production."
   }
 }
@@ -45,7 +45,7 @@ variable "audit_environment" {
 variable "log_retention_days" {
   description = "Audit log retention period in days"
   type        = number
-  default     = 2555  # 7 years
+  default     = 2555 # 7 years
 }
 
 # Audit Project Setup
@@ -53,21 +53,21 @@ resource "google_project" "audit_project" {
   name            = "audit-${var.audit_environment}"
   project_id      = var.project_id
   billing_account = var.billing_account
-  org_id         = var.organization_id
-  
+  org_id          = var.organization_id
+
   labels = {
-    environment     = var.audit_environment
-    purpose        = "audit-logging"
-    compliance     = "multi-framework"
-    criticality    = "critical"
-    data_type      = "audit-logs"
+    environment = var.audit_environment
+    purpose     = "audit-logging"
+    compliance  = "multi-framework"
+    criticality = "critical"
+    data_type   = "audit-logs"
   }
 }
 
 # Enable required APIs
 resource "google_project_service" "audit_apis" {
   project = google_project.audit_project.project_id
-  
+
   for_each = toset([
     "bigquery.googleapis.com",
     "cloudfunctions.googleapis.com",
@@ -84,8 +84,8 @@ resource "google_project_service" "audit_apis" {
     "secretmanager.googleapis.com",
     "storage.googleapis.com"
   ])
-  
-  service = each.value
+
+  service                    = each.value
   disable_dependent_services = true
 }
 
@@ -95,7 +95,7 @@ resource "google_compute_network" "audit_vpc" {
   name                    = "audit-vpc-${var.audit_environment}"
   auto_create_subnetworks = false
   description             = "Secure VPC for audit processing"
-  
+
   depends_on = [google_project_service.audit_apis]
 }
 
@@ -105,13 +105,13 @@ resource "google_compute_subnetwork" "audit_subnet" {
   ip_cidr_range = "10.10.0.0/24"
   region        = var.region
   network       = google_compute_network.audit_vpc.name
-  
+
   private_ip_google_access = true
-  
+
   log_config {
     aggregation_interval = "INTERVAL_1_MIN"
-    flow_sampling       = 1.0
-    metadata           = "INCLUDE_ALL_METADATA"
+    flow_sampling        = 1.0
+    metadata             = "INCLUDE_ALL_METADATA"
   }
 }
 
@@ -120,7 +120,7 @@ resource "google_kms_key_ring" "audit_keyring" {
   project  = google_project.audit_project.project_id
   name     = "audit-keyring-${var.audit_environment}"
   location = var.region
-  
+
   depends_on = [google_project_service.audit_apis]
 }
 
@@ -128,17 +128,17 @@ resource "google_kms_crypto_key" "audit_encryption_key" {
   name     = "audit-encryption-key"
   key_ring = google_kms_key_ring.audit_keyring.id
   purpose  = "ENCRYPT_DECRYPT"
-  
+
   version_template {
     algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
     protection_level = "HSM"
   }
-  
+
   lifecycle {
     prevent_destroy = true
   }
-  
-  rotation_period = "7776000s"  # 90 days
+
+  rotation_period = "7776000s" # 90 days
 }
 
 # BigQuery for audit log analytics
@@ -146,18 +146,18 @@ resource "google_bigquery_dataset" "audit_dataset" {
   project    = google_project.audit_project.project_id
   dataset_id = "audit_logs"
   location   = var.region
-  
+
   description                     = "Audit logs dataset for comprehensive analysis"
   default_table_expiration_ms     = var.log_retention_days * 24 * 60 * 60 * 1000
-  default_partition_expiration_ms = 7 * 24 * 60 * 60 * 1000  # 7 days
-  
+  default_partition_expiration_ms = 7 * 24 * 60 * 60 * 1000 # 7 days
+
   default_encryption_configuration {
     kms_key_name = google_kms_crypto_key.audit_encryption_key.id
   }
-  
+
   labels = {
     environment = var.audit_environment
-    purpose    = "audit-analytics"
+    purpose     = "audit-analytics"
   }
 }
 
@@ -166,7 +166,7 @@ resource "google_logging_project_sink" "comprehensive_audit_sink" {
   project     = google_project.audit_project.project_id
   name        = "comprehensive-audit-sink"
   destination = "bigquery.googleapis.com/projects/${google_project.audit_project.project_id}/datasets/${google_bigquery_dataset.audit_dataset.dataset_id}"
-  
+
   # Capture all audit-relevant logs
   filter = <<EOF
 (protoPayload.serviceName!="" AND protoPayload.methodName!="") OR
@@ -182,7 +182,7 @@ resource "google_logging_project_sink" "comprehensive_audit_sink" {
 EOF
 
   unique_writer_identity = true
-  
+
   bigquery_options {
     use_partitioned_tables = true
   }
@@ -199,11 +199,11 @@ resource "google_bigquery_dataset_iam_member" "audit_sink_writer" {
 resource "google_pubsub_topic" "audit_events" {
   project = google_project.audit_project.project_id
   name    = "audit-events"
-  
+
   kms_key_name = google_kms_crypto_key.audit_encryption_key.id
-  
-  message_retention_duration = "604800s"  # 7 days
-  
+
+  message_retention_duration = "604800s" # 7 days
+
   labels = {
     purpose = "real-time-audit"
   }
@@ -212,11 +212,11 @@ resource "google_pubsub_topic" "audit_events" {
 resource "google_pubsub_topic" "change_events" {
   project = google_project.audit_project.project_id
   name    = "change-events"
-  
+
   kms_key_name = google_kms_crypto_key.audit_encryption_key.id
-  
-  message_retention_duration = "604800s"  # 7 days
-  
+
+  message_retention_duration = "604800s" # 7 days
+
   labels = {
     purpose = "change-tracking"
   }
@@ -225,11 +225,11 @@ resource "google_pubsub_topic" "change_events" {
 resource "google_pubsub_topic" "security_events" {
   project = google_project.audit_project.project_id
   name    = "security-events"
-  
+
   kms_key_name = google_kms_crypto_key.audit_encryption_key.id
-  
-  message_retention_duration = "604800s"  # 7 days
-  
+
+  message_retention_duration = "604800s" # 7 days
+
   labels = {
     purpose = "security-monitoring"
   }
@@ -240,28 +240,28 @@ resource "google_pubsub_subscription" "audit_processing" {
   project = google_project.audit_project.project_id
   name    = "audit-processing"
   topic   = google_pubsub_topic.audit_events.name
-  
+
   ack_deadline_seconds = 300
-  
+
   retry_policy {
     minimum_backoff = "10s"
     maximum_backoff = "600s"
   }
-  
+
   dead_letter_policy {
     dead_letter_topic     = google_pubsub_topic.audit_dead_letter.id
     max_delivery_attempts = 5
   }
-  
+
   expiration_policy {
-    ttl = ""  # Never expire
+    ttl = "" # Never expire
   }
 }
 
 resource "google_pubsub_topic" "audit_dead_letter" {
   project = google_project.audit_project.project_id
   name    = "audit-dead-letter"
-  
+
   kms_key_name = google_kms_crypto_key.audit_encryption_key.id
 }
 
@@ -270,17 +270,17 @@ resource "google_storage_bucket" "audit_archive" {
   project  = google_project.audit_project.project_id
   name     = "${var.project_id}-audit-archive-${var.audit_environment}"
   location = var.region
-  
+
   uniform_bucket_level_access = true
-  
+
   versioning {
     enabled = true
   }
-  
+
   encryption {
     default_kms_key_name = google_kms_crypto_key.audit_encryption_key.id
   }
-  
+
   lifecycle_rule {
     condition {
       age = var.log_retention_days
@@ -289,37 +289,37 @@ resource "google_storage_bucket" "audit_archive" {
       type = "Delete"
     }
   }
-  
+
   lifecycle_rule {
     condition {
       age = 90
     }
     action {
-      type = "SetStorageClass"
+      type          = "SetStorageClass"
       storage_class = "NEARLINE"
     }
   }
-  
+
   lifecycle_rule {
     condition {
       age = 365
     }
     action {
-      type = "SetStorageClass"
+      type          = "SetStorageClass"
       storage_class = "COLDLINE"
     }
   }
-  
+
   lifecycle_rule {
     condition {
-      age = 1095  # 3 years
+      age = 1095 # 3 years
     }
     action {
-      type = "SetStorageClass"
+      type          = "SetStorageClass"
       storage_class = "ARCHIVE"
     }
   }
-  
+
   labels = {
     purpose     = "audit-archive"
     environment = var.audit_environment
@@ -331,7 +331,7 @@ resource "google_storage_bucket" "function_source" {
   project  = google_project.audit_project.project_id
   name     = "${var.project_id}-audit-functions-${var.audit_environment}"
   location = var.region
-  
+
   uniform_bucket_level_access = true
 }
 
@@ -354,7 +354,7 @@ resource "google_service_account" "change_tracker" {
 resource "google_project_iam_binding" "audit_processor_permissions" {
   project = google_project.audit_project.project_id
   role    = "roles/bigquery.dataEditor"
-  
+
   members = [
     "serviceAccount:${google_service_account.audit_processor.email}",
   ]
@@ -363,7 +363,7 @@ resource "google_project_iam_binding" "audit_processor_permissions" {
 resource "google_project_iam_binding" "audit_processor_pubsub" {
   project = google_project.audit_project.project_id
   role    = "roles/pubsub.editor"
-  
+
   members = [
     "serviceAccount:${google_service_account.audit_processor.email}",
   ]
@@ -372,7 +372,7 @@ resource "google_project_iam_binding" "audit_processor_pubsub" {
 resource "google_project_iam_binding" "audit_processor_storage" {
   project = google_project.audit_project.project_id
   role    = "roles/storage.objectAdmin"
-  
+
   members = [
     "serviceAccount:${google_service_account.audit_processor.email}",
   ]
@@ -384,7 +384,7 @@ resource "google_project_iam_custom_role" "audit_analyst" {
   role_id     = "audit_analyst"
   title       = "Audit Analyst"
   description = "Role for audit analysts with read access to audit data"
-  
+
   permissions = [
     "bigquery.datasets.get",
     "bigquery.tables.get",
@@ -402,16 +402,16 @@ resource "google_compute_firewall" "audit_internal_only" {
   project = google_project.audit_project.project_id
   name    = "audit-internal-only"
   network = google_compute_network.audit_vpc.name
-  
+
   description = "Allow internal audit processing traffic only"
   direction   = "INGRESS"
   priority    = 1000
-  
+
   allow {
     protocol = "tcp"
     ports    = ["443", "80"]
   }
-  
+
   source_ranges = ["10.10.0.0/24"]
   target_tags   = ["audit-processor"]
 }
@@ -422,30 +422,30 @@ resource "google_sql_database_instance" "audit_metadata_db" {
   name             = "audit-metadata-${var.audit_environment}"
   database_version = "POSTGRES_15"
   region           = var.region
-  
+
   settings {
-    tier                        = "db-f1-micro"  # Small instance for metadata
+    tier                        = "db-f1-micro" # Small instance for metadata
     availability_type           = "ZONAL"
     deletion_protection_enabled = true
-    
+
     database_flags {
       name  = "log_statement"
       value = "all"
     }
-    
+
     backup_configuration {
       enabled                        = true
       start_time                     = "03:00"
       point_in_time_recovery_enabled = true
       transaction_log_retention_days = 7
     }
-    
+
     ip_configuration {
       ipv4_enabled    = false
       private_network = google_compute_network.audit_vpc.id
       require_ssl     = true
     }
-    
+
     disk_encryption_configuration {
       kms_key_name = google_kms_crypto_key.audit_encryption_key.id
     }
@@ -473,10 +473,10 @@ resource "google_bigquery_table" "access_patterns_view" {
   project    = google_project.audit_project.project_id
   dataset_id = google_bigquery_dataset.audit_dataset.dataset_id
   table_id   = "access_patterns"
-  
+
   view {
-    query = <<EOF
-SELECT 
+    query          = <<EOF
+SELECT
   protoPayload.authenticationInfo.principalEmail as user_email,
   protoPayload.serviceName as service,
   protoPayload.methodName as method,
@@ -497,10 +497,10 @@ resource "google_bigquery_table" "change_tracking_view" {
   project    = google_project.audit_project.project_id
   dataset_id = google_bigquery_dataset.audit_dataset.dataset_id
   table_id   = "change_tracking"
-  
+
   view {
-    query = <<EOF
-SELECT 
+    query          = <<EOF
+SELECT
   protoPayload.authenticationInfo.principalEmail as changed_by,
   protoPayload.serviceName as service,
   protoPayload.methodName as change_type,
@@ -510,8 +510,8 @@ SELECT
   protoPayload.request as change_details,
   protoPayload.response as change_result
 FROM `${google_project.audit_project.project_id}.${google_bigquery_dataset.audit_dataset.dataset_id}.cloudaudit_googleapis_com_activity_*`
-WHERE protoPayload.methodName LIKE '%create%' 
-   OR protoPayload.methodName LIKE '%update%' 
+WHERE protoPayload.methodName LIKE '%create%'
+   OR protoPayload.methodName LIKE '%update%'
    OR protoPayload.methodName LIKE '%delete%'
    OR protoPayload.methodName LIKE '%patch%'
   AND DATE(_PARTITIONTIME) >= DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY)
@@ -525,10 +525,10 @@ resource "google_bigquery_table" "security_events_view" {
   project    = google_project.audit_project.project_id
   dataset_id = google_bigquery_dataset.audit_dataset.dataset_id
   table_id   = "security_events"
-  
+
   view {
-    query = <<EOF
-SELECT 
+    query          = <<EOF
+SELECT
   protoPayload.authenticationInfo.principalEmail as user_email,
   protoPayload.serviceName as service,
   protoPayload.methodName as method,
@@ -556,13 +556,13 @@ resource "google_bigquery_data_transfer_config" "daily_compliance_report" {
   display_name   = "Daily Compliance Report"
   location       = var.region
   data_source_id = "scheduled_query"
-  
+
   schedule = "every day 06:00"
-  
+
   params = {
     query = <<EOF
 CREATE OR REPLACE TABLE `${google_project.audit_project.project_id}.${google_bigquery_dataset.audit_dataset.dataset_id}.daily_compliance_summary_${formatdate("YYYY_MM_DD", timestamp())}` AS
-SELECT 
+SELECT
   DATE(timestamp) as report_date,
   protoPayload.serviceName as service,
   COUNT(*) as total_events,
@@ -576,7 +576,7 @@ GROUP BY report_date, service
 ORDER BY total_events DESC
 EOF
   }
-  
+
   destination_dataset_id = google_bigquery_dataset.audit_dataset.dataset_id
 }
 
@@ -585,28 +585,28 @@ resource "google_monitoring_alert_policy" "audit_log_ingestion_failure" {
   project      = google_project.audit_project.project_id
   display_name = "Audit Log Ingestion Failure"
   description  = "Alert when audit log ingestion fails"
-  
+
   conditions {
     display_name = "Log Ingestion Error Rate"
-    
+
     condition_threshold {
-      filter         = "resource.type=\"logging_sink\" AND resource.labels.name=\"${google_logging_project_sink.comprehensive_audit_sink.name}\""
-      duration       = "300s"
-      comparison     = "COMPARISON_GREATER_THAN"
+      filter          = "resource.type=\"logging_sink\" AND resource.labels.name=\"${google_logging_project_sink.comprehensive_audit_sink.name}\""
+      duration        = "300s"
+      comparison      = "COMPARISON_GREATER_THAN"
       threshold_value = 0.01
-      
+
       aggregations {
         alignment_period   = "300s"
         per_series_aligner = "ALIGN_RATE"
       }
     }
   }
-  
+
   notification_channels = [
     google_monitoring_notification_channel.audit_team_email.name,
     google_monitoring_notification_channel.audit_team_pagerduty.name,
   ]
-  
+
   alert_strategy {
     auto_close = "1800s"
   }
@@ -616,7 +616,7 @@ resource "google_monitoring_notification_channel" "audit_team_email" {
   project      = google_project.audit_project.project_id
   display_name = "Audit Team Email"
   type         = "email"
-  
+
   labels = {
     email_address = "audit-team@company.com"
   }
@@ -626,11 +626,11 @@ resource "google_monitoring_notification_channel" "audit_team_pagerduty" {
   project      = google_project.audit_project.project_id
   display_name = "Audit Team PagerDuty"
   type         = "pagerduty"
-  
+
   labels = {
     service_key = var.pagerduty_service_key
   }
-  
+
   sensitive_labels {
     service_key = var.pagerduty_service_key
   }

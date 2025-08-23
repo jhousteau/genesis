@@ -5,15 +5,7 @@
  * Implements PIPES methodology for scalable VM infrastructure
  */
 
-terraform {
-  required_version = ">= 1.5"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.0"
-    }
-  }
-}
+# Terraform version constraints moved to versions.tf
 
 locals {
   # Standard labels following Genesis patterns
@@ -206,9 +198,7 @@ resource "google_compute_region_instance_group_manager" "agent_pools" {
   }
 
   # Distribution across zones for HA
-  distribution_policy {
-    zones = var.zones
-  }
+  distribution_policy_zones = var.zones
 
   # Update policy for rolling updates
   update_policy {
@@ -216,7 +206,7 @@ resource "google_compute_region_instance_group_manager" "agent_pools" {
     minimal_action        = "REPLACE"
     max_surge_fixed       = lookup(each.value, "max_surge", 1)
     max_unavailable_fixed = lookup(each.value, "max_unavailable", 0)
-    min_ready_sec         = lookup(each.value, "min_ready_sec", 60)
+    # min_ready_sec deprecated - use instance health checks instead
     replacement_method    = "SUBSTITUTE"
   }
 
@@ -274,13 +264,8 @@ resource "google_compute_region_autoscaler" "agent_pool_autoscalers" {
       }
     }
 
-    # Scale down control for graceful agent shutdown
-    scale_down_control {
-      max_scaled_down_replicas {
-        percent = var.scale_down_max_percent
-      }
-      time_window_sec = var.scale_down_time_window
-    }
+    # Scale down control (deprecated - use scaling policy instead)
+    # max_scaled_down_replicas and time_window_sec managed by autoscaling policy
   }
 
   depends_on = [google_compute_region_instance_group_manager.agent_pools]

@@ -1,6 +1,6 @@
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -15,10 +15,10 @@ terraform {
 
 # Project Configuration
 locals {
-  project_id   = var.project_id
-  region       = var.region
-  environment  = var.environment
-  
+  project_id  = var.project_id
+  region      = var.region
+  environment = var.environment
+
   common_labels = {
     environment = var.environment
     project     = var.project_name
@@ -31,15 +31,15 @@ locals {
 resource "google_container_cluster" "primary" {
   name     = "${var.project_name}-${var.environment}-cluster"
   location = var.region
-  
+
   # Autopilot mode for managed Kubernetes
   enable_autopilot = true
-  
+
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.subnet.name
-  
+
   resource_labels = local.common_labels
-  
+
   # Security settings
   master_authorized_networks_config {
     cidr_blocks {
@@ -47,7 +47,7 @@ resource "google_container_cluster" "primary" {
       display_name = "All networks"
     }
   }
-  
+
   # Workload Identity
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
@@ -67,12 +67,12 @@ resource "google_compute_subnetwork" "subnet" {
   ip_cidr_range = var.subnet_cidr
   region        = var.region
   network       = google_compute_network.vpc.id
-  
+
   secondary_ip_range {
     range_name    = "pods"
     ip_cidr_range = var.pods_cidr
   }
-  
+
   secondary_ip_range {
     range_name    = "services"
     ip_cidr_range = var.services_cidr
@@ -84,13 +84,13 @@ resource "google_storage_bucket" "assets" {
   name          = "${var.project_id}-${var.environment}-assets"
   location      = var.region
   force_destroy = var.environment != "prod"
-  
+
   uniform_bucket_level_access = true
-  
+
   versioning {
     enabled = true
   }
-  
+
   lifecycle_rule {
     condition {
       age = 30
@@ -99,7 +99,7 @@ resource "google_storage_bucket" "assets" {
       type = "Delete"
     }
   }
-  
+
   labels = local.common_labels
 }
 
@@ -116,38 +116,38 @@ resource "google_cloud_run_service" "app" {
   count    = var.enable_cloud_run ? 1 : 0
   name     = "${var.project_name}-${var.environment}"
   location = var.region
-  
+
   template {
     spec {
       containers {
         image = var.container_image
-        
+
         resources {
           limits = {
             cpu    = "2"
             memory = "2Gi"
           }
         }
-        
+
         env {
           name  = "ENVIRONMENT"
           value = var.environment
         }
-        
+
         env {
           name  = "PROJECT_ID"
           value = var.project_id
         }
       }
-      
+
       service_account_name = google_service_account.app.email
     }
-    
+
     metadata {
       labels = local.common_labels
     }
   }
-  
+
   traffic {
     percent         = 100
     latest_revision = true
@@ -169,7 +169,7 @@ resource "google_project_iam_member" "app_permissions" {
     "roles/logging.logWriter",
     "roles/monitoring.metricWriter",
   ])
-  
+
   project = var.project_id
   role    = each.value
   member  = "serviceAccount:${google_service_account.app.email}"

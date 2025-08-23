@@ -7,18 +7,22 @@ Production-ready Terraform modules for Google Cloud Platform infrastructure. The
 ### Core Infrastructure
 
 #### Bootstrap Module (`bootstrap/`)
+
 Initial project setup and foundational infrastructure.
 
 **Resources:**
+
 - GCP project configuration
 - Essential API enablement
 - Service account creation
 - Initial IAM bindings
 
 #### State Backend Module (`state-backend/`)
+
 Terraform state management infrastructure.
 
 **Resources:**
+
 - Cloud Storage bucket for state files
 - State file encryption and versioning
 - Access controls and locking
@@ -26,18 +30,22 @@ Terraform state management infrastructure.
 ### Compute Modules
 
 #### Compute Module (`compute/`)
+
 Comprehensive compute infrastructure including serverless and container orchestration.
 
 **Resources:**
+
 - Google Kubernetes Engine (GKE) clusters
 - Cloud Run services
 - Compute Engine instances
 - Load balancers and ingress
 
 #### Networking Module (`networking/`)
+
 VPC and network security infrastructure.
 
 **Resources:**
+
 - VPC networks and subnets
 - Firewall rules and security policies
 - Cloud NAT and routers
@@ -46,9 +54,11 @@ VPC and network security infrastructure.
 ### Data Modules
 
 #### Data Module (`data/`)
+
 Storage and database infrastructure.
 
 **Resources:**
+
 - Cloud Storage buckets
 - Cloud SQL databases
 - Firestore databases
@@ -57,27 +67,33 @@ Storage and database infrastructure.
 ### Security Modules
 
 #### Service Accounts Module (`service-accounts/`)
+
 Service account management and IAM configuration.
 
 **Resources:**
+
 - Service account creation
 - IAM role bindings
 - Key management and rotation
 - Cross-project permissions
 
 #### Workload Identity Module (`workload-identity/`)
+
 Secure CI/CD authentication without service account keys.
 
 **Resources:**
+
 - Workload Identity pool and providers
 - GitHub Actions integration
 - GitLab CI integration
 - Azure DevOps integration
 
 #### Security Module (`security/`)
+
 Comprehensive security infrastructure.
 
 **Resources:**
+
 - Secret Manager configuration
 - Security scanning setup
 - Compliance monitoring
@@ -86,9 +102,11 @@ Comprehensive security infrastructure.
 ### Project Management
 
 #### Multi-Project Module (`multi-project/`)
+
 Enterprise-scale multi-project management.
 
 **Resources:**
+
 - Project factory patterns
 - Organization policies
 - Shared VPC configuration
@@ -97,6 +115,7 @@ Enterprise-scale multi-project management.
 ## 🚀 Usage Patterns
 
 ### Single Project Deployment
+
 ```hcl
 # environments/dev/main.tf
 module "bootstrap" {
@@ -127,6 +146,7 @@ module "compute" {
 ```
 
 ### Multi-Environment Setup
+
 ```hcl
 # environments/prod/main.tf
 module "prod_infrastructure" {
@@ -150,6 +170,7 @@ module "prod_infrastructure" {
 ```
 
 ### Workload Identity for CI/CD
+
 ```hcl
 module "workload_identity" {
   source = "../../modules/workload-identity"
@@ -174,17 +195,20 @@ module "workload_identity" {
 ## 🔧 Module Standards
 
 ### Naming Conventions
+
 - **Resources**: Use descriptive names with environment prefixes
 - **Variables**: Clear, documented with validation rules
 - **Outputs**: Comprehensive with descriptions
 
 ### Security Practices
+
 - **Least Privilege**: Minimal required permissions
 - **Encryption**: All data encrypted at rest and in transit
 - **Network Security**: Private endpoints and firewall rules
 - **Audit Logging**: Comprehensive logging and monitoring
 
 ### Operational Features
+
 - **Health Checks**: Built-in monitoring and alerting
 - **Backup & Recovery**: Automated backup strategies
 - **Disaster Recovery**: Multi-region failover capabilities
@@ -193,6 +217,7 @@ module "workload_identity" {
 ## 📚 Documentation
 
 Each module includes comprehensive documentation:
+
 - `README.md` - Usage examples and configuration
 - `variables.tf` - Input variable definitions
 - `outputs.tf` - Output value definitions
@@ -202,6 +227,7 @@ Each module includes comprehensive documentation:
 ## 🧪 Testing
 
 ### Module Validation
+
 ```bash
 # Validate all modules
 for module in modules/*/; do
@@ -214,6 +240,7 @@ done
 ```
 
 ### Integration Testing
+
 ```bash
 # Test module integration
 cd examples/complete-deployment
@@ -226,13 +253,17 @@ terraform destroy -auto-approve
 ## 🔗 Integration
 
 ### With Genesis Core
+
 Modules automatically integrate with Genesis Core for:
+
 - Structured logging and monitoring
 - Health checks and observability
 - Error handling and retry logic
 
 ### With Intelligence System
+
 Modules support:
+
 - Infrastructure as code generation from SOLVE graphs
 - Template evolution based on usage patterns
 - Automated compliance validation
@@ -240,7 +271,9 @@ Modules support:
 ## 🛠️ Development
 
 ### Adding New Modules
+
 1. Create module directory with standard structure:
+
    ```
    modules/new-module/
    ├── README.md
@@ -256,6 +289,7 @@ Modules support:
 4. Update this index README
 
 ### Module Guidelines
+
 - **Single Responsibility**: Each module has one clear purpose
 - **Composability**: Modules work together seamlessly
 - **Flexibility**: Support multiple use cases through variables

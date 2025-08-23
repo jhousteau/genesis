@@ -22,14 +22,14 @@ This module provides comprehensive compute infrastructure for Google Cloud Platf
 ```hcl
 module "compute" {
   source = "./modules/compute"
-  
+
   project_id   = "my-project-id"
   name_prefix  = "app"
   environment  = "production"
-  
+
   network_id = module.networking.network_id
   subnet_id  = module.networking.subnet_ids["app-subnet"]
-  
+
   vm_instances = [
     {
       name         = "web-server"
@@ -37,7 +37,7 @@ module "compute" {
       source_image = "debian-cloud/debian-12"
       disk_size_gb = 50
       network_tags = ["web-server"]
-      
+
       service_account = {
         email  = module.service_accounts.service_accounts["web"].email
         scopes = ["cloud-platform"]
@@ -52,11 +52,11 @@ module "compute" {
 ```hcl
 module "compute" {
   source = "./modules/compute"
-  
+
   project_id   = "my-project-id"
   name_prefix  = "app"
   environment  = "production"
-  
+
   # VM template
   vm_instances = [
     {
@@ -64,31 +64,31 @@ module "compute" {
       machine_type = "e2-standard-2"
       source_image = "debian-cloud/debian-12"
       network_tags = ["web-server", "load-balanced"]
-      
+
       startup_script = file("${path.module}/startup-script.sh")
-      
+
       metadata = {
         "startup-script-url" = "gs://my-bucket/startup-script.sh"
       }
     }
   ]
-  
+
   # Instance group
   instance_groups = [
     {
       name              = "web-group"
       instance_template = "web-template"
       target_size       = 3
-      
+
       # Auto-scaling
       enable_autoscaling = true
       min_replicas      = 2
       max_replicas      = 10
       cpu_target        = 0.6
-      
+
       # Health check
       health_check = "web-health-check"
-      
+
       # Update policy
       update_policy = {
         type                = "PROACTIVE"
@@ -98,7 +98,7 @@ module "compute" {
       }
     }
   ]
-  
+
   # Health checks
   health_checks = [
     {
@@ -117,45 +117,45 @@ module "compute" {
 ```hcl
 module "compute" {
   source = "./modules/compute"
-  
+
   project_id   = "my-project-id"
   name_prefix  = "k8s"
   environment  = "production"
-  
+
   network_id = module.networking.network_id
   subnet_id  = module.networking.subnet_ids["gke-subnet"]
-  
+
   gke_clusters = [
     {
       name               = "primary"
       location          = "us-central1"
       kubernetes_version = "1.28"
-      
+
       # Private cluster
       private_cluster         = true
       enable_private_endpoint = false
       master_ipv4_cidr_block = "172.16.0.0/28"
-      
+
       # IP allocation
       enable_ip_alias     = true
       pods_range_name     = "pods"
       services_range_name = "services"
-      
+
       # Network policy
       enable_network_policy = true
-      
+
       # Addons
       enable_http_load_balancing = true
       enable_hpa                = true
       enable_backup_agent       = true
-      
+
       # Workload Identity
       enable_workload_identity = true
-      
+
       # Monitoring
       enable_monitoring     = true
       enable_logging       = true
-      
+
       # Node pools
       node_pools = [
         {
@@ -163,31 +163,31 @@ module "compute" {
           machine_type = "e2-standard-4"
           disk_size_gb = 100
           disk_type    = "pd-ssd"
-          
+
           enable_autoscaling = true
           min_node_count    = 1
           max_node_count    = 5
-          
+
           labels = {
             pool = "default"
           }
-          
+
           taints = []
         },
         {
           name         = "compute-pool"
           machine_type = "c2-standard-8"
           disk_size_gb = 200
-          
+
           enable_autoscaling = true
           min_node_count    = 0
           max_node_count    = 10
-          
+
           labels = {
             pool        = "compute"
             workload    = "cpu-intensive"
           }
-          
+
           taints = [
             {
               key    = "compute"
@@ -207,38 +207,38 @@ module "compute" {
 ```hcl
 module "compute" {
   source = "./modules/compute"
-  
+
   project_id   = "my-project-id"
   name_prefix  = "api"
   environment  = "production"
-  
+
   cloud_run_services = [
     {
       name  = "api-service"
       image = "gcr.io/my-project/api:latest"
-      
+
       # Scaling
       min_scale = 1
       max_scale = 100
-      
+
       # Resources
       containers = [
         {
           cpu    = "1000m"
           memory = "1Gi"
-          
+
           env = {
             "DATABASE_URL" = "postgresql://..."
             "REDIS_URL"    = "redis://..."
           }
-          
+
           env_from_secret = {
             "API_KEY" = {
               secret  = "api-secrets"
               version = "latest"
             }
           }
-          
+
           ports = [
             {
               container_port = 8080
@@ -246,13 +246,13 @@ module "compute" {
           ]
         }
       ]
-      
+
       # VPC Access
       vpc_access = {
         connector = "vpc-connector"
         egress   = "PRIVATE_RANGES_ONLY"
       }
-      
+
       # Traffic
       traffic = [
         {
@@ -260,7 +260,7 @@ module "compute" {
           percent = 100
         }
       ]
-      
+
       allow_unauthenticated = true
     }
   ]
@@ -272,36 +272,36 @@ module "compute" {
 ```hcl
 module "compute" {
   source = "./modules/compute"
-  
+
   project_id   = "my-project-id"
   name_prefix  = "fn"
   environment  = "production"
-  
+
   cloud_functions = [
     {
       name        = "process-data"
       runtime     = "python311"
       entry_point = "main"
-      
+
       source_bucket = "my-functions-bucket"
       source_object = "process-data.zip"
-      
+
       # Configuration
       available_memory    = "512M"
       timeout_seconds    = 300
       max_instances      = 10
-      
+
       environment_variables = {
         "ENVIRONMENT" = "production"
       }
-      
+
       secret_environment_variables = {
         "DATABASE_PASSWORD" = {
           secret  = "db-credentials"
           version = "latest"
         }
       }
-      
+
       # Event trigger
       event_trigger = {
         event_type   = "google.cloud.pubsub.topic.v1.messagePublished"
@@ -365,7 +365,7 @@ vm_instances = [
   {
     name         = "batch-worker"
     machine_type = "n1-standard-4"
-    
+
     scheduling = {
       preemptible = true
     }
@@ -397,7 +397,7 @@ vm_instances = [
     name         = "ml-training"
     machine_type = "n1-standard-4"
     zone        = "us-central1-a"
-    
+
     guest_accelerators = [
       {
         type  = "nvidia-tesla-t4"
@@ -425,7 +425,7 @@ instance_groups = [
 # Secondary region
 instance_groups = [
   {
-    name   = "web-secondary" 
+    name   = "web-secondary"
     region = "us-east1"
     # ... configuration
   }
@@ -440,12 +440,12 @@ Enable advanced security features:
 vm_instances = [
   {
     name = "secure-vm"
-    
+
     # Shielded VM
     enable_shielded_vm           = true
     enable_secure_boot          = true
     enable_integrity_monitoring = true
-    
+
     # Confidential Computing
     enable_confidential_vm = true
   }
@@ -474,7 +474,7 @@ module "networking" {
 
 module "compute" {
   source = "./modules/compute"
-  
+
   network_id = module.networking.network_id
   subnet_id  = module.networking.subnet_ids["compute-subnet"]
   # compute configuration
@@ -491,7 +491,7 @@ module "security" {
 
 module "compute" {
   source = "./modules/compute"
-  
+
   vm_instances = [
     {
       name = "web-server"

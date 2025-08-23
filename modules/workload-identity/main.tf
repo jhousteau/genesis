@@ -485,9 +485,7 @@ resource "google_service_account_iam_member" "workload_identity_binding" {
   service_account_id = each.value.sa_email
   role              = "roles/iam.workloadIdentityUser"
 
-  member = var.enable_attribute_conditions && each.value.attribute_condition != null ?
-    "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.main.name}/attribute.${each.value.attribute_condition}" :
-    "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.main.name}/*"
+  member = var.enable_attribute_conditions && each.value.attribute_condition != null ? "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.main.name}/attribute.${each.value.attribute_condition}" : "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.main.name}/*"
 
   depends_on = [
     google_iam_workload_identity_pool_provider.providers
