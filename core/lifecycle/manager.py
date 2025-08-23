@@ -25,7 +25,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from ..errors.handler import get_error_handler
 from ..logging.logger import get_logger
@@ -137,7 +137,7 @@ class LifecycleManager:
         self.hook_manager = get_hook_manager(service_name)
 
         # Health check management
-        self.health_checks: Dict[str, callable] = {}
+        self.health_checks: Dict[str, Callable[[], bool]] = {}
         self.health_check_results: Dict[str, bool] = {}
         self.health_check_task: Optional[asyncio.Task] = None
 
@@ -161,17 +161,17 @@ class LifecycleManager:
             f"Lifecycle manager initialized for '{service_name}' v{version} in {environment}"
         )
 
-    def _register_builtin_hooks(self):
+    def _register_builtin_hooks(self) -> None:
         """Register built-in lifecycle hooks"""
 
         @lifecycle_hook(HookEvent.PRE_STARTUP, manager=self.hook_manager)
-        def pre_startup_hook(context):
+        def pre_startup_hook(context: Dict[str, Any]) -> None:
             self.logger.info("Pre-startup hook: Preparing service initialization")
             self.state = ServiceState.STARTING
             self.startup_time = datetime.utcnow()
 
         @lifecycle_hook(HookEvent.POST_STARTUP, manager=self.hook_manager)
-        def post_startup_hook(context):
+        def post_startup_hook(context: Dict[str, Any]) -> None:
             self.logger.info("Post-startup hook: Service initialization completed")
             self.state = ServiceState.READY
             self.ready_time = datetime.utcnow()
@@ -182,18 +182,18 @@ class LifecycleManager:
                 self.metrics.startup_duration_ms = duration
 
         @lifecycle_hook(HookEvent.STARTUP_FAILED, manager=self.hook_manager)
-        def startup_failed_hook(context):
+        def startup_failed_hook(context: Dict[str, Any]) -> None:
             self.logger.error("Startup failed hook: Service initialization failed")
             self.state = ServiceState.FAILED
 
         @lifecycle_hook(HookEvent.PRE_SHUTDOWN, manager=self.hook_manager)
-        def pre_shutdown_hook(context):
+        def pre_shutdown_hook(context: Dict[str, Any]) -> None:
             self.logger.info("Pre-shutdown hook: Initiating graceful shutdown")
             self.state = ServiceState.SHUTTING_DOWN
             self.shutdown_time = datetime.utcnow()
 
         @lifecycle_hook(HookEvent.POST_SHUTDOWN, manager=self.hook_manager)
-        def post_shutdown_hook(context):
+        def post_shutdown_hook(context: Dict[str, Any]) -> None:
             self.logger.info("Post-shutdown hook: Service shutdown completed")
             self.state = ServiceState.STOPPED
 
@@ -204,7 +204,7 @@ class LifecycleManager:
                 self.metrics.shutdown_duration_ms = duration
 
         @lifecycle_hook(HookEvent.HEALTH_CHECK_FAILED, manager=self.hook_manager)
-        def health_check_failed_hook(context):
+        def health_check_failed_hook(context: Dict[str, Any]) -> None:
             self.metrics.health_check_failures += 1
             self.logger.warning("Health check failed - investigating service health")
 
@@ -214,29 +214,29 @@ class LifecycleManager:
             )
 
         @lifecycle_hook(HookEvent.SERVICE_DEGRADED, manager=self.hook_manager)
-        def service_degraded_hook(context):
+        def service_degraded_hook(context: Dict[str, Any]) -> None:
             self.logger.warning(
                 "Service degraded - operating with limited functionality"
             )
             self.state = ServiceState.DEGRADED
 
         @lifecycle_hook(HookEvent.SERVICE_RECOVERING, manager=self.hook_manager)
-        def service_recovering_hook(context):
+        def service_recovering_hook(context: Dict[str, Any]) -> None:
             self.logger.info("Service recovering - restoring full functionality")
             self.state = ServiceState.READY
 
-    def _register_builtin_health_checks(self):
+    def _register_builtin_health_checks(self) -> None:
         """Register built-in health checks"""
 
-        def basic_health_check():
+        def basic_health_check() -> bool:
             """Basic service health check"""
             return self.state in [ServiceState.READY, ServiceState.DEGRADED]
 
-        def startup_health_check():
+        def startup_health_check() -> bool:
             """Check if startup completed successfully"""
             return self.startup_manager.is_ready()
 
-        def components_health_check():
+        def components_health_check() -> bool:
             """Check health of all registered components"""
             try:
                 # Check hook manager health
@@ -295,7 +295,7 @@ class LifecycleManager:
             )
             return False
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Stop the service with graceful shutdown
         """
@@ -317,12 +317,12 @@ class LifecycleManager:
     def register_startup_hook(
         self,
         name: str,
-        callback: callable,
+        callback: Callable[[], None],
         phase: int,
         timeout: int = 60,
         critical: bool = True,
         description: str = "",
-    ):
+    ) -> None:
         """Register a startup hook"""
         self.startup_manager.register_hook(
             name=name,
@@ -336,11 +336,11 @@ class LifecycleManager:
     def register_shutdown_hook(
         self,
         name: str,
-        callback: callable,
+        callback: Callable[[], None],
         phase: int,
         timeout: int = 30,
         description: str = "",
-    ):
+    ) -> None:
         """Register a shutdown hook"""
         self.graceful_shutdown.register_hook(
             name=name,
@@ -350,7 +350,9 @@ class LifecycleManager:
             description=description,
         )
 
-    def register_health_check(self, name: str, check_function: callable):
+    def register_health_check(
+        self, name: str, check_function: Callable[[], bool]
+    ) -> None:
         """Register a health check function"""
         with self._lock:
             self.health_checks[name] = check_function
@@ -361,12 +363,13 @@ class LifecycleManager:
     def register_dependency(
         self,
         name: str,
-        check_function: callable,
+        check_function: Callable[[], bool],
         dependency_type: str = "required",
         timeout: int = 30,
         retry_attempts: int = 3,
+        retry_delay: int = 1,
         description: str = "",
-    ):
+    ) -> None:
         """Register an external dependency"""
         from .startup import DependencyType
 
@@ -382,15 +385,16 @@ class LifecycleManager:
             dependency_type=dep_type,
             timeout=timeout,
             retry_attempts=retry_attempts,
+            retry_delay=retry_delay,
             description=description,
         )
 
-    def _start_health_check_monitoring(self):
+    def _start_health_check_monitoring(self) -> None:
         """Start health check monitoring task"""
         if self.health_check_task is None or self.health_check_task.done():
             self.health_check_task = asyncio.create_task(self._health_check_loop())
 
-    async def _health_check_loop(self):
+    async def _health_check_loop(self) -> None:
         """Main health check monitoring loop"""
         self.logger.debug("Started health check monitoring")
 
@@ -407,7 +411,7 @@ class LifecycleManager:
 
         self.logger.debug("Health check monitoring stopped")
 
-    async def _perform_health_checks(self):
+    async def _perform_health_checks(self) -> None:
         """Perform all registered health checks"""
         self.metrics.last_health_check = datetime.utcnow()
 
@@ -455,7 +459,9 @@ class LifecycleManager:
             # Service recovered
             await self.hook_manager.trigger_event(HookEvent.SERVICE_RECOVERING)
 
-    def _investigate_health_failure(self, check_name: str, error: str):
+    def _investigate_health_failure(
+        self, check_name: Optional[str], error: Optional[str]
+    ) -> None:
         """
         SPIDER methodology implementation for health check failures
 
@@ -585,7 +591,7 @@ class LifecycleManager:
 # Kubernetes/Container compatibility helpers
 def create_kubernetes_probes(
     lifecycle_manager: LifecycleManager,
-) -> Dict[str, callable]:
+) -> Dict[str, Callable[[], bool]]:
     """
     Create Kubernetes-compatible probe functions
 
@@ -596,15 +602,15 @@ def create_kubernetes_probes(
         Dictionary with readiness and liveness probe functions
     """
 
-    def readiness_probe():
+    def readiness_probe() -> bool:
         """Kubernetes readiness probe - is service ready to accept traffic?"""
         return lifecycle_manager.is_ready()
 
-    def liveness_probe():
+    def liveness_probe() -> bool:
         """Kubernetes liveness probe - is service alive and healthy?"""
         return lifecycle_manager.is_healthy()
 
-    def startup_probe():
+    def startup_probe() -> bool:
         """Kubernetes startup probe - has service completed startup?"""
         return lifecycle_manager.startup_manager.is_ready()
 
@@ -620,7 +626,7 @@ _lifecycle_manager: Optional[LifecycleManager] = None
 
 
 def get_lifecycle_manager(
-    service_name: Optional[str] = None, **kwargs
+    service_name: Optional[str] = None, **kwargs: Any
 ) -> LifecycleManager:
     """
     Get the global lifecycle manager instance
@@ -641,7 +647,7 @@ def get_lifecycle_manager(
     return _lifecycle_manager
 
 
-def configure_lifecycle_manager(service_name: str, **kwargs) -> LifecycleManager:
+def configure_lifecycle_manager(service_name: str, **kwargs: Any) -> LifecycleManager:
     """
     Configure the global lifecycle manager
 

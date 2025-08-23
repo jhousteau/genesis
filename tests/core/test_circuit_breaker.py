@@ -21,12 +21,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from core.errors.handler import ErrorCategory, GenesisError
-from core.retry.circuit_breaker import (
-    CircuitBreaker,
-    CircuitBreakerError,
-    CircuitBreakerMetrics,
-    CircuitBreakerState,
-)
+from core.retry.circuit_breaker import (CircuitBreaker, CircuitBreakerError,
+                                        CircuitBreakerMetrics,
+                                        CircuitBreakerState)
 
 
 class TestCircuitBreakerState:

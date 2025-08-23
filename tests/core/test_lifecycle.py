@@ -21,41 +21,22 @@ Test Categories:
 """
 
 import asyncio
-import os
-import pytest
-import signal
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from unittest.mock import Mock, patch
 
-from core.lifecycle.manager import (
-    # Core classes
-    LifecycleManager,
-    ServiceState,
-    LifecycleMetrics,
-    create_kubernetes_probes,
-    get_lifecycle_manager,
-    configure_lifecycle_manager,
-)
+import pytest
 
-from core.lifecycle.startup import (
-    StartupManager,
-    StartupPhase,
-    StartupStatus,
-    DependencyType,
-    StartupHook,
-    DependencyCheck,
-    StartupMetrics,
-)
-
-from core.lifecycle.hooks import (
-    HookEvent,
-    HookPriority,
-)
-
-from core.errors.handler import GenesisError
+from core.lifecycle.manager import LifecycleManager  # Core classes
+from core.lifecycle.manager import (LifecycleMetrics, ServiceState,
+                                    configure_lifecycle_manager,
+                                    create_kubernetes_probes,
+                                    get_lifecycle_manager)
+from core.lifecycle.startup import (DependencyCheck, DependencyType,
+                                    StartupHook, StartupManager,
+                                    StartupMetrics, StartupPhase,
+                                    StartupStatus)
 
 
 class TestServiceState:
@@ -475,7 +456,8 @@ class TestStartupManager:
     async def test_startup_manager_start_success(self):
         """Test successful startup sequence"""
         manager = StartupManager(
-            service_name="success-test", warmup_duration=1  # Reduce for testing
+            service_name="success-test",
+            warmup_duration=1,  # Reduce for testing
         )
 
         # Mock environment variables

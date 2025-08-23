@@ -14,28 +14,20 @@ Test Coverage:
 - K8s probe compatibility and integration
 """
 
-import statistics
 import threading
 import time
 from collections import deque
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from lib.integration.health_aggregator import (
-    CheckType,
-    ComponentHealth,
-    HealthAggregator,
-    HealthCheck,
-    HealthMetric,
-    HealthStatus,
-    SystemHealth,
-    add_health_check,
-    get_health_aggregator,
-    get_system_health,
-)
+from lib.integration.health_aggregator import (CheckType, ComponentHealth,
+                                               HealthAggregator, HealthCheck,
+                                               HealthMetric, HealthStatus,
+                                               SystemHealth, add_health_check,
+                                               get_health_aggregator,
+                                               get_system_health)
 
 
 class TestHealthStatus:

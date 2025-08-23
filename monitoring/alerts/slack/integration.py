@@ -258,9 +258,9 @@ class SlackIntegration:
             # Add mentions to the first block if any
             if mentions:
                 if blocks:
-                    blocks[0]["text"]["text"] = (
-                        f"{mentions}\n{blocks[0]['text']['text']}"
-                    )
+                    blocks[0]["text"][
+                        "text"
+                    ] = f"{mentions}\n{blocks[0]['text']['text']}"
 
             response = self.client.chat_postMessage(
                 channel=channel,
@@ -287,9 +287,9 @@ class SlackIntegration:
             # Add mentions to the first block if any
             if mentions:
                 if blocks:
-                    blocks[0]["text"]["text"] = (
-                        f"{mentions}\n{blocks[0]['text']['text']}"
-                    )
+                    blocks[0]["text"][
+                        "text"
+                    ] = f"{mentions}\n{blocks[0]['text']['text']}"
 
             payload = {
                 "channel": channel,
@@ -368,9 +368,9 @@ class SlackIntegration:
         }
 
         if error_budget_remaining is not None:
-            additional_context["Error Budget Remaining"] = (
-                f"{error_budget_remaining:.2f}%"
-            )
+            additional_context[
+                "Error Budget Remaining"
+            ] = f"{error_budget_remaining:.2f}%"
 
         alert = AlertMessage(
             title=title,

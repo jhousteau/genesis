@@ -31,8 +31,8 @@ _session_id: ContextVar[Optional[str]] = ContextVar("session_id", default=None)
 _trace_id: ContextVar[Optional[str]] = ContextVar("trace_id", default=None)
 _span_id: ContextVar[Optional[str]] = ContextVar("span_id", default=None)
 _parent_span_id: ContextVar[Optional[str]] = ContextVar("parent_span_id", default=None)
-_baggage: ContextVar[Dict[str, str]] = ContextVar("baggage", default_factory=dict)
-_metadata: ContextVar[Dict[str, Any]] = ContextVar("metadata", default_factory=dict)
+_baggage: ContextVar[Dict[str, str]] = ContextVar("baggage", default={})
+_metadata: ContextVar[Dict[str, Any]] = ContextVar("metadata", default={})
 
 
 @dataclass

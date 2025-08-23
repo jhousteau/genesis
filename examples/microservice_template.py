@@ -37,25 +37,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # Genesis Core imports
-from core import (
-    NETWORK_POLICY,
-    CircuitBreaker,
-    Context,
-    ErrorCategory,
-    GenesisError,
-    HealthStatus,
-    HTTPHealthCheck,
-    RequestContext,
-    TraceContext,
-    UserContext,
-    configure_core,
-    context_span,
-    get_context,
-    get_logger,
-    get_service_health_registry,
-    handle_error,
-    retry,
-)
+from core import (NETWORK_POLICY, CircuitBreaker, Context, ErrorCategory,
+                  GenesisError, HealthStatus, HTTPHealthCheck, RequestContext,
+                  TraceContext, UserContext, configure_core, context_span,
+                  get_context, get_logger, get_service_health_registry,
+                  handle_error, retry)
 from core.health import KubernetesProbeHandler
 
 

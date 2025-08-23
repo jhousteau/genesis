@@ -68,7 +68,7 @@ class GenesisServiceExample:
             f"Genesis service '{service_name}' initialized with lifecycle management"
         )
 
-    def _setup_lifecycle_hooks(self):
+    def _setup_lifecycle_hooks(self) -> None:
         """Setup service-specific lifecycle hooks"""
 
         # Startup hooks
@@ -124,7 +124,7 @@ class GenesisServiceExample:
             description="Close cache connections",
         )
 
-    def _setup_dependencies(self):
+    def _setup_dependencies(self) -> None:
         """Setup external dependency checks"""
 
         # Database dependency
@@ -160,7 +160,7 @@ class GenesisServiceExample:
             description="External service API connectivity",
         )
 
-    def _setup_health_checks(self):
+    def _setup_health_checks(self) -> None:
         """Setup service health checks"""
 
         # Application health check
@@ -184,7 +184,7 @@ class GenesisServiceExample:
         )
 
     # Startup hook implementations
-    def _initialize_database(self):
+    def _initialize_database(self) -> None:
         """Initialize database connections"""
         self.logger.info("Initializing database connections")
 
@@ -206,7 +206,7 @@ class GenesisServiceExample:
                 "Failed to initialize database", code="DATABASE_INIT_FAILED", cause=e
             )
 
-    def _initialize_cache(self):
+    def _initialize_cache(self) -> None:
         """Initialize cache connections"""
         self.logger.info("Initializing cache connections")
 
@@ -225,7 +225,7 @@ class GenesisServiceExample:
             self.logger.warning(f"Cache initialization failed (non-critical): {e}")
             # Don't raise error for non-critical cache
 
-    def _start_background_tasks(self):
+    def _start_background_tasks(self) -> None:
         """Start background processing tasks"""
         self.logger.info("Starting background tasks")
 
@@ -250,7 +250,7 @@ class GenesisServiceExample:
             )
 
     # Shutdown hook implementations
-    def _stop_background_tasks(self):
+    def _stop_background_tasks(self) -> None:
         """Stop background processing tasks"""
         self.logger.info("Stopping background tasks")
 
@@ -266,7 +266,7 @@ class GenesisServiceExample:
         except Exception as e:
             self.logger.error(f"Error stopping background tasks: {e}")
 
-    def _close_database(self):
+    def _close_database(self) -> None:
         """Close database connections"""
         self.logger.info("Closing database connections")
 
@@ -279,7 +279,7 @@ class GenesisServiceExample:
         except Exception as e:
             self.logger.error(f"Error closing database: {e}")
 
-    def _close_cache(self):
+    def _close_cache(self) -> None:
         """Close cache connections"""
         self.logger.info("Closing cache connections")
 
@@ -347,7 +347,7 @@ class GenesisServiceExample:
         """Start the service"""
         return await self.lifecycle.start()
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the service"""
         self.lifecycle.stop()
 
@@ -375,7 +375,7 @@ class GenesisServiceExample:
 
 
 # Kubernetes/Container Integration Example
-def create_web_server_with_lifecycle():
+def create_web_server_with_lifecycle() -> tuple[GenesisServiceExample, type, type]:
     """
     Example of integrating lifecycle management with a web server
     for Kubernetes deployment
@@ -416,7 +416,7 @@ def create_web_server_with_lifecycle():
             else:
                 self.send_error(404)
 
-        def _send_health_response(self, healthy: bool, probe_type: str):
+        def _send_health_response(self, healthy: bool, probe_type: str) -> None:
             """Send health check response"""
             status_code = 200 if healthy else 503
             self.send_response(status_code)
@@ -431,14 +431,14 @@ def create_web_server_with_lifecycle():
 
             self.wfile.write(json.dumps(response).encode())
 
-        def _send_json_response(self, data: Dict[str, Any]):
+        def _send_json_response(self, data: Dict[str, Any]) -> None:
             """Send JSON response"""
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(data, indent=2).encode())
 
-        def log_message(self, format, *args):
+        def log_message(self, format: str, *args: Any) -> None:
             # Suppress default logging to use Genesis logger
             pass
 
@@ -446,7 +446,7 @@ def create_web_server_with_lifecycle():
 
 
 # Example usage and integration patterns
-async def main():
+async def main() -> int:
     """Example main function showing lifecycle management usage"""
 
     # Initialize service with lifecycle management

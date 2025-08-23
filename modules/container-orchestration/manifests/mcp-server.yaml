@@ -1,0 +1,396 @@
+---
+# Genesis MCP Server Kubernetes Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: genesis-mcp-server
+  namespace: genesis-mcp
+  labels:
+    app: genesis-mcp-server
+    component: mcp-protocol
+    version: v1.0.0
+    tier: infrastructure
+    managed-by: genesis-platform
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 2
+  selector:
+    matchLabels:
+      app: genesis-mcp-server
+  template:
+    metadata:
+      labels:
+        app: genesis-mcp-server
+        component: mcp-protocol
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8081"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: genesis-mcp-server
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: mcp-server
+        image: gcr.io/genesis-platform/mcp-server:v1.0.0
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: websocket
+          containerPort: 8080
+          protocol: TCP  
+        - name: metrics
+          containerPort: 8081
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PROJECT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: genesis-config
+              key: project-id
+        - name: ENVIRONMENT
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: METRICS_PORT
+          value: "8081"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: MCP_CONFIG_PATH
+          value: "/app/config/mcp-production.yaml"
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/var/secrets/google/key.json"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 2
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 12
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: secrets
+          mountPath: /var/secrets/google
+          readOnly: true
+        - name: temp
+          mountPath: /app/temp
+        - name: logs
+          mountPath: /app/logs
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: mcp-server-config
+          defaultMode: 0644
+      - name: secrets
+        secret:
+          secretName: genesis-mcp-service-account
+          defaultMode: 0400
+      - name: temp
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: logs
+        emptyDir:
+          sizeLimit: 2Gi
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 300
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - genesis-mcp-server
+              topologyKey: kubernetes.io/hostname
+
+---
+# MCP Server Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: genesis-mcp-server
+  namespace: genesis-mcp
+  labels:
+    app: genesis-mcp-server
+    component: mcp-protocol
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: websocket
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: genesis-mcp-server
+
+---
+# MCP Server Metrics Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: genesis-mcp-server-metrics
+  namespace: genesis-mcp
+  labels:
+    app: genesis-mcp-server
+    component: mcp-protocol
+    purpose: metrics
+spec:
+  type: ClusterIP
+  ports:
+  - name: metrics
+    port: 8081
+    targetPort: 8081
+    protocol: TCP
+  selector:
+    app: genesis-mcp-server
+
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: genesis-mcp-server
+  namespace: genesis-mcp
+  labels:
+    app: genesis-mcp-server
+    component: mcp-protocol
+  annotations:
+    iam.gke.io/gcp-service-account: genesis-mcp-server@genesis-platform.iam.gserviceaccount.com
+
+---
+# ConfigMap for MCP Server Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-server-config
+  namespace: genesis-mcp
+  labels:
+    app: genesis-mcp-server
+    component: mcp-protocol
+data:
+  mcp-production.yaml: |
+    # MCP Production Configuration for Kubernetes
+    mcp:
+      server:
+        host: "0.0.0.0"
+        port: 8080
+        enableAuth: true
+        enableWebSocket: true
+        enableHttp: true
+        corsOrigins: ["*"]
+        maxConnections: 1000
+        requestTimeout: 30000
+        
+      auth:
+        enabled: true
+        
+      monitoring:
+        enabled: true
+        metricsPort: 8081
+        healthCheckInterval: 30
+        
+      services:
+        registry:
+          maxServices: 1000
+          healthCheckInterval: 30
+          
+      security:
+        rateLimiting:
+          enabled: true
+          windowMs: 900000  # 15 minutes
+          max: 1000         # requests per window
+          
+        requestValidation:
+          enabled: true
+          maxRequestSize: "10MB"
+          
+        securityHeaders:
+          enabled: true
+          
+    claude_talk:
+      integration:
+        enabled: true
+        session_timeout: 3600
+        max_concurrent_agents: 100
+        streaming_enabled: true
+        
+      resources:
+        defaults:
+          memory: "1GB"
+          cpu: "500m"
+          timeout: 1800
+          
+        limits:
+          memory: "4GB"
+          cpu: "2000m"
+          timeout: 3600
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: genesis-mcp-server
+  namespace: genesis-mcp
+  labels:
+    app: genesis-mcp-server
+    component: mcp-protocol
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: genesis-mcp-server
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 120
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: genesis-mcp-server
+  namespace: genesis-mcp
+  labels:
+    app: genesis-mcp-server
+    component: mcp-protocol
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: genesis-mcp-server
+
+---
+# Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: genesis-mcp-server
+  namespace: genesis-mcp
+  labels:
+    app: genesis-mcp-server
+    component: mcp-protocol
+spec:
+  podSelector:
+    matchLabels:
+      app: genesis-mcp-server
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: genesis-claude-talk
+    - namespaceSelector:
+        matchLabels:
+          name: genesis-agents
+    - podSelector:
+        matchLabels:
+          app: genesis-ingress
+    ports:
+    - protocol: TCP
+      port: 8080
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 8081  # Metrics
+  egress:
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443   # HTTPS (Secret Manager, etc.)
+    - protocol: TCP
+      port: 53    # DNS
+    - protocol: UDP
+      port: 53    # DNS

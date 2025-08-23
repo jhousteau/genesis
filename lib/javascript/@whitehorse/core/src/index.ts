@@ -1,6 +1,6 @@
 /**
  * @whitehorse/core - Industrial-strength core library for the Universal Project Platform
- * 
+ *
  * This library provides comprehensive utilities for building cloud-native applications
  * with focus on GCP integration, observability, and enterprise-grade features.
  */
@@ -46,6 +46,9 @@ export {
 
 // Types
 export * from './types';
+
+// MCP Protocol Support
+export * from './mcp';
 
 // Version
 export const VERSION = '1.0.0';

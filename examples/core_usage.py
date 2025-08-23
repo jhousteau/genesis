@@ -15,26 +15,11 @@ import random
 import time
 
 # Import Genesis Core components
-from core import (
-    AGGRESSIVE_POLICY,
-    CircuitBreaker,
-    Context,
-    DiskHealthCheck,
-    GenesisError,
-    HealthStatus,
-    HTTPHealthCheck,
-    MemoryHealthCheck,
-    RequestContext,
-    TraceContext,
-    UserContext,
-    configure_core,
-    context_span,
-    get_context,
-    get_health_registry,
-    get_logger,
-    handle_error,
-    retry,
-)
+from core import (AGGRESSIVE_POLICY, CircuitBreaker, Context, DiskHealthCheck,
+                  GenesisError, HealthStatus, HTTPHealthCheck,
+                  MemoryHealthCheck, RequestContext, TraceContext, UserContext,
+                  configure_core, context_span, get_context,
+                  get_health_registry, get_logger, handle_error, retry)
 
 
 def example_basic_setup():

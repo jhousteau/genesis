@@ -1,0 +1,31 @@
+{
+  "execution_time": "2025-08-23T16:59:40.891491",
+  "total_duration": 0.993166,
+  "suites": 1,
+  "total_tests": 0,
+  "total_passed": 0,
+  "total_failed": 0,
+  "total_skipped": 0,
+  "success_rate": 0,
+  "suite_results": {
+    "unit": {
+      "suite_name": "unit",
+      "start_time": "2025-08-23 16:59:40.935374",
+      "end_time": "2025-08-23 16:59:41.884609",
+      "duration": 0.9491908550262451,
+      "files": [
+        "test_cli_commands.py",
+        "test_registry_operations.py"
+      ],
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "coverage": null,
+      "success": false,
+      "output": "",
+      "error_output": "ERROR: usage: __main__.py [options] [file_or_dir] [file_or_dir] [...]\n__main__.py: error: unrecognized arguments: --html=/Users/jameshousteau/source_code/genesis/tests/test_reports/report_unit.html --json-report --json-report-file=/Users/jameshousteau/source_code/genesis/tests/test_reports/report_unit.json -n auto\n  inifile: /Users/jameshousteau/source_code/genesis/tests/pytest.ini\n  rootdir: /Users/jameshousteau/source_code/genesis/tests\n\n",
+      "return_code": 4
+    }
+  }
+}

@@ -44,9 +44,9 @@ class TestDeploymentStrategies:
 
         for expected_dir in expected_dirs:
             dir_path = self.deploy_dir / expected_dir
-            assert dir_path.exists(), (
-                f"Deployment directory {expected_dir} does not exist"
-            )
+            assert (
+                dir_path.exists()
+            ), f"Deployment directory {expected_dir} does not exist"
             assert dir_path.is_dir(), f"{expected_dir} is not a directory"
 
     def test_blue_green_deployment(self):
@@ -140,9 +140,9 @@ class TestPipelineGeneration:
 
         for expected_dir in expected_dirs:
             dir_path = self.pipelines_dir / expected_dir
-            assert dir_path.exists(), (
-                f"Pipeline directory {expected_dir} does not exist"
-            )
+            assert (
+                dir_path.exists()
+            ), f"Pipeline directory {expected_dir} does not exist"
 
     def test_github_actions_pipelines(self):
         """Test GitHub Actions pipeline templates"""

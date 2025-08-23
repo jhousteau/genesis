@@ -15,7 +15,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 
 class ErrorSeverity(Enum):
@@ -59,7 +59,7 @@ class ErrorContext:
     request_id: Optional[str] = None
     trace_id: Optional[str] = None
     span_id: Optional[str] = None
-    metadata: Dict[str, Any] = None
+    metadata: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert context to dictionary"""
@@ -147,7 +147,7 @@ class GenesisError(Exception):
             }
 
         if self.severity in [ErrorSeverity.ERROR, ErrorSeverity.CRITICAL]:
-            error_dict["stack_trace"] = self.stack_trace
+            error_dict["error"]["stack_trace"] = self.stack_trace
 
         return error_dict
 
@@ -246,7 +246,7 @@ class ErrorHandler:
     def __init__(self, service_name: str, environment: str = "development"):
         self.service_name = service_name
         self.environment = environment
-        self.handlers = []
+        self.handlers: List[Callable[[GenesisError], None]] = []
 
     def handle(
         self, error: Exception, context: Optional[ErrorContext] = None
@@ -293,7 +293,7 @@ class ErrorHandler:
 
         for exc_type, (genesis_class, error_category) in error_map.items():
             if isinstance(error, exc_type):
-                error_class = genesis_class
+                error_class = genesis_class  # type: ignore[assignment]
                 category = error_category
                 break
 
@@ -301,7 +301,7 @@ class ErrorHandler:
             message=str(error), category=category, context=context, cause=error
         )
 
-    def add_handler(self, handler):
+    def add_handler(self, handler: Callable[[GenesisError], None]) -> None:
         """Add an error handler function"""
         self.handlers.append(handler)
 

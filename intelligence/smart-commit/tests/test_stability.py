@@ -76,6 +76,6 @@ def test_capture_state_without_gitignore(tmp_path):
     assert any(p.name == "utils.py" for p in state.keys())
 
     # Check that .git files are excluded even without gitignore
-    assert not any(".git" in str(p) for p in state.keys()), (
-        "Found .git file in state even though it should always be excluded"
-    )
+    assert not any(
+        ".git" in str(p) for p in state.keys()
+    ), "Found .git file in state even though it should always be excluded"

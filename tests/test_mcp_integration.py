@@ -11,13 +11,10 @@ Tests the complete MCP implementation with claude-talk integration including:
 - Error handling and resilience
 """
 
-import unittest
-import asyncio
 import json
 import time
+import unittest
 import uuid
-from typing import Dict, List, Optional, Any
-from unittest.mock import Mock, AsyncMock, patch
 
 
 class TestMCPProtocolValidation(unittest.TestCase):
