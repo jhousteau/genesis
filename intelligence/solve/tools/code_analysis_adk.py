@@ -447,9 +447,9 @@ class CodeAnalysisADKTool(BaseTool):
                             ),
                         }
                         if include_source:
-                            issue[
-                                "source_preview"
-                            ] = f"def {node.name}(...): # {func_length} lines"
+                            issue["source_preview"] = (
+                                f"def {node.name}(...): # {func_length} lines"
+                            )
                         issues.append(issue)
 
                 # Check parameter count

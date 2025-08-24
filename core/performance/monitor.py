@@ -786,9 +786,11 @@ class PerformanceMonitor:
                         "threshold_value": incident.threshold_value,
                         "triggered_at": incident.triggered_at.isoformat(),
                     },
-                    severity="WARNING"
-                    if incident.severity == AlertSeverity.WARNING
-                    else "ERROR",
+                    severity=(
+                        "WARNING"
+                        if incident.severity == AlertSeverity.WARNING
+                        else "ERROR"
+                    ),
                 )
             except Exception as e:
                 self.logger.error(f"Failed to send incident to Cloud Logging: {e}")

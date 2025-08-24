@@ -12,19 +12,19 @@ regulatory_compliance:
       consent_management: required
       data_portability: supported
       right_to_erasure: implemented
-      
+
     hipaa:
       enabled: false
       phi_handling: encrypted
       access_controls: role_based
       audit_logs: immutable
-      
+
     pci_dss:
       enabled: false
       level: 2
       scanning: quarterly
       penetration_testing: annual
-      
+
     sox:
       enabled: true
       controls: documented
@@ -40,7 +40,7 @@ operational_compliance:
       production: 3
     documentation: required
     rollback_plan: mandatory
-    
+
   deployment_standards:
     environments:
       - development
@@ -51,13 +51,13 @@ operational_compliance:
       security_scan: clean
       performance: acceptable
       approval: obtained
-    
+
   monitoring_requirements:
     uptime_sla: 99.9%
     metrics_retention: 90d
     log_retention: 365d
     alert_response: 15m
-    
+
   backup_requirements:
     frequency:
       production: daily
@@ -79,19 +79,19 @@ data_governance:
       - restricted
     marking: required
     handling: policy_based
-    
+
   retention:
     default: 7_years
     pii: 3_years
     logs: 1_year
     metrics: 90_days
-    
+
   privacy:
     pii_identification: automated
     consent_tracking: required
     anonymization: available
     pseudonymization: supported
-    
+
   cross_border:
     data_residency: enforced
     transfer_mechanisms:
@@ -105,19 +105,19 @@ quality_standards:
     complexity_maximum: 10
     duplication_maximum: 5%
     security_issues: zero_tolerance
-    
+
   documentation:
     api_documentation: required
     architecture_docs: required
     runbooks: required
     disaster_recovery: required
-    
+
   testing:
     unit_tests: required
     integration_tests: required
     performance_tests: recommended
     security_tests: required
-    
+
   release_management:
     versioning: semantic
     changelog: required
@@ -129,14 +129,14 @@ audit_requirements:
     frequency: quarterly
     scope: full_platform
     reporting: executive_level
-    
+
   external_audit:
     frequency: annual
     certifications:
       - ISO_27001
       - SOC2_Type2
     reporting: board_level
-    
+
   continuous_compliance:
     monitoring: automated
     reporting: real_time
@@ -148,12 +148,12 @@ vendor_management:
     security_review: required
     privacy_review: required
     contract_review: legal_team
-    
+
   monitoring:
     performance: monthly
     compliance: quarterly
     incidents: immediate
-    
+
   requirements:
     insurance: required
     certifications: verified
@@ -169,7 +169,7 @@ training_requirements:
       - data_handling
       - incident_reporting
     completion_rate: 100%
-    
+
   compliance_training:
     frequency: annual
     topics:
@@ -178,7 +178,7 @@ training_requirements:
       - data_protection
       - ethical_guidelines
     completion_rate: 100%
-    
+
   role_specific:
     developers: secure_coding
     operators: incident_response

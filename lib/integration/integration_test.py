@@ -16,8 +16,12 @@ sys.path.insert(0, os.path.dirname(__file__))
 from component_registry import ComponentState, ComponentType, get_registry
 from config_manager import get_config_manager
 from event_bus import EventPriority, EventType, get_event_bus
-from health_aggregator import (CheckType, HealthCheck, HealthStatus,
-                               get_health_aggregator)
+from health_aggregator import (
+    CheckType,
+    HealthCheck,
+    HealthStatus,
+    get_health_aggregator,
+)
 
 from . import get_system_integrator
 

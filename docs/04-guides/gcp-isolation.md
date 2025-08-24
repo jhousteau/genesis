@@ -35,7 +35,7 @@ Genesis implements comprehensive GCP environment isolation to prevent cross-proj
    ```bash
    # macOS
    brew install direnv
-   
+
    # Add to your shell profile (.zshrc or .bash_profile)
    eval "$(direnv hook zsh)"  # or bash
    ```
@@ -62,7 +62,7 @@ Genesis implements comprehensive GCP environment isolation to prevent cross-proj
    ```bash
    echo $CLOUDSDK_CONFIG
    # Should show: /Users/yourname/.gcloud/whai-genesis-dev
-   
+
    gcloud config list
    # Should show isolated configuration
    ```
@@ -176,7 +176,7 @@ All gcloud operations are logged to:
 **Solution**: Run `direnv allow` in the project directory
 
 ### Issue: "No active authentication"
-**Solution**: 
+**Solution**:
 ```bash
 gcloud auth login
 # or for service account:

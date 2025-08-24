@@ -184,7 +184,7 @@ extensions:
 
 service:
   extensions: [health_check, pprof, zpages, basicauth]
-  
+
   pipelines:
     # Metrics pipeline
     metrics:

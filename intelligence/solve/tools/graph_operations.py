@@ -31,8 +31,7 @@ logger = structlog.get_logger(__name__)
 try:
     from graph.connection import GraphConnection
     from graph.models.adr_models import ADRNode, SystemNode
-    from graph.models.gcp_models import (CloudRunService, GCPPrimitive,
-                                         PubSubTopic)
+    from graph.models.gcp_models import CloudRunService, GCPPrimitive, PubSubTopic
     from graph.repositories.adr_repository import ADRRepository
     from graph.repositories.gcp_repository import GCPRepository
 

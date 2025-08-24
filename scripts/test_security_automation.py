@@ -16,11 +16,17 @@ from typing import Any, Dict, List
 # Add the parent directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core.security import (AccessJustification, AttackPattern, ElevationLevel,
-                           SecurityAutomationLevel, SecurityEvent,
-                           SecurityEventType, ThreatSeverity,
-                           create_comprehensive_security_platform,
-                           get_shield_score)
+from core.security import (
+    AccessJustification,
+    AttackPattern,
+    ElevationLevel,
+    SecurityAutomationLevel,
+    SecurityEvent,
+    SecurityEventType,
+    ThreatSeverity,
+    create_comprehensive_security_platform,
+    get_shield_score,
+)
 
 
 class SecurityAutomationTester:
@@ -77,9 +83,9 @@ class SecurityAutomationTester:
                 "total_tests": total_tests,
                 "passed_tests": passed_tests,
                 "failed_tests": total_tests - passed_tests,
-                "success_rate": (passed_tests / total_tests) * 100
-                if total_tests > 0
-                else 0,
+                "success_rate": (
+                    (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+                ),
                 "test_duration": time.time() - self.test_start_time,
             },
             "recommendations": self._generate_test_recommendations(test_suite),

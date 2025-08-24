@@ -423,11 +423,11 @@ queue = PubSubQueue('work-queue')
 
 async def process_message(message):
     logger.info("Processing message", message_id=message.id)
-    
+
     # Process and store result
     result = await process_work(message.data)
     storage.put_json(f"results/{message.id}.json", result)
-    
+
     logger.info("Message processed", message_id=message.id)
 
 async def main():

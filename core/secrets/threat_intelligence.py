@@ -870,9 +870,11 @@ class ThreatIntelligenceSystem:
                     "service_identity": event.service_identity,
                     "secret_name": event.secret_name,
                     "confidence_score": event.confidence_score,
-                    "automated_response": event.automated_response.value
-                    if event.automated_response
-                    else None,
+                    "automated_response": (
+                        event.automated_response.value
+                        if event.automated_response
+                        else None
+                    ),
                     "response_taken": event.response_taken,
                     "resolved": event.resolved,
                     "evidence": event.evidence,

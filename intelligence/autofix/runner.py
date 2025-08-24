@@ -9,8 +9,12 @@ import asyncio
 import logging
 import time
 
-from .fixers import (EndOfFileFixer, RuffAutoFixer, RuffFormatter,
-                     TrailingWhitespaceFixer)
+from .fixers import (
+    EndOfFileFixer,
+    RuffAutoFixer,
+    RuffFormatter,
+    TrailingWhitespaceFixer,
+)
 from .models import AutofixConfig, FixResult
 from .typescript_fixer import TypeScriptLintFixer
 

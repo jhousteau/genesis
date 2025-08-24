@@ -15,8 +15,11 @@ NO CLASSES - Only direct function-style Agent definitions following hello_world 
 import logging
 from typing import Any
 
-from solve.prompts.constitutional_template import (AgentRole, PromptContext,
-                                                   build_adk_instruction)
+from solve.prompts.constitutional_template import (
+    AgentRole,
+    PromptContext,
+    build_adk_instruction,
+)
 
 # Set up logging for this module
 logger = logging.getLogger(__name__)
@@ -30,8 +33,11 @@ def _get_tools_for_agent(agent_role: AgentRole) -> list[Any]:
         # Import ADK tools directly to ensure compatibility
         from solve.tools.code_analysis_adk import CodeAnalysisADKTool
         from solve.tools.filesystem_adk import FileSystemTool
-        from solve.tools.git_operations_adk import (GitAddTool, GitCommitTool,
-                                                    GitStatusTool)
+        from solve.tools.git_operations_adk import (
+            GitAddTool,
+            GitCommitTool,
+            GitStatusTool,
+        )
 
         # Base tools that all agents need
         filesystem_tool = FileSystemTool()

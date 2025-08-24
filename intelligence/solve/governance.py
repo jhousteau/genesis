@@ -152,7 +152,9 @@ class GovernanceLoader:
         try:
             # Parse XML
             # Using defusedxml when available for secure XML parsing
-            root = ET.fromstring(content)  # noqa: S314 - Using defusedxml or warning issued
+            root = ET.fromstring(
+                content
+            )  # noqa: S314 - Using defusedxml or warning issued
             if root.tag != "adr_governance":
                 raise GovernanceLoadError(
                     f"Invalid ADR file format: root element should be "
@@ -358,7 +360,9 @@ class GovernanceLoader:
                     governance_file.read_text, encoding="utf-8"
                 )
                 # Using defusedxml when available for secure XML parsing
-                root = ET.fromstring(content)  # noqa: S314 - Using defusedxml or warning issued
+                root = ET.fromstring(
+                    content
+                )  # noqa: S314 - Using defusedxml or warning issued
 
                 # Create phase config from governance file
                 config = PhaseConfig(

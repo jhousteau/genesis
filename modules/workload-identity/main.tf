@@ -9,122 +9,122 @@ locals {
   # Standard attribute mappings for different providers
   default_attribute_mappings = {
     github = {
-      "google.subject"                    = "assertion.sub"
-      "attribute.actor"                   = "assertion.actor"
-      "attribute.repository"              = "assertion.repository"
-      "attribute.repository_owner"        = "assertion.repository_owner"
-      "attribute.repository_visibility"   = "assertion.repository_visibility"
-      "attribute.event_name"              = "assertion.event_name"
-      "attribute.ref"                     = "assertion.ref"
-      "attribute.ref_type"                = "assertion.ref_type"
-      "attribute.workflow"                = "assertion.workflow"
-      "attribute.job_workflow_ref"        = "assertion.job_workflow_ref"
-      "attribute.environment"              = "assertion.environment"
-      "attribute.runner_environment"      = "assertion.runner_environment"
+      "google.subject"                  = "assertion.sub"
+      "attribute.actor"                 = "assertion.actor"
+      "attribute.repository"            = "assertion.repository"
+      "attribute.repository_owner"      = "assertion.repository_owner"
+      "attribute.repository_visibility" = "assertion.repository_visibility"
+      "attribute.event_name"            = "assertion.event_name"
+      "attribute.ref"                   = "assertion.ref"
+      "attribute.ref_type"              = "assertion.ref_type"
+      "attribute.workflow"              = "assertion.workflow"
+      "attribute.job_workflow_ref"      = "assertion.job_workflow_ref"
+      "attribute.environment"           = "assertion.environment"
+      "attribute.runner_environment"    = "assertion.runner_environment"
     }
 
     gitlab = {
-      "google.subject"                    = "assertion.sub"
-      "attribute.namespace_id"            = "assertion.namespace_id"
-      "attribute.namespace_path"          = "assertion.namespace_path"
-      "attribute.project_id"              = "assertion.project_id"
-      "attribute.project_path"            = "assertion.project_path"
-      "attribute.user_email"              = "assertion.user_email"
-      "attribute.user_login"              = "assertion.user_login"
-      "attribute.ref"                     = "assertion.ref"
-      "attribute.ref_type"                = "assertion.ref_type"
-      "attribute.ref_protected"           = "assertion.ref_protected"
-      "attribute.environment"             = "assertion.environment"
-      "attribute.environment_protected"   = "assertion.environment_protected"
-      "attribute.deployment_tier"         = "assertion.deployment_tier"
-      "attribute.pipeline_source"         = "assertion.pipeline_source"
-      "attribute.ci_config_ref_uri"       = "assertion.ci_config_ref_uri"
+      "google.subject"                  = "assertion.sub"
+      "attribute.namespace_id"          = "assertion.namespace_id"
+      "attribute.namespace_path"        = "assertion.namespace_path"
+      "attribute.project_id"            = "assertion.project_id"
+      "attribute.project_path"          = "assertion.project_path"
+      "attribute.user_email"            = "assertion.user_email"
+      "attribute.user_login"            = "assertion.user_login"
+      "attribute.ref"                   = "assertion.ref"
+      "attribute.ref_type"              = "assertion.ref_type"
+      "attribute.ref_protected"         = "assertion.ref_protected"
+      "attribute.environment"           = "assertion.environment"
+      "attribute.environment_protected" = "assertion.environment_protected"
+      "attribute.deployment_tier"       = "assertion.deployment_tier"
+      "attribute.pipeline_source"       = "assertion.pipeline_source"
+      "attribute.ci_config_ref_uri"     = "assertion.ci_config_ref_uri"
     }
 
     azure_devops = {
-      "google.subject"                    = "assertion.sub"
-      "attribute.sc"                      = "assertion.sc"
-      "attribute.project_id"              = "assertion.teamProjectId"
-      "attribute.organization"            = "assertion.organizationId"
-      "attribute.definition_id"           = "assertion.pipelineId"
-      "attribute.build_id"                = "assertion.runId"
-      "attribute.branch"                  = "assertion.ref"
+      "google.subject"          = "assertion.sub"
+      "attribute.sc"            = "assertion.sc"
+      "attribute.project_id"    = "assertion.teamProjectId"
+      "attribute.organization"  = "assertion.organizationId"
+      "attribute.definition_id" = "assertion.pipelineId"
+      "attribute.build_id"      = "assertion.runId"
+      "attribute.branch"        = "assertion.ref"
     }
 
     terraform_cloud = {
-      "google.subject"                    = "assertion.sub"
-      "attribute.terraform_run_phase"     = "assertion.terraform_run_phase"
-      "attribute.terraform_run_id"        = "assertion.terraform_run_id"
-      "attribute.terraform_workspace_id"  = "assertion.terraform_workspace_id"
-      "attribute.terraform_workspace_name" = "assertion.terraform_workspace_name"
-      "attribute.terraform_organization_id" = "assertion.terraform_organization_id"
+      "google.subject"                        = "assertion.sub"
+      "attribute.terraform_run_phase"         = "assertion.terraform_run_phase"
+      "attribute.terraform_run_id"            = "assertion.terraform_run_id"
+      "attribute.terraform_workspace_id"      = "assertion.terraform_workspace_id"
+      "attribute.terraform_workspace_name"    = "assertion.terraform_workspace_name"
+      "attribute.terraform_organization_id"   = "assertion.terraform_organization_id"
       "attribute.terraform_organization_name" = "assertion.terraform_organization_name"
-      "attribute.terraform_project_id"    = "assertion.terraform_project_id"
-      "attribute.terraform_project_name"  = "assertion.terraform_project_name"
+      "attribute.terraform_project_id"        = "assertion.terraform_project_id"
+      "attribute.terraform_project_name"      = "assertion.terraform_project_name"
     }
 
     jenkins = {
-      "google.subject"             = "assertion.sub"
-      "attribute.jenkins_url"      = "assertion.jenkins_url"
-      "attribute.build_number"     = "assertion.build_number"
-      "attribute.job_name"         = "assertion.job_name"
-      "attribute.node_name"        = "assertion.node_name"
-      "attribute.user_id"          = "assertion.user_id"
-      "attribute.build_url"        = "assertion.build_url"
-      "attribute.workspace"        = "assertion.workspace"
-      "attribute.git_branch"       = "assertion.git_branch"
-      "attribute.git_commit"       = "assertion.git_commit"
+      "google.subject"         = "assertion.sub"
+      "attribute.jenkins_url"  = "assertion.jenkins_url"
+      "attribute.build_number" = "assertion.build_number"
+      "attribute.job_name"     = "assertion.job_name"
+      "attribute.node_name"    = "assertion.node_name"
+      "attribute.user_id"      = "assertion.user_id"
+      "attribute.build_url"    = "assertion.build_url"
+      "attribute.workspace"    = "assertion.workspace"
+      "attribute.git_branch"   = "assertion.git_branch"
+      "attribute.git_commit"   = "assertion.git_commit"
     }
 
     circleci = {
-      "google.subject"                = "assertion.sub"
-      "attribute.project_id"          = "assertion.oidc.circleci.project-id"
-      "attribute.context_id"          = "assertion.oidc.circleci.context-id"
-      "attribute.job_id"              = "assertion.oidc.circleci.job-id"
-      "attribute.vcs_origin"          = "assertion.oidc.circleci.vcs.origin"
-      "attribute.vcs_ref"             = "assertion.oidc.circleci.vcs.ref"
-      "attribute.vcs_repository_url"  = "assertion.oidc.circleci.vcs.repository-url"
-      "attribute.vcs_type"            = "assertion.oidc.circleci.vcs.type"
+      "google.subject"               = "assertion.sub"
+      "attribute.project_id"         = "assertion.oidc.circleci.project-id"
+      "attribute.context_id"         = "assertion.oidc.circleci.context-id"
+      "attribute.job_id"             = "assertion.oidc.circleci.job-id"
+      "attribute.vcs_origin"         = "assertion.oidc.circleci.vcs.origin"
+      "attribute.vcs_ref"            = "assertion.oidc.circleci.vcs.ref"
+      "attribute.vcs_repository_url" = "assertion.oidc.circleci.vcs.repository-url"
+      "attribute.vcs_type"           = "assertion.oidc.circleci.vcs.type"
     }
 
     bitbucket = {
-      "google.subject"             = "assertion.sub"
-      "attribute.workspace"        = "assertion.workspaceUuid"
-      "attribute.repository"       = "assertion.repositoryUuid"
-      "attribute.branch"           = "assertion.branchName"
-      "attribute.build_number"     = "assertion.buildNumber"
-      "attribute.pipeline_uuid"    = "assertion.pipelineUuid"
-      "attribute.step_uuid"        = "assertion.stepUuid"
+      "google.subject"          = "assertion.sub"
+      "attribute.workspace"     = "assertion.workspaceUuid"
+      "attribute.repository"    = "assertion.repositoryUuid"
+      "attribute.branch"        = "assertion.branchName"
+      "attribute.build_number"  = "assertion.buildNumber"
+      "attribute.pipeline_uuid" = "assertion.pipelineUuid"
+      "attribute.step_uuid"     = "assertion.stepUuid"
     }
 
     spinnaker = {
       "google.subject"          = "assertion.sub"
-      "attribute.application"    = "assertion.application"
-      "attribute.pipeline_name"  = "assertion.pipeline_name"
-      "attribute.execution_id"   = "assertion.execution_id"
-      "attribute.stage_name"     = "assertion.stage_name"
-      "attribute.account"        = "assertion.account"
-      "attribute.user"           = "assertion.user"
+      "attribute.application"   = "assertion.application"
+      "attribute.pipeline_name" = "assertion.pipeline_name"
+      "attribute.execution_id"  = "assertion.execution_id"
+      "attribute.stage_name"    = "assertion.stage_name"
+      "attribute.account"       = "assertion.account"
+      "attribute.user"          = "assertion.user"
     }
 
     harness = {
-      "google.subject"             = "assertion.sub"
-      "attribute.account_id"       = "assertion.harness.accountId"
-      "attribute.organization_id"  = "assertion.harness.orgId"
-      "attribute.project_id"       = "assertion.harness.projectId"
-      "attribute.pipeline_id"      = "assertion.harness.pipelineId"
-      "attribute.service_id"       = "assertion.harness.serviceId"
-      "attribute.environment_id"   = "assertion.harness.envId"
+      "google.subject"            = "assertion.sub"
+      "attribute.account_id"      = "assertion.harness.accountId"
+      "attribute.organization_id" = "assertion.harness.orgId"
+      "attribute.project_id"      = "assertion.harness.projectId"
+      "attribute.pipeline_id"     = "assertion.harness.pipelineId"
+      "attribute.service_id"      = "assertion.harness.serviceId"
+      "attribute.environment_id"  = "assertion.harness.envId"
     }
 
     aws_codebuild = {
-      "google.subject"          = "assertion.sub"
-      "attribute.aws_account"    = "assertion.aws:account-id"
-      "attribute.aws_region"     = "assertion.aws:region"
-      "attribute.project_name"   = "assertion.aws:codebuild:project-name"
-      "attribute.build_id"       = "assertion.aws:codebuild:build-id"
-      "attribute.source_repo"    = "assertion.aws:codebuild:source-repo"
-      "attribute.branch"         = "assertion.aws:codebuild:resolved-source-version"
+      "google.subject"         = "assertion.sub"
+      "attribute.aws_account"  = "assertion.aws:account-id"
+      "attribute.aws_region"   = "assertion.aws:region"
+      "attribute.project_name" = "assertion.aws:codebuild:project-name"
+      "attribute.build_id"     = "assertion.aws:codebuild:build-id"
+      "attribute.source_repo"  = "assertion.aws:codebuild:source-repo"
+      "attribute.branch"       = "assertion.aws:codebuild:resolved-source-version"
     }
   }
 
@@ -152,13 +152,13 @@ locals {
     for key, provider in var.providers : key => (
       provider.github != null ? join(" && ", compact([
         provider.github.organization != null ?
-          "assertion.repository_owner == '${provider.github.organization}'" : null,
+        "assertion.repository_owner == '${provider.github.organization}'" : null,
         provider.github.repositories != null && length(provider.github.repositories) > 0 ?
-          "assertion.repository in ${jsonencode(provider.github.repositories)}" : null,
+        "assertion.repository in ${jsonencode(provider.github.repositories)}" : null,
         provider.github.branches != null && length(provider.github.branches) > 0 ?
-          "assertion.ref in ${jsonencode([for b in provider.github.branches : "refs/heads/${b}"])}" : null,
+        "assertion.ref in ${jsonencode([for b in provider.github.branches : "refs/heads/${b}"])}" : null,
         provider.github.environments != null && length(provider.github.environments) > 0 ?
-          "assertion.environment in ${jsonencode(provider.github.environments)}" : null,
+        "assertion.environment in ${jsonencode(provider.github.environments)}" : null,
       ])) : null
     )
   }
@@ -168,13 +168,13 @@ locals {
     for key, provider in var.providers : key => (
       provider.gitlab != null ? join(" && ", compact([
         provider.gitlab.group_path != null ?
-          "assertion.namespace_path == '${provider.gitlab.group_path}'" : null,
+        "assertion.namespace_path == '${provider.gitlab.group_path}'" : null,
         provider.gitlab.project_path != null ?
-          "assertion.project_path == '${provider.gitlab.project_path}'" : null,
+        "assertion.project_path == '${provider.gitlab.project_path}'" : null,
         provider.gitlab.branches != null && length(provider.gitlab.branches) > 0 ?
-          "assertion.ref in ${jsonencode([for b in provider.gitlab.branches : "refs/heads/${b}"])}" : null,
+        "assertion.ref in ${jsonencode([for b in provider.gitlab.branches : "refs/heads/${b}"])}" : null,
         provider.gitlab.environments != null && length(provider.gitlab.environments) > 0 ?
-          "assertion.environment in ${jsonencode(provider.gitlab.environments)}" : null,
+        "assertion.environment in ${jsonencode(provider.gitlab.environments)}" : null,
         "assertion.ref_protected == 'true'", # Require protected branches
       ])) : null
     )
@@ -185,11 +185,11 @@ locals {
     for key, provider in var.providers : key => (
       provider.azure_devops != null ? join(" && ", compact([
         provider.azure_devops.organization != null ?
-          "assertion.organizationId == '${provider.azure_devops.organization}'" : null,
+        "assertion.organizationId == '${provider.azure_devops.organization}'" : null,
         provider.azure_devops.project != null ?
-          "assertion.teamProjectId == '${provider.azure_devops.project}'" : null,
+        "assertion.teamProjectId == '${provider.azure_devops.project}'" : null,
         provider.azure_devops.branches != null && length(provider.azure_devops.branches) > 0 ?
-          "assertion.ref in ${jsonencode([for b in provider.azure_devops.branches : "refs/heads/${b}"])}" : null,
+        "assertion.ref in ${jsonencode([for b in provider.azure_devops.branches : "refs/heads/${b}"])}" : null,
       ])) : null
     )
   }
@@ -199,13 +199,13 @@ locals {
     for key, provider in var.providers : key => (
       provider.terraform_cloud != null ? join(" && ", compact([
         provider.terraform_cloud.organization != null ?
-          "assertion.terraform_organization_name == '${provider.terraform_cloud.organization}'" : null,
+        "assertion.terraform_organization_name == '${provider.terraform_cloud.organization}'" : null,
         provider.terraform_cloud.project != null ?
-          "assertion.terraform_project_name == '${provider.terraform_cloud.project}'" : null,
+        "assertion.terraform_project_name == '${provider.terraform_cloud.project}'" : null,
         provider.terraform_cloud.workspace != null ?
-          "assertion.terraform_workspace_name == '${provider.terraform_cloud.workspace}'" : null,
+        "assertion.terraform_workspace_name == '${provider.terraform_cloud.workspace}'" : null,
         provider.terraform_cloud.run_phase != null ?
-          "assertion.terraform_run_phase == '${provider.terraform_cloud.run_phase}'" : null,
+        "assertion.terraform_run_phase == '${provider.terraform_cloud.run_phase}'" : null,
       ])) : null
     )
   }
@@ -215,13 +215,13 @@ locals {
     for key, provider in var.providers : key => (
       provider.jenkins != null ? join(" && ", compact([
         provider.jenkins.jenkins_url != null ?
-          "assertion.jenkins_url == '${provider.jenkins.jenkins_url}'" : null,
+        "assertion.jenkins_url == '${provider.jenkins.jenkins_url}'" : null,
         provider.jenkins.job_name != null ?
-          "assertion.job_name == '${provider.jenkins.job_name}'" : null,
+        "assertion.job_name == '${provider.jenkins.job_name}'" : null,
         provider.jenkins.user_id != null ?
-          "assertion.user_id == '${provider.jenkins.user_id}'" : null,
+        "assertion.user_id == '${provider.jenkins.user_id}'" : null,
         provider.jenkins.git_branch != null ?
-          "assertion.git_branch == '${provider.jenkins.git_branch}'" : null,
+        "assertion.git_branch == '${provider.jenkins.git_branch}'" : null,
       ])) : null
     )
   }
@@ -231,13 +231,13 @@ locals {
     for key, provider in var.providers : key => (
       provider.circleci != null ? join(" && ", compact([
         provider.circleci.organization != null ?
-          "assertion.oidc.circleci.project-id.startsWith('${provider.circleci.organization}/')" : null,
+        "assertion.oidc.circleci.project-id.startsWith('${provider.circleci.organization}/')" : null,
         provider.circleci.project_id != null ?
-          "assertion.oidc.circleci.project-id == '${provider.circleci.project_id}'" : null,
+        "assertion.oidc.circleci.project-id == '${provider.circleci.project_id}'" : null,
         provider.circleci.vcs_type != null ?
-          "assertion.oidc.circleci.vcs.type == '${provider.circleci.vcs_type}'" : null,
+        "assertion.oidc.circleci.vcs.type == '${provider.circleci.vcs_type}'" : null,
         provider.circleci.repository != null ?
-          "assertion.oidc.circleci.vcs.repository-url.contains('${provider.circleci.repository}')" : null,
+        "assertion.oidc.circleci.vcs.repository-url.contains('${provider.circleci.repository}')" : null,
       ])) : null
     )
   }
@@ -247,11 +247,11 @@ locals {
     for key, provider in var.providers : key => (
       provider.bitbucket != null ? join(" && ", compact([
         provider.bitbucket.workspace != null ?
-          "assertion.workspaceUuid == '${provider.bitbucket.workspace}'" : null,
+        "assertion.workspaceUuid == '${provider.bitbucket.workspace}'" : null,
         provider.bitbucket.repository != null ?
-          "assertion.repositoryUuid == '${provider.bitbucket.repository}'" : null,
+        "assertion.repositoryUuid == '${provider.bitbucket.repository}'" : null,
         provider.bitbucket.branch != null ?
-          "assertion.branchName == '${provider.bitbucket.branch}'" : null,
+        "assertion.branchName == '${provider.bitbucket.branch}'" : null,
       ])) : null
     )
   }
@@ -261,11 +261,11 @@ locals {
     for key, provider in var.providers : key => (
       provider.spinnaker != null ? join(" && ", compact([
         provider.spinnaker.application != null ?
-          "assertion.application == '${provider.spinnaker.application}'" : null,
+        "assertion.application == '${provider.spinnaker.application}'" : null,
         provider.spinnaker.pipeline_name != null ?
-          "assertion.pipeline_name == '${provider.spinnaker.pipeline_name}'" : null,
+        "assertion.pipeline_name == '${provider.spinnaker.pipeline_name}'" : null,
         provider.spinnaker.account != null ?
-          "assertion.account == '${provider.spinnaker.account}'" : null,
+        "assertion.account == '${provider.spinnaker.account}'" : null,
       ])) : null
     )
   }
@@ -275,13 +275,13 @@ locals {
     for key, provider in var.providers : key => (
       provider.harness != null ? join(" && ", compact([
         provider.harness.account_id != null ?
-          "assertion.harness.accountId == '${provider.harness.account_id}'" : null,
+        "assertion.harness.accountId == '${provider.harness.account_id}'" : null,
         provider.harness.organization_id != null ?
-          "assertion.harness.orgId == '${provider.harness.organization_id}'" : null,
+        "assertion.harness.orgId == '${provider.harness.organization_id}'" : null,
         provider.harness.project_id != null ?
-          "assertion.harness.projectId == '${provider.harness.project_id}'" : null,
+        "assertion.harness.projectId == '${provider.harness.project_id}'" : null,
         provider.harness.pipeline_id != null ?
-          "assertion.harness.pipelineId == '${provider.harness.pipeline_id}'" : null,
+        "assertion.harness.pipelineId == '${provider.harness.pipeline_id}'" : null,
       ])) : null
     )
   }
@@ -291,11 +291,11 @@ locals {
     for key, provider in var.providers : key => (
       provider.aws_codebuild != null ? join(" && ", compact([
         provider.aws_codebuild.aws_account_id != null ?
-          "assertion['aws:account-id'] == '${provider.aws_codebuild.aws_account_id}'" : null,
+        "assertion['aws:account-id'] == '${provider.aws_codebuild.aws_account_id}'" : null,
         provider.aws_codebuild.aws_region != null ?
-          "assertion['aws:region'] == '${provider.aws_codebuild.aws_region}'" : null,
+        "assertion['aws:region'] == '${provider.aws_codebuild.aws_region}'" : null,
         provider.aws_codebuild.project_name != null ?
-          "assertion['aws:codebuild:project-name'] == '${provider.aws_codebuild.project_name}'" : null,
+        "assertion['aws:codebuild:project-name'] == '${provider.aws_codebuild.project_name}'" : null,
       ])) : null
     )
   }
@@ -304,11 +304,11 @@ locals {
   custom_oidc_conditions = {
     for key, provider in var.providers : key => (
       provider.custom_oidc != null && length(provider.custom_oidc.allowed_claims) > 0 ?
-        join(" && ", flatten([
-          for claim, allowed_values in provider.custom_oidc.allowed_claims : [
-            for value in allowed_values : "assertion.${claim} == '${value}'"
-          ]
-        ])) : null
+      join(" && ", flatten([
+        for claim, allowed_values in provider.custom_oidc.allowed_claims : [
+          for value in allowed_values : "assertion.${claim} == '${value}'"
+        ]
+      ])) : null
     )
   }
 
@@ -392,11 +392,11 @@ resource "google_iam_workload_identity_pool_provider" "providers" {
   project                            = var.project_id
 
   display_name = coalesce(each.value.display_name, each.value.provider_id)
-  description  = coalesce(
+  description = coalesce(
     each.value.description,
     "Workload Identity Provider for ${local.provider_configs[each.key].type}"
   )
-  disabled     = each.value.disabled
+  disabled = each.value.disabled
 
   attribute_mapping = local.provider_configs[each.key].attribute_mapping
 
@@ -413,7 +413,7 @@ resource "google_iam_workload_identity_pool_provider" "providers" {
     content {
       issuer_uri        = local.provider_configs[each.key].issuer_uri
       allowed_audiences = local.provider_configs[each.key].allowed_audiences
-      jwks_json        = each.value.jwks_json
+      jwks_json         = each.value.jwks_json
     }
   }
 }
@@ -427,11 +427,11 @@ resource "google_service_account" "accounts" {
 
   account_id   = each.value.service_account_id
   display_name = coalesce(each.value.display_name, each.value.service_account_id)
-  description  = coalesce(
+  description = coalesce(
     each.value.description,
     "Service account for workload identity federation"
   )
-  project      = var.project_id
+  project = var.project_id
 }
 
 # Get existing service accounts
@@ -465,8 +465,8 @@ locals {
         sa_key              = sa_key
         provider_id         = binding.provider_id
         attribute_condition = binding.attribute_condition
-        roles              = binding.roles
-        sa_email           = local.service_account_emails[sa_key]
+        roles               = binding.roles
+        sa_email            = local.service_account_emails[sa_key]
       }
     ]
   ])
@@ -483,7 +483,7 @@ resource "google_service_account_iam_member" "workload_identity_binding" {
   for_each = local.binding_keys
 
   service_account_id = each.value.sa_email
-  role              = "roles/iam.workloadIdentityUser"
+  role               = "roles/iam.workloadIdentityUser"
 
   member = var.enable_attribute_conditions && each.value.attribute_condition != null ? "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.main.name}/attribute.${each.value.attribute_condition}" : "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.main.name}/*"
 
@@ -498,8 +498,8 @@ resource "google_project_iam_member" "sa_project_roles" {
     for item in flatten([
       for sa_key, sa in var.service_accounts : [
         for role in sa.project_roles : {
-          key  = "${sa_key}-${role}"
-          role = role
+          key   = "${sa_key}-${role}"
+          role  = role
           email = local.service_account_emails[sa_key]
         }
       ]
@@ -519,18 +519,18 @@ data "google_project" "current" {
 resource "google_logging_project_sink" "workload_identity_audit" {
   count = var.enable_audit_logging ? 1 : 0
 
-  name        = var.audit_log_config.log_sink_name
-  project     = var.project_id
+  name    = var.audit_log_config.log_sink_name
+  project = var.project_id
 
   # Destination configuration
   destination = (
     var.audit_log_config.destination_type == "bigquery" && var.audit_log_config.bigquery_dataset != null ?
-      "bigquery.googleapis.com/projects/${var.project_id}/datasets/${var.audit_log_config.bigquery_dataset}" :
+    "bigquery.googleapis.com/projects/${var.project_id}/datasets/${var.audit_log_config.bigquery_dataset}" :
     var.audit_log_config.destination_type == "pubsub" && var.audit_log_config.pubsub_topic != null ?
-      "pubsub.googleapis.com/projects/${var.project_id}/topics/${var.audit_log_config.pubsub_topic}" :
+    "pubsub.googleapis.com/projects/${var.project_id}/topics/${var.audit_log_config.pubsub_topic}" :
     var.audit_log_config.destination_type == "cloud_storage" && var.audit_log_config.cloud_storage_bucket != null ?
-      "storage.googleapis.com/${var.audit_log_config.cloud_storage_bucket}" :
-      "logging.googleapis.com/projects/${var.project_id}/logs/${var.audit_log_config.log_sink_name}"
+    "storage.googleapis.com/${var.audit_log_config.cloud_storage_bucket}" :
+    "logging.googleapis.com/projects/${var.project_id}/logs/${var.audit_log_config.log_sink_name}"
   )
 
   # Filter for workload identity operations
@@ -556,7 +556,7 @@ resource "google_logging_project_sink" "workload_identity_audit" {
 resource "google_monitoring_dashboard" "workload_identity" {
   count = var.monitoring_config.enable_metrics ? 1 : 0
 
-  project        = var.project_id
+  project = var.project_id
   dashboard_json = jsonencode({
     displayName = "Workload Identity Federation Dashboard"
     mosaicLayout = {
@@ -619,9 +619,9 @@ resource "google_monitoring_alert_policy" "auth_failures" {
     display_name = "High Authentication Failure Rate"
 
     condition_threshold {
-      filter         = "resource.type=\"iam_workload_identity_pool\" AND severity=\"ERROR\""
-      duration       = "60s"
-      comparison     = "COMPARISON_GREATER_THAN"
+      filter          = "resource.type=\"iam_workload_identity_pool\" AND severity=\"ERROR\""
+      duration        = "60s"
+      comparison      = "COMPARISON_GREATER_THAN"
       threshold_value = var.monitoring_config.alert_thresholds.failed_auth_rate
 
       aggregations {
@@ -664,7 +664,7 @@ resource "google_billing_budget" "workload_identity" {
 
   threshold_rules {
     threshold_percent = var.cost_optimization.budget_alerts.threshold_percent / 100
-    spend_basis      = "CURRENT_SPEND"
+    spend_basis       = "CURRENT_SPEND"
   }
 
   dynamic "all_updates_rule" {
@@ -692,9 +692,9 @@ resource "google_cloud_scheduler_job" "cleanup" {
     uri         = "https://cloudfunctions.googleapis.com/v1/projects/${var.project_id}/locations/us-central1/functions/workload-identity-cleanup"
 
     body = base64encode(jsonencode({
-      pool_id                      = var.pool_id
-      unused_pool_threshold_days   = var.cost_optimization.automated_cleanup.unused_pool_threshold_days
-      unused_sa_threshold_days     = var.cost_optimization.automated_cleanup.unused_sa_threshold_days
+      pool_id                    = var.pool_id
+      unused_pool_threshold_days = var.cost_optimization.automated_cleanup.unused_pool_threshold_days
+      unused_sa_threshold_days   = var.cost_optimization.automated_cleanup.unused_sa_threshold_days
     }))
 
     headers = {

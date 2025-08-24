@@ -160,36 +160,36 @@ parse_args() {
 # Check prerequisites
 check_prerequisites() {
     log_info "Checking prerequisites..."
-    
+
     # Check Terraform
     if ! command -v terraform &> /dev/null; then
         log_error "Terraform is not installed"
         exit 1
     fi
-    
+
     # Check gcloud
     if ! command -v gcloud &> /dev/null; then
         log_error "gcloud CLI is not installed"
         exit 1
     fi
-    
+
     # Check authentication
     if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" &> /dev/null; then
         log_error "Not authenticated with GCP. Run: gcloud auth login"
         exit 1
     fi
-    
+
     # Check project list file
     if [[ -z "$PROJECT_LIST" ]]; then
         log_error "Project list file is required (--list)"
         usage
     fi
-    
+
     if [[ ! -f "$PROJECT_LIST" ]]; then
         log_error "Project list file not found: $PROJECT_LIST"
         exit 1
     fi
-    
+
     log_success "Prerequisites check passed"
 }
 
@@ -198,9 +198,9 @@ parse_project_list() {
     local file="$1"
     local extension="${file##*.}"
     local temp_file="/tmp/projects-$(date +%s).json"
-    
+
     log_info "Parsing project list from $file..."
-    
+
     case "$extension" in
         csv)
             # Convert CSV to JSON
@@ -257,7 +257,7 @@ EOF
             exit 1
             ;;
     esac
-    
+
     echo "$temp_file"
 }
 
@@ -266,17 +266,17 @@ generate_terraform_config() {
     local projects_json="$1"
     local deployment_name="multi-project-$(date +%Y%m%d-%H%M%S)"
     local deployment_path="$DEPLOYMENT_DIR/$deployment_name"
-    
+
     log_info "Generating Terraform configuration..."
-    
+
     # Create deployment directory
     mkdir -p "$deployment_path"
-    
+
     # Generate main.tf
     cat > "$deployment_path/main.tf" << 'EOF'
 terraform {
   required_version = ">= 1.5"
-  
+
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -291,25 +291,25 @@ provider "google" {
 
 module "multi_project_bootstrap" {
   source = "../../modules/multi-project"
-  
+
   deployment_name = var.deployment_name
   project_group   = var.project_group
   org_id          = var.org_id
   folder_id       = var.folder_id
   default_region  = var.default_region
-  
+
   projects = var.projects
-  
+
   # Feature flags
   create_state_buckets     = var.create_state_buckets
   create_service_accounts  = var.create_service_accounts
   enable_workload_identity = var.enable_workload_identity
-  
+
   # Deployment options
   parallel_deployments     = var.parallel_deployments
   error_on_partial_failure = var.error_on_partial_failure
   dry_run                 = var.dry_run
-  
+
   # WIF configuration
   default_wif_providers = var.github_org != "" ? {
     github = {
@@ -322,7 +322,7 @@ module "multi_project_bootstrap" {
   } : {}
 }
 EOF
-    
+
     # Generate variables.tf
     cat > "$deployment_path/variables.tf" << 'EOF'
 variable "deployment_name" {
@@ -396,7 +396,7 @@ variable "github_org" {
   default = ""
 }
 EOF
-    
+
     # Generate terraform.tfvars
     cat > "$deployment_path/terraform.tfvars" << EOF
 deployment_name = "$deployment_name"
@@ -414,7 +414,7 @@ github_org = "${GITHUB_ORG:-}"
 # Projects loaded from: $PROJECT_LIST
 projects = $(jq '.projects' "$projects_json")
 EOF
-    
+
     # Generate outputs.tf
     cat > "$deployment_path/outputs.tf" << 'EOF'
 output "deployed_projects" {
@@ -437,35 +437,35 @@ output "terraform_configs" {
   value = module.multi_project_bootstrap.generated_tfvars
 }
 EOF
-    
+
     # Copy custom config if provided
     if [[ -n "$CONFIG_FILE" ]] && [[ -f "$CONFIG_FILE" ]]; then
         log_info "Using custom configuration from $CONFIG_FILE"
         cp "$CONFIG_FILE" "$deployment_path/custom.tfvars"
     fi
-    
+
     echo "$deployment_path"
 }
 
 # Deploy projects
 deploy_projects() {
     local deployment_path="$1"
-    
+
     log_info "Starting deployment from $deployment_path"
-    
+
     cd "$deployment_path"
-    
+
     # Initialize Terraform
     log_info "Initializing Terraform..."
     terraform init -upgrade
-    
+
     # Format code
     terraform fmt
-    
+
     # Validate configuration
     log_info "Validating configuration..."
     terraform validate
-    
+
     # Plan deployment
     log_info "Planning deployment..."
     if [[ -f "custom.tfvars" ]]; then
@@ -473,7 +473,7 @@ deploy_projects() {
     else
         terraform plan -out=tfplan
     fi
-    
+
     # Show summary
     terraform show -json tfplan | jq -r '
         .planned_values.root_module.child_modules[].resources[] |
@@ -482,12 +482,12 @@ deploy_projects() {
     ' | while read -r project; do
         log_info "Will deploy: $project"
     done
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_warning "Dry run mode - not applying changes"
         return 0
     fi
-    
+
     # Confirm deployment
     echo
     read -p "Do you want to proceed with the deployment? (yes/no): " -r
@@ -495,11 +495,11 @@ deploy_projects() {
         log_warning "Deployment cancelled by user"
         return 1
     fi
-    
+
     # Apply configuration
     log_info "Applying configuration..."
     terraform apply tfplan
-    
+
     # Save outputs
     if [[ -n "${OUTPUT_DIR:-}" ]]; then
         mkdir -p "$OUTPUT_DIR"
@@ -507,21 +507,21 @@ deploy_projects() {
         terraform output -raw terraform_configs > "$OUTPUT_DIR/project_configs.txt"
         log_success "Outputs saved to $OUTPUT_DIR"
     fi
-    
+
     log_success "Deployment completed successfully!"
 }
 
 # Generate summary report
 generate_report() {
     local deployment_path="$1"
-    
+
     cd "$deployment_path"
-    
+
     log_info "Generating deployment report..."
-    
+
     # Get deployment summary
     local summary=$(terraform output -json summary 2>/dev/null || echo "{}")
-    
+
     cat > "$deployment_path/report.md" << EOF
 # Multi-Project Deployment Report
 
@@ -552,7 +552,7 @@ $(terraform output -json service_accounts 2>/dev/null | jq -r 'to_entries[] | "#
 
 See detailed logs at: $LOG_FILE
 EOF
-    
+
     log_success "Report saved to $deployment_path/report.md"
 }
 
@@ -560,37 +560,37 @@ EOF
 main() {
     log_info "Multi-Project Bootstrap Deployment Script"
     log_info "Log file: $LOG_FILE"
-    
+
     # Parse arguments
     parse_args "$@"
-    
+
     # Check prerequisites
     check_prerequisites
-    
+
     # Parse project list
     projects_json=$(parse_project_list "$PROJECT_LIST")
-    
+
     # Validate parsed projects
     project_count=$(jq '.projects | length' "$projects_json")
     log_info "Found $project_count projects to deploy"
-    
+
     if [[ "$project_count" -eq 0 ]]; then
         log_error "No projects found in the list"
         exit 1
     fi
-    
+
     # Generate Terraform configuration
     deployment_path=$(generate_terraform_config "$projects_json")
     log_success "Generated Terraform configuration at: $deployment_path"
-    
+
     # Deploy projects
     if deploy_projects "$deployment_path"; then
         # Generate report
         generate_report "$deployment_path"
-        
+
         log_success "Multi-project deployment completed!"
         log_info "Deployment path: $deployment_path"
-        
+
         # Show summary
         echo
         echo "=== Deployment Summary ==="
@@ -599,7 +599,7 @@ main() {
         log_error "Deployment failed"
         exit 1
     fi
-    
+
     # Cleanup temp files
     rm -f "$projects_json"
 }

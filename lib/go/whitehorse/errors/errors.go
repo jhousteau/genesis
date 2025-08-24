@@ -315,33 +315,33 @@ func WithCorrelationID(correlationID string) Option {
 // captureStackTrace captures the current stack trace
 func captureStackTrace() []StackFrame {
 	var frames []StackFrame
-	
+
 	// Skip the first few frames (captureStackTrace, New/Wrap, etc.)
 	for i := 2; i < 10; i++ {
 		pc, file, line, ok := runtime.Caller(i)
 		if !ok {
 			break
 		}
-		
+
 		function := runtime.FuncForPC(pc).Name()
-		
+
 		// Stop at main or test functions
 		if strings.Contains(function, "main.") || strings.Contains(function, "testing.") {
 			break
 		}
-		
+
 		// Extract just the filename
 		if idx := strings.LastIndex(file, "/"); idx >= 0 {
 			file = file[idx+1:]
 		}
-		
+
 		frames = append(frames, StackFrame{
 			Function: function,
 			File:     file,
 			Line:     line,
 		})
 	}
-	
+
 	return frames
 }
 
@@ -516,7 +516,7 @@ func (m *MultiError) Error() string {
 	if len(m.Errors) == 1 {
 		return m.Errors[0].Error()
 	}
-	
+
 	var messages []string
 	for _, err := range m.Errors {
 		messages = append(messages, err.Error())

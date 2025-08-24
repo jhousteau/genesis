@@ -6,10 +6,10 @@ iso27001_compliance:
   framework: "ISO/IEC 27001:2022"
   last_updated: "2024-08-20"
   certification_scope: "Cloud infrastructure and application security"
-  
+
   # Annex A Controls
   security_controls:
-    
+
     # A.5 - Organizational Controls
     organizational_controls:
       A5_1: # Information security policies
@@ -18,7 +18,7 @@ iso27001_compliance:
         implementation:
           policies_required:
             - "Information Security Policy"
-            - "Acceptable Use Policy" 
+            - "Acceptable Use Policy"
             - "Data Classification Policy"
             - "Incident Response Policy"
             - "Business Continuity Policy"
@@ -32,7 +32,7 @@ iso27001_compliance:
           - "Approval records"
           - "Distribution logs"
           - "Acknowledgment records"
-          
+
       A5_2: # Information security roles and responsibilities
         title: "Information security roles and responsibilities"
         description: "Information security roles and responsibilities are defined"
@@ -51,7 +51,7 @@ iso27001_compliance:
           - "Role definitions"
           - "Responsibility matrices"
           - "Assignment records"
-          
+
       A5_3: # Segregation of duties
         title: "Segregation of duties"
         description: "Conflicting duties and conflicting areas of responsibility are segregated"
@@ -69,7 +69,7 @@ iso27001_compliance:
           - "Role conflict analysis"
           - "Access review reports"
 
-    # A.6 - People Controls  
+    # A.6 - People Controls
     people_controls:
       A6_1: # Screening
         title: "Screening"
@@ -88,7 +88,7 @@ iso27001_compliance:
           - "Screening policies"
           - "Completion records"
           - "Verification reports"
-          
+
       A6_2: # Terms and conditions of employment
         title: "Terms and conditions of employment"
         description: "Employment contracts include information security responsibilities"
@@ -106,7 +106,7 @@ iso27001_compliance:
           - "Contract templates"
           - "Signed agreements"
           - "Amendment records"
-          
+
       A6_3: # Information security awareness, education and training
         title: "Information security awareness, education and training"
         description: "Personnel receive appropriate information security training"
@@ -146,7 +146,7 @@ iso27001_compliance:
           - "Access logs"
           - "Visitor records"
           - "Security assessments"
-          
+
       A7_2: # Physical entry
         title: "Physical entry"
         description: "Secure areas are protected by appropriate entry controls"
@@ -184,7 +184,7 @@ iso27001_compliance:
           - "Device inventories"
           - "Compliance reports"
           - "Security assessments"
-          
+
       A8_2: # Privileged access rights
         title: "Privileged access rights"
         description: "Allocation and use of privileged access rights is restricted"
@@ -202,7 +202,7 @@ iso27001_compliance:
           - "PAM system logs"
           - "Access review reports"
           - "Session recordings"
-          
+
       A8_3: # Information access restriction
         title: "Information access restriction"
         description: "Access to information and application system functions is restricted"
@@ -240,7 +240,7 @@ iso27001_compliance:
           - "Procedure documentation"
           - "Change records"
           - "Incident reports"
-          
+
       A12_2: # Protection from malware
         title: "Protection from malware"
         description: "Protection against malware is implemented"
@@ -258,7 +258,7 @@ iso27001_compliance:
           - "Malware detection logs"
           - "Protection status reports"
           - "Incident reports"
-          
+
       A12_3: # Backup
         title: "Backup"
         description: "Backup copies of information and software are taken regularly"
@@ -296,7 +296,7 @@ iso27001_compliance:
           - "Network configurations"
           - "Monitoring logs"
           - "Security assessments"
-          
+
       A13_2: # Information transfer
         title: "Information transfer"
         description: "Information transfer within and outside the organization is secure"
@@ -335,7 +335,7 @@ iso27001_compliance:
           - "Threat models"
           - "Architecture reviews"
           - "Code analysis reports"
-          
+
       A14_2: # Security in development and support processes
         title: "Security in development and support processes"
         description: "Security is integrated into development and support processes"
@@ -366,7 +366,7 @@ iso27001_compliance:
         - "Threat intelligence integration"
         - "Vulnerability correlation"
         - "Risk scoring algorithms"
-        
+
     risk_treatment:
       options:
         - "Risk mitigation through controls"
@@ -377,7 +377,7 @@ iso27001_compliance:
         - "Treatment plan tracking"
         - "Control implementation monitoring"
         - "Residual risk calculation"
-        
+
     monitoring_review:
       frequency: "Continuous with monthly reporting"
       metrics:
@@ -400,7 +400,7 @@ iso27001_compliance:
         - "Evidence collection"
         - "Finding tracking"
         - "Corrective action monitoring"
-        
+
     management_review:
       frequency: "Quarterly"
       inputs:
@@ -412,7 +412,7 @@ iso27001_compliance:
         - "Review package preparation"
         - "Action item tracking"
         - "Decision recording"
-        
+
     external_assessments:
       certification_audits: "Annual"
       penetration_testing: "Semi-annual"
@@ -429,12 +429,12 @@ iso27001_compliance:
       soar: "Security Orchestration and Response"
       pam: "Privileged Access Management"
       dlp: "Data Loss Prevention"
-      
+
     cloud_security:
       cspm: "Cloud Security Posture Management"
       casb: "Cloud Access Security Broker"
       cwpp: "Cloud Workload Protection Platform"
-      
+
     automation_platforms:
       - "Terraform for infrastructure security"
       - "Ansible for configuration management"
@@ -449,14 +449,14 @@ iso27001_compliance:
       - "Security incident volume"
       - "Vulnerability remediation time"
       - "Control effectiveness ratings"
-      
+
     compliance_metrics:
       - "Control implementation percentage"
       - "Audit finding trends"
       - "Risk reduction achievements"
       - "Training completion rates"
       - "Policy compliance rates"
-      
+
     operational_metrics:
       - "System availability"
       - "Backup success rates"
@@ -471,13 +471,13 @@ improvement_process:
     - "Audit finding analysis"
     - "Risk assessment updates"
     - "Performance metric reviews"
-    
+
   automation_opportunities:
     - "Manual process identification"
     - "Repetitive task automation"
     - "Workflow optimization"
     - "Tool integration enhancement"
-    
+
   innovation_initiatives:
     - "Emerging threat research"
     - "New technology evaluation"

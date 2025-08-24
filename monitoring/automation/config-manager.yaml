@@ -16,26 +16,26 @@ configurations:
     template: "prometheus.yml.j2"
     backup_dir: "/var/backups/prometheus"
     validation_enabled: true
-    
+
   alertmanager:
     config_file: "/etc/alertmanager/alertmanager.yml"
     reload_url: "http://alertmanager:9093/-/reload"
     template: "alertmanager.yml.j2"
     backup_dir: "/var/backups/alertmanager"
     validation_enabled: true
-    
+
   grafana:
     provisioning_dir: "/etc/grafana/provisioning"
     dashboards_dir: "/etc/grafana/provisioning/dashboards"
     datasources_dir: "/etc/grafana/provisioning/datasources"
     reload_url: "http://grafana:3000/api/admin/provisioning/dashboards/reload"
     backup_dir: "/var/backups/grafana"
-    
+
   jaeger:
     config_file: "/etc/jaeger/jaeger.yml"
     template: "jaeger.yml.j2"
     backup_dir: "/var/backups/jaeger"
-    
+
   loki:
     config_file: "/etc/loki/loki.yml"
     template: "loki.yml.j2"
@@ -56,14 +56,14 @@ template_config:
     external_labels:
       cluster: "universal-platform"
       environment: "production"
-    
+
   alertmanager:
     smtp_smarthost: "localhost:587"
     smtp_from: "alertmanager@universal-platform.com"
     group_wait: "10s"
     group_interval: "10s"
     repeat_interval: "1h"
-    
+
   grafana:
     default_datasource: "Prometheus"
     theme: "dark"
@@ -78,21 +78,21 @@ teams:
     email_addresses:
       - "platform-team@universal-platform.com"
     escalation_policy: "platform-escalation"
-    
+
   frontend:
     slack_webhook: "${FRONTEND_SLACK_WEBHOOK}"
     slack_channel: "#frontend-alerts"
     email_addresses:
       - "frontend-team@universal-platform.com"
     escalation_policy: "frontend-escalation"
-    
+
   backend:
     slack_webhook: "${BACKEND_SLACK_WEBHOOK}"
     slack_channel: "#backend-alerts"
     email_addresses:
       - "backend-team@universal-platform.com"
     escalation_policy: "backend-escalation"
-    
+
   data:
     slack_webhook: "${DATA_SLACK_WEBHOOK}"
     slack_channel: "#data-alerts"
@@ -117,13 +117,13 @@ update_policies:
     validation_required: true
     backup_before_update: true
     rollback_on_failure: true
-    
+
   alertmanager:
     auto_reload: true
     validation_required: true
     backup_before_update: true
     rollback_on_failure: true
-    
+
   grafana:
     auto_reload: false  # Grafana handles its own reloading
     validation_required: false
@@ -136,12 +136,12 @@ validation:
     check_syntax: true
     check_targets: false  # Don't validate targets as they may not be reachable
     check_rules: true
-    
+
   alertmanager:
     check_syntax: true
     check_routes: true
     check_receivers: false  # Don't validate external receivers
-    
+
   grafana:
     check_json_syntax: true
     check_datasource_refs: false
@@ -152,7 +152,7 @@ self_monitoring:
   metrics_port: 8080
   health_check_port: 8081
   log_file: "/var/log/config-manager.log"
-  
+
 # Security settings
 security:
   encrypt_backups: false

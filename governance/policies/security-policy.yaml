@@ -10,21 +10,21 @@ security_requirements:
       - oauth2
       - api_key
       - service_account
-    multi_factor: 
+    multi_factor:
       enabled: true
       required_for: ["production", "staging"]
-  
+
   authorization:
     model: RBAC
     principle: least_privilege
     review_frequency: quarterly
-  
+
   encryption:
     data_at_rest:
       required: true
       algorithm: AES-256-GCM
       key_rotation: 90d
-    
+
     data_in_transit:
       required: true
       minimum_tls: "1.2"
@@ -33,9 +33,9 @@ security_requirements:
         - TLS_AES_256_GCM_SHA384
         - TLS_AES_128_GCM_SHA256
         - TLS_CHACHA20_POLY1305_SHA256
-  
+
   secrets_management:
-    storage: 
+    storage:
       - google_secret_manager
       - hashicorp_vault
     rotation:
@@ -60,12 +60,12 @@ vulnerability_management:
       high: 24h
       medium: 7d
       low: 30d
-  
+
   dependency_updates:
     security_patches: immediate
     minor_updates: weekly
     major_updates: monthly
-    
+
   container_security:
     base_images:
       scan_on_build: true
@@ -82,12 +82,12 @@ access_control:
     naming_convention: "{{project}}-{{environment}}-{{service}}-sa"
     key_rotation: 90d
     audit_logging: required
-  
+
   api_access:
     rate_limiting: true
     authentication: required
     audit_logging: required
-    
+
   database_access:
     direct_access: forbidden
     access_method: application_only
@@ -99,12 +99,12 @@ compliance:
     - GDPR
     - HIPAA
     - PCI-DSS
-  
+
   audit_requirements:
     retention: 7_years
     immutability: true
     encryption: required
-    
+
   data_protection:
     classification:
       - public
@@ -121,13 +121,13 @@ incident_response:
     monitoring: 24x7
     alerting: automated
     escalation: tiered
-    
+
   response_times:
     critical: 15_minutes
     high: 1_hour
     medium: 4_hours
     low: 24_hours
-    
+
   post_incident:
     review: required
     documentation: required
@@ -140,13 +140,13 @@ security_testing:
       - semgrep
       - bandit
       - gosec
-  
+
   dynamic_analysis:
     frequency: weekly
     tools:
       - owasp_zap
       - burp_suite
-  
+
   penetration_testing:
     frequency: annually
     scope: full_application

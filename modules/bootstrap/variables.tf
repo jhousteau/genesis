@@ -29,7 +29,7 @@ variable "billing_account" {
   type        = string
   validation {
     condition     = can(regex("^[0-9A-F]{6}-[0-9A-F]{6}-[0-9A-F]{6}$", var.billing_account))
-    error_message = "Billing account ID must be in the format XXXXXX-XXXXXX-XXXXXX."
+    error_message = "Billing account ID must be in the format 123ABC-456DEF-789GHI."
   }
 }
 

@@ -14,8 +14,14 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Union
 
 try:
-    from prometheus_client import (CollectorRegistry, Counter, Gauge,
-                                   Histogram, Summary, generate_latest)
+    from prometheus_client import (
+        CollectorRegistry,
+        Counter,
+        Gauge,
+        Histogram,
+        Summary,
+        generate_latest,
+    )
     from prometheus_client.exposition import start_http_server
 
     HAS_PROMETHEUS = True

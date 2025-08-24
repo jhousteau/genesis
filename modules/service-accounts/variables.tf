@@ -26,15 +26,15 @@ variable "service_accounts" {
     disabled     = optional(bool, false) # Whether the service account is disabled
 
     # IAM role bindings
-    project_roles      = optional(list(string), [])         # List of project-level IAM roles
-    organization_roles = optional(list(string), [])         # List of organization-level IAM roles
-    folder_roles       = optional(map(list(string)), {})    # Map of folder IDs to list of roles
+    project_roles      = optional(list(string), [])      # List of project-level IAM roles
+    organization_roles = optional(list(string), [])      # List of organization-level IAM roles
+    folder_roles       = optional(map(list(string)), {}) # Map of folder IDs to list of roles
 
     # Impersonation configuration
     impersonators = optional(list(string), []) # List of identities that can impersonate this SA
 
     # Key management
-    create_key           = optional(bool, false)     # Whether to create a key for this SA
+    create_key           = optional(bool, false)      # Whether to create a key for this SA
     key_secret_accessors = optional(list(string), []) # Who can access the key in Secret Manager
   }))
 
@@ -149,33 +149,33 @@ variable "key_rotation_days" {
 variable "advanced_iam_config" {
   description = "Advanced IAM configuration for service accounts"
   type = object({
-    enable_conditional_access = bool
-    enable_custom_roles = bool
+    enable_conditional_access  = bool
+    enable_custom_roles        = bool
     enable_just_in_time_access = bool
-    access_boundary_policy = optional(string)
+    access_boundary_policy     = optional(string)
     conditional_bindings = optional(list(object({
-      role = string
+      role    = string
       members = list(string)
       condition = object({
-        title = string
+        title       = string
         description = string
-        expression = string
+        expression  = string
       })
     })), [])
     custom_roles = optional(list(object({
-      role_id = string
-      title = string
+      role_id     = string
+      title       = string
       description = string
       permissions = list(string)
-      stage = string
+      stage       = string
     })), [])
   })
   default = {
-    enable_conditional_access = false
-    enable_custom_roles = false
+    enable_conditional_access  = false
+    enable_custom_roles        = false
     enable_just_in_time_access = false
-    conditional_bindings = []
-    custom_roles = []
+    conditional_bindings       = []
+    custom_roles               = []
   }
 }
 
@@ -185,25 +185,25 @@ variable "workload_identity_config" {
   type = object({
     enabled = bool
     identity_pools = list(object({
-      pool_id = string
+      pool_id      = string
       display_name = string
-      description = string
-      disabled = optional(bool, false)
+      description  = string
+      disabled     = optional(bool, false)
       providers = list(object({
-        provider_id = string
-        display_name = string
-        description = string
-        disabled = optional(bool, false)
-        attribute_mapping = map(string)
+        provider_id         = string
+        display_name        = string
+        description         = string
+        disabled            = optional(bool, false)
+        attribute_mapping   = map(string)
         attribute_condition = optional(string)
         oidc_config = optional(object({
-          issuer_uri = string
+          issuer_uri        = string
           allowed_audiences = list(string)
-          jwks_json = optional(string)
+          jwks_json         = optional(string)
         }))
         aws_config = optional(object({
           account_id = string
-          sts_uri = optional(string)
+          sts_uri    = optional(string)
         }))
         saml_config = optional(object({
           idp_metadata_xml = string
@@ -212,14 +212,14 @@ variable "workload_identity_config" {
     }))
     service_account_bindings = list(object({
       service_account_key = string
-      pool_id = string
-      provider_id = string
-      members = list(string)
+      pool_id             = string
+      provider_id         = string
+      members             = list(string)
     }))
   })
   default = {
-    enabled = false
-    identity_pools = []
+    enabled                  = false
+    identity_pools           = []
     service_account_bindings = []
   }
 }
@@ -228,55 +228,55 @@ variable "workload_identity_config" {
 variable "enhanced_security" {
   description = "Enhanced security configuration for service accounts"
   type = object({
-    enable_key_rotation = bool
-    key_rotation_schedule = string
-    automated_key_rotation = bool
-    enable_access_logging = bool
+    enable_key_rotation     = bool
+    key_rotation_schedule   = string
+    automated_key_rotation  = bool
+    enable_access_logging   = bool
     enable_usage_monitoring = bool
     security_policies = object({
-      require_mfa = bool
-      allowed_key_types = list(string)
-      max_key_age_days = number
+      require_mfa           = bool
+      allowed_key_types     = list(string)
+      max_key_age_days      = number
       require_justification = bool
     })
     access_controls = object({
-      enable_ip_restrictions = bool
-      allowed_ip_ranges = list(string)
-      enable_device_trust = bool
+      enable_ip_restrictions       = bool
+      allowed_ip_ranges            = list(string)
+      enable_device_trust          = bool
       enable_location_restrictions = bool
-      allowed_regions = list(string)
+      allowed_regions              = list(string)
     })
     compliance_settings = object({
-      enable_data_governance = bool
+      enable_data_governance     = bool
       data_classification_labels = list(string)
-      retention_policy_days = number
-      enable_audit_trail = bool
+      retention_policy_days      = number
+      enable_audit_trail         = bool
     })
   })
   default = {
-    enable_key_rotation = false
-    key_rotation_schedule = "0 2 * * 0"
-    automated_key_rotation = false
-    enable_access_logging = true
+    enable_key_rotation     = false
+    key_rotation_schedule   = "0 2 * * 0"
+    automated_key_rotation  = false
+    enable_access_logging   = true
     enable_usage_monitoring = false
     security_policies = {
-      require_mfa = false
-      allowed_key_types = ["TYPE_GOOGLE_CREDENTIALS_FILE"]
-      max_key_age_days = 90
+      require_mfa           = false
+      allowed_key_types     = ["TYPE_GOOGLE_CREDENTIALS_FILE"]
+      max_key_age_days      = 90
       require_justification = false
     }
     access_controls = {
-      enable_ip_restrictions = false
-      allowed_ip_ranges = []
-      enable_device_trust = false
+      enable_ip_restrictions       = false
+      allowed_ip_ranges            = []
+      enable_device_trust          = false
       enable_location_restrictions = false
-      allowed_regions = []
+      allowed_regions              = []
     }
     compliance_settings = {
-      enable_data_governance = false
+      enable_data_governance     = false
       data_classification_labels = []
-      retention_policy_days = 2555
-      enable_audit_trail = true
+      retention_policy_days      = 2555
+      enable_audit_trail         = true
     }
   }
 }
@@ -288,29 +288,29 @@ variable "cross_project_access" {
     enabled = bool
     target_projects = list(object({
       project_id = string
-      roles = list(string)
+      roles      = list(string)
       conditions = optional(object({
-        title = string
+        title       = string
         description = string
-        expression = string
+        expression  = string
       }))
     }))
     shared_vpc_projects = list(object({
-      host_project_id = string
+      host_project_id     = string
       service_project_ids = list(string)
-      network_roles = list(string)
+      network_roles       = list(string)
     }))
     folder_access = list(object({
-      folder_id = string
-      roles = list(string)
+      folder_id           = string
+      roles               = list(string)
       inherit_from_parent = bool
     }))
   })
   default = {
-    enabled = false
-    target_projects = []
+    enabled             = false
+    target_projects     = []
     shared_vpc_projects = []
-    folder_access = []
+    folder_access       = []
   }
 }
 
@@ -321,51 +321,51 @@ variable "cicd_platforms" {
     github_actions = object({
       enabled = bool
       repositories = list(object({
-        owner = string
-        repo = string
-        ref = optional(string, "main")
+        owner               = string
+        repo                = string
+        ref                 = optional(string, "main")
         service_account_key = string
       }))
     })
     gitlab_ci = object({
       enabled = bool
       projects = list(object({
-        project_id = string
-        ref = optional(string, "main")
+        project_id          = string
+        ref                 = optional(string, "main")
         service_account_key = string
       }))
     })
     azure_devops = object({
       enabled = bool
       organizations = list(object({
-        organization = string
-        project = string
+        organization        = string
+        project             = string
         service_account_key = string
       }))
     })
     jenkins = object({
       enabled = bool
       instances = list(object({
-        url = string
+        url                 = string
         service_account_key = string
       }))
     })
   })
   default = {
     github_actions = {
-      enabled = false
+      enabled      = false
       repositories = []
     }
     gitlab_ci = {
-      enabled = false
+      enabled  = false
       projects = []
     }
     azure_devops = {
-      enabled = false
+      enabled       = false
       organizations = []
     }
     jenkins = {
-      enabled = false
+      enabled   = false
       instances = []
     }
   }

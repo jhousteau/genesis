@@ -19,8 +19,11 @@ from typing import Any
 
 from solve.agents.tool_executor import ToolExecutor
 from solve.models import AgentTask, Goal, Result, TaskStatus
-from solve.prompts.constitutional_template import (AgentRole, PromptContext,
-                                                   build_complete_prompt)
+from solve.prompts.constitutional_template import (
+    AgentRole,
+    PromptContext,
+    build_complete_prompt,
+)
 from solve.tools.filesystem import FileSystemTool, SafetyConfig
 
 # ADK imports are done inside methods to avoid import-time dependencies

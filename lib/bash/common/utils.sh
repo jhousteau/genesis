@@ -91,13 +91,13 @@ setup_gcp_isolation() {
     local project_name="$1"
     local environment="$2"
     local gcp_project="$3"
-    
+
     local gcloud_home="$HOME/.gcloud/${project_name}-${environment}"
-    
+
     ensure_directory "$gcloud_home"
-    
+
     export CLOUDSDK_CONFIG="$gcloud_home"
-    
+
     log_debug "Set up GCP isolation: $gcloud_home for $gcp_project"
 }
 
@@ -105,7 +105,7 @@ setup_gcp_isolation() {
 check_connectivity() {
     local host="$1"
     local port="${2:-443}"
-    
+
     if command -v nc &> /dev/null; then
         if nc -z "$host" "$port" 2>/dev/null; then
             return 0
@@ -149,12 +149,12 @@ handle_error() {
     local exit_code=$?
     local line_number=$1
     local command="$2"
-    
+
     if [[ $exit_code -ne 0 ]]; then
         log_error "Command failed on line $line_number: $command"
         log_error "Exit code: $exit_code"
     fi
-    
+
     return $exit_code
 }
 

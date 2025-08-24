@@ -106,8 +106,12 @@ class ProjectDetector:
             required_files=["composer.json"],
             priority=10,
         ),
-        ProjectType.SHELL: DetectionPattern(file_patterns=["*.sh", "*.bash"], priority=5),
-        ProjectType.MARKDOWN: DetectionPattern(file_patterns=["*.md", "*.markdown"], priority=1),
+        ProjectType.SHELL: DetectionPattern(
+            file_patterns=["*.sh", "*.bash"], priority=5
+        ),
+        ProjectType.MARKDOWN: DetectionPattern(
+            file_patterns=["*.md", "*.markdown"], priority=1
+        ),
     }
 
     def __init__(self, project_root: Optional[Path] = None):
@@ -136,7 +140,9 @@ class ProjectDetector:
         for root, dirs, filenames in os.walk(self.project_root):
             dirs[:] = [d for d in dirs if d not in ignore_dirs]
             for filename in filenames:
-                rel_path = os.path.relpath(os.path.join(root, filename), self.project_root)
+                rel_path = os.path.relpath(
+                    os.path.join(root, filename), self.project_root
+                )
                 files.add(rel_path)
 
         self._file_cache = files
@@ -176,7 +182,9 @@ class ProjectDetector:
                         break
 
             if matching_files > 0:
-                score = min(matching_files / 10.0, 1.0) * 0.5  # Up to 50% from file patterns
+                score = (
+                    min(matching_files / 10.0, 1.0) * 0.5
+                )  # Up to 50% from file patterns
 
             # Check required files (adds up to 40%)
             if pattern.required_files:

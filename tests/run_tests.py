@@ -236,9 +236,9 @@ class TestRunner:
         except subprocess.TimeoutExpired:
             result["end_time"] = datetime.now()
             result["duration"] = suite_config.get("timeout", 600)
-            result[
-                "error_output"
-            ] = f"Test suite timed out after {suite_config.get('timeout', 600)} seconds"
+            result["error_output"] = (
+                f"Test suite timed out after {suite_config.get('timeout', 600)} seconds"
+            )
             result["success"] = False
 
         except Exception as e:

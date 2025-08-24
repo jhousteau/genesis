@@ -32,8 +32,8 @@ locals {
         storage_class = "COLDLINE"
       }
       condition = {
-        age                        = var.cost_optimization.intelligent_tiering.coldline_threshold_days
-        matches_storage_class      = ["STANDARD", "NEARLINE"]
+        age                   = var.cost_optimization.intelligent_tiering.coldline_threshold_days
+        matches_storage_class = ["STANDARD", "NEARLINE"]
       }
     },
     {
@@ -42,8 +42,8 @@ locals {
         storage_class = "ARCHIVE"
       }
       condition = {
-        age                        = var.cost_optimization.intelligent_tiering.archive_threshold_days
-        matches_storage_class      = ["STANDARD", "NEARLINE", "COLDLINE"]
+        age                   = var.cost_optimization.intelligent_tiering.archive_threshold_days
+        matches_storage_class = ["STANDARD", "NEARLINE", "COLDLINE"]
       }
     }
   ] : []
@@ -57,8 +57,8 @@ locals {
 
   # Determine if we need to create a logging bucket
   create_logging_bucket = var.logging_config == null
-  log_bucket_name      = local.create_logging_bucket ? "${var.bucket_name}-logs" : var.logging_config.log_bucket
-  log_object_prefix    = local.create_logging_bucket ? "access-logs/" : var.logging_config.log_object_prefix
+  log_bucket_name       = local.create_logging_bucket ? "${var.bucket_name}-logs" : var.logging_config.log_bucket
+  log_object_prefix     = local.create_logging_bucket ? "access-logs/" : var.logging_config.log_object_prefix
 
   # Multi-region configuration
   all_regions = var.multi_region_config.enabled ? concat(
@@ -69,18 +69,18 @@ locals {
   # Enhanced security labels
   security_labels = var.enhanced_security.cmek_config.enabled ? {
     encryption_type = "cmek"
-    key_rotation   = "enabled"
-    security_level = "enhanced"
-  } : {
+    key_rotation    = "enabled"
+    security_level  = "enhanced"
+    } : {
     encryption_type = "google_managed"
-    security_level = "standard"
+    security_level  = "standard"
   }
 
   # Compliance labels
   compliance_labels = var.compliance_config.enabled ? {
     compliance_frameworks = join(",", var.compliance_config.frameworks)
-    data_classification  = var.compliance_config.data_classification
-    retention_policy     = var.compliance_config.retention_compliance.deletion_policy
+    data_classification   = var.compliance_config.data_classification
+    retention_policy      = var.compliance_config.retention_compliance.deletion_policy
   } : {}
 
   # Merged labels
@@ -89,10 +89,10 @@ locals {
     local.security_labels,
     local.compliance_labels,
     {
-      multi_region    = var.multi_region_config.enabled
+      multi_region      = var.multi_region_config.enabled
       disaster_recovery = var.disaster_recovery.enabled
-      monitoring      = var.monitoring_config.enabled
-      cost_optimized  = var.cost_optimization.enabled
+      monitoring        = var.monitoring_config.enabled
+      cost_optimized    = var.cost_optimization.enabled
     }
   )
 }
@@ -308,7 +308,7 @@ resource "google_storage_transfer_job" "replication" {
     transfer_options {
       overwrite_objects_already_existing_in_sink = var.replication_configuration.rewrite_destination
       delete_objects_from_source_after_transfer  = false
-      delete_objects_unique_in_sink               = var.replication_configuration.delete_marker_status
+      delete_objects_unique_in_sink              = var.replication_configuration.delete_marker_status
     }
   }
 
@@ -474,7 +474,7 @@ resource "google_storage_bucket" "disaster_recovery_buckets" {
   name                        = "${var.bucket_name}-dr-${each.value}"
   project                     = var.project_id
   location                    = each.value
-  storage_class               = "COLDLINE"  # Use coldline for cost-effective DR
+  storage_class               = "COLDLINE" # Use coldline for cost-effective DR
   force_destroy               = var.force_destroy
   uniform_bucket_level_access = true
   public_access_prevention    = "enforced"
@@ -504,10 +504,10 @@ resource "google_storage_bucket" "disaster_recovery_buckets" {
   labels = merge(
     var.labels,
     {
-      purpose        = "disaster-recovery"
-      backup_type    = "cross-region"
-      source_bucket  = var.bucket_name
-      dr_region      = each.value
+      purpose       = "disaster-recovery"
+      backup_type   = "cross-region"
+      source_bucket = var.bucket_name
+      dr_region     = each.value
     }
   )
 }
@@ -534,7 +534,7 @@ resource "google_storage_transfer_job" "disaster_recovery" {
     transfer_options {
       overwrite_objects_already_existing_in_sink = true
       delete_objects_from_source_after_transfer  = false
-      delete_objects_unique_in_sink               = false
+      delete_objects_unique_in_sink              = false
     }
   }
 
@@ -546,7 +546,7 @@ resource "google_storage_transfer_job" "disaster_recovery" {
     }
 
     start_time_of_day {
-      hours   = 2  # Run at 2 AM
+      hours   = 2 # Run at 2 AM
       minutes = 0
       seconds = 0
       nanos   = 0
@@ -583,7 +583,7 @@ resource "google_cloud_scheduler_job" "backup_scheduler" {
 
     oauth_token {
       service_account_email = "${var.project_id}@appspot.gserviceaccount.com"
-      scope                = "https://www.googleapis.com/auth/devstorage.read_write"
+      scope                 = "https://www.googleapis.com/auth/devstorage.read_write"
     }
   }
 }
@@ -671,9 +671,9 @@ resource "google_monitoring_alert_policy" "state_bucket_alerts" {
     display_name = each.value.name
 
     condition_threshold {
-      filter         = each.value.condition
-      duration       = "300s"
-      comparison     = "COMPARISON_GREATER_THAN"
+      filter          = each.value.condition
+      duration        = "300s"
+      comparison      = "COMPARISON_GREATER_THAN"
       threshold_value = each.value.threshold
 
       aggregations {
@@ -698,9 +698,9 @@ resource "google_cloudfunctions_function" "state_operations" {
   region  = var.location
   name    = "${var.bucket_name}-state-operations"
 
-  description          = "Advanced state operations for ${var.bucket_name}"
-  available_memory_mb  = 256
-  timeout              = 540
+  description         = "Advanced state operations for ${var.bucket_name}"
+  available_memory_mb = 256
+  timeout             = 540
   entry_point         = "handleStateOperation"
   runtime             = "python39"
 
@@ -708,9 +708,9 @@ resource "google_cloudfunctions_function" "state_operations" {
   source_archive_object = "state-operations.zip"
 
   environment_variables = {
-    BUCKET_NAME      = google_storage_bucket.state_bucket.name
-    PROJECT_ID       = var.project_id
-    BACKUP_ENABLED   = var.disaster_recovery.cross_region_backup.enabled
+    BUCKET_NAME        = google_storage_bucket.state_bucket.name
+    PROJECT_ID         = var.project_id
+    BACKUP_ENABLED     = var.disaster_recovery.cross_region_backup.enabled
     MONITORING_ENABLED = var.monitoring_config.enabled
   }
 
@@ -726,15 +726,15 @@ resource "google_storage_bucket_iam_binding" "conditional_access" {
     "time_restricted" = {
       role = "roles/storage.objectViewer"
       condition = {
-        title      = "Time-based access"
+        title       = "Time-based access"
         description = "Access only during business hours"
-        expression = "request.time.getHours() >= 9 && request.time.getHours() <= 17"
+        expression  = "request.time.getHours() >= 9 && request.time.getHours() <= 17"
       }
     }
   }
 
-  bucket = google_storage_bucket.state_bucket.name
-  role   = each.value.role
+  bucket  = google_storage_bucket.state_bucket.name
+  role    = each.value.role
   members = var.enhanced_security.access_control.service_account_restrictions
 
   dynamic "condition" {

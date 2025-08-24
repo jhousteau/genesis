@@ -89,7 +89,7 @@ pip install google-cloud-run
 - Need to implement command handlers
 
 ### SOLVE in Genesis
-- ✅ Code copied to `intelligence/` 
+- ✅ Code copied to `intelligence/`
 - ❌ Not integrated with Genesis core
 - ❌ No connection to error/logging modules
 - ❌ Smart-commit not wired to `g commit`

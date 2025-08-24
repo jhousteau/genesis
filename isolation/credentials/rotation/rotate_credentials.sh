@@ -86,7 +86,7 @@ parse_arguments() {
     WARN_THRESHOLD="$DEFAULT_WARNING_THRESHOLD"
     CRITICAL_THRESHOLD="$DEFAULT_CRITICAL_THRESHOLD"
     NOTIFICATION_EMAIL=""
-    
+
     while [[ $# -gt 0 ]]; do
         case $1 in
             --project)
@@ -137,19 +137,19 @@ parse_arguments() {
                 ;;
         esac
     done
-    
+
     # Validation
     if [[ -z "$COMMAND" ]]; then
         log_error "Command is required"
         show_usage
         exit 1
     fi
-    
+
     if [[ -z "$PROJECT_ID" ]]; then
         log_error "PROJECT_ID is required"
         exit 1
     fi
-    
+
     if [[ "$COMMAND" == "rotate" && -z "$SA_NAME" ]]; then
         log_error "Service account name is required for rotate command"
         exit 1
@@ -160,7 +160,7 @@ parse_arguments() {
 days_since() {
     local date_str="$1"
     local date_epoch
-    
+
     # Handle different date formats
     if date -d "$date_str" >/dev/null 2>&1; then
         # GNU date (Linux)
@@ -172,13 +172,13 @@ days_since() {
         # Try other formats
         date_epoch=$(date -d "$date_str" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$date_str" +%s 2>/dev/null || echo "0")
     fi
-    
+
     local current_epoch
     current_epoch=$(date +%s)
-    
+
     local diff_seconds=$((current_epoch - date_epoch))
     local diff_days=$((diff_seconds / 86400))
-    
+
     echo "$diff_days"
 }
 
@@ -187,11 +187,11 @@ send_notification() {
     local subject="$1"
     local message="$2"
     local severity="${3:-INFO}"
-    
+
     # Create notification payload
     local timestamp
     timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    
+
     local notification="{
         \"timestamp\": \"$timestamp\",
         \"project\": \"$PROJECT_ID\",
@@ -201,13 +201,13 @@ send_notification() {
         \"message\": \"$message\",
         \"source\": \"credential-rotation-system\"
     }"
-    
+
     # Log to audit file
     local audit_dir="${CLOUDSDK_CONFIG:-$HOME/.gcloud}/logs"
     local audit_file="$audit_dir/credential-rotation-$(date +%Y%m%d).log"
     mkdir -p "$audit_dir"
     echo "$notification" >> "$audit_file"
-    
+
     # Send webhook notification if configured
     if [[ -n "${NOTIFICATION_WEBHOOK:-}" ]]; then
         local webhook_payload
@@ -222,26 +222,26 @@ send_notification() {
                 webhook_payload="{\"text\":\"ℹ️ $subject\", \"attachments\":[{\"color\":\"good\",\"text\":\"$message\"}]}"
                 ;;
         esac
-        
+
         if command -v curl >/dev/null 2>&1; then
             curl -s -X POST -H "Content-type: application/json" \
                 --data "$webhook_payload" \
                 "$NOTIFICATION_WEBHOOK" >/dev/null || true
         fi
     fi
-    
+
     # Send email if configured
     if [[ -n "$NOTIFICATION_EMAIL" ]] && command -v mail >/dev/null 2>&1; then
         echo "$message" | mail -s "$subject" "$NOTIFICATION_EMAIL" 2>/dev/null || true
     fi
-    
+
     log_info "Notification sent: $subject"
 }
 
 # Check credential status
 check_credentials() {
     log_step "Checking credential status for project: $PROJECT_ID"
-    
+
     echo -e "${WHITE}Credential Status Report${NC}"
     echo "════════════════════════════════════════════════════════"
     echo "Project: $PROJECT_ID"
@@ -249,23 +249,23 @@ check_credentials() {
     echo "Check Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo "────────────────────────────────────────────────────────"
     echo ""
-    
+
     # Get all service accounts
     local sa_list
     mapfile -t sa_list < <(gcloud iam service-accounts list \
         --project="$PROJECT_ID" \
         --format="value(email)")
-    
+
     local total_sas=${#sa_list[@]}
     local keys_checked=0
     local warnings=0
     local criticals=0
     local expired=0
-    
+
     echo -e "${CYAN}Service Account Analysis:${NC}"
     printf "%-50s %-15s %-15s %-10s\n" "SERVICE ACCOUNT" "KEY COUNT" "OLDEST KEY" "STATUS"
     echo "────────────────────────────────────────────────────────────────────────────"
-    
+
     for sa_email in "${sa_list[@]}"; do
         # Skip default service accounts
         if [[ "$sa_email" =~ -compute@developer.gserviceaccount.com$ ]] || \
@@ -273,31 +273,31 @@ check_credentials() {
            [[ "$sa_email" =~ @cloudbuild.gserviceaccount.com$ ]]; then
             continue
         fi
-        
+
         # Get keys for this service account
         local key_info
         key_info=$(gcloud iam service-accounts keys list \
             --iam-account="$sa_email" \
             --project="$PROJECT_ID" \
             --format="value(validAfterTime)" 2>/dev/null || echo "")
-        
+
         if [[ -z "$key_info" ]]; then
             printf "%-50s %-15s %-15s %-10s\n" "${sa_email:0:47}..." "0" "N/A" "NO_KEYS"
             continue
         fi
-        
+
         # Count keys and find oldest
         local key_count
         key_count=$(echo "$key_info" | wc -l)
         local oldest_key
         oldest_key=$(echo "$key_info" | sort | head -1)
-        
+
         ((keys_checked++))
-        
+
         # Calculate age of oldest key
         local key_age
         key_age=$(days_since "$oldest_key")
-        
+
         # Determine status
         local status color
         if [[ $key_age -gt $MAX_AGE ]]; then
@@ -316,10 +316,10 @@ check_credentials() {
             status="OK"
             color="${GREEN}"
         fi
-        
+
         printf "%-50s %-15s %-15s " "${sa_email:0:47}..." "$key_count" "${key_age}d"
         echo -e "${color}${status}${NC}"
-        
+
         # Generate notifications for problematic keys
         if [[ "$status" == "EXPIRED" ]]; then
             send_notification \
@@ -338,7 +338,7 @@ check_credentials() {
                 "WARNING"
         fi
     done
-    
+
     echo ""
     echo -e "${WHITE}Summary:${NC}"
     echo "• Total Service Accounts: $total_sas"
@@ -347,7 +347,7 @@ check_credentials() {
     echo -e "• ${YELLOW}Warnings:${NC} $warnings"
     echo -e "• ${RED}Critical:${NC} $criticals"
     echo -e "• ${RED}Expired:${NC} $expired"
-    
+
     echo ""
     echo -e "${CYAN}Recommendations:${NC}"
     if [[ $expired -gt 0 ]]; then
@@ -361,7 +361,7 @@ check_credentials() {
     fi
     echo "• Consider using Workload Identity Federation instead of keys"
     echo "• Set up automated rotation schedule"
-    
+
     # Exit with appropriate code
     if [[ $expired -gt 0 ]]; then
         exit 2  # Critical issues
@@ -375,32 +375,32 @@ check_credentials() {
 # Rotate specific service account
 rotate_service_account() {
     log_step "Rotating service account: $SA_NAME"
-    
+
     local sa_email="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
-    
+
     # Verify service account exists
     if ! gcloud iam service-accounts describe "$sa_email" \
         --project="$PROJECT_ID" >/dev/null 2>&1; then
         log_error "Service account does not exist: $sa_email"
         exit 1
     fi
-    
+
     # Get current keys
     local current_keys
     mapfile -t current_keys < <(gcloud iam service-accounts keys list \
         --iam-account="$sa_email" \
         --project="$PROJECT_ID" \
         --format="value(name)" 2>/dev/null || echo "")
-    
+
     local key_count=${#current_keys[@]}
-    
+
     echo "Current keys for $sa_email: $key_count"
-    
+
     if [[ $key_count -eq 0 ]]; then
         log_info "No keys to rotate for $sa_email"
         return 0
     fi
-    
+
     # Safety check for production
     if [[ "${PRODUCTION_MODE:-false}" == "true" && "$FORCE" != "true" ]]; then
         log_warning "PRODUCTION ENVIRONMENT - Key rotation"
@@ -411,41 +411,41 @@ rotate_service_account() {
             return 0
         fi
     fi
-    
+
     # Create rotation plan
     local rotation_timestamp
     rotation_timestamp=$(date +%Y%m%d-%H%M%S)
     local new_key_file="${SA_NAME}-key-${rotation_timestamp}.json"
-    
+
     log_info "Rotation plan:"
     echo "  • Service Account: $sa_email"
     echo "  • Current Keys: $key_count"
     echo "  • New Key File: $new_key_file"
     echo "  • Rotation Time: $(date)"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would create new key and rotate credentials"
         return 0
     fi
-    
+
     # Step 1: Create new key
     log_step "Creating new key..."
     if gcloud iam service-accounts keys create "$new_key_file" \
         --iam-account="$sa_email" \
         --project="$PROJECT_ID"; then
         log_success "Created new key: $new_key_file"
-        
+
         # Secure the key file
         chmod 600 "$new_key_file"
     else
         log_error "Failed to create new key"
         return 1
     fi
-    
+
     # Step 2: Validation period
     log_info "New key created successfully"
     log_warning "IMPORTANT: Update applications to use the new key before old keys are deleted"
-    
+
     # Step 3: Schedule old key cleanup (optional)
     if [[ "${AUTO_CLEANUP_OLD_KEYS:-false}" == "true" ]]; then
         log_info "Scheduling old key cleanup in ${KEY_CLEANUP_DELAY:-24} hours"
@@ -461,33 +461,33 @@ rotate_service_account() {
             echo "  gcloud iam service-accounts keys delete '$key_name' --iam-account='$sa_email'"
         done
     fi
-    
+
     # Step 4: Create rotation record
     create_rotation_record "$sa_email" "$rotation_timestamp" "$new_key_file"
-    
+
     # Step 5: Send notification
     send_notification \
         "Service Account Key Rotated" \
         "Successfully rotated keys for $sa_email. New key: $new_key_file. Update applications and clean up old keys." \
         "INFO"
-    
+
     log_success "Rotation completed for $sa_email"
 }
 
 # Rotate all eligible credentials
 rotate_all_credentials() {
     log_step "Starting batch rotation for project: $PROJECT_ID"
-    
+
     # Get all service accounts with aging keys
     local sa_list
     mapfile -t sa_list < <(gcloud iam service-accounts list \
         --project="$PROJECT_ID" \
         --format="value(email)")
-    
+
     local rotation_candidates=()
-    
+
     echo "Analyzing service accounts for rotation eligibility..."
-    
+
     for sa_email in "${sa_list[@]}"; do
         # Skip system service accounts
         if [[ "$sa_email" =~ -compute@developer.gserviceaccount.com$ ]] || \
@@ -495,29 +495,29 @@ rotate_all_credentials() {
            [[ "$sa_email" =~ @cloudbuild.gserviceaccount.com$ ]]; then
             continue
         fi
-        
+
         # Get oldest key age
         local oldest_key
         oldest_key=$(gcloud iam service-accounts keys list \
             --iam-account="$sa_email" \
             --project="$PROJECT_ID" \
             --format="value(validAfterTime)" 2>/dev/null | sort | head -1)
-        
+
         if [[ -n "$oldest_key" ]]; then
             local key_age
             key_age=$(days_since "$oldest_key")
-            
+
             if [[ $key_age -gt $WARN_THRESHOLD ]]; then
                 rotation_candidates+=("$sa_email:$key_age")
             fi
         fi
     done
-    
+
     if [[ ${#rotation_candidates[@]} -eq 0 ]]; then
         log_success "No service accounts require rotation at this time"
         return 0
     fi
-    
+
     echo ""
     echo "Rotation candidates:"
     for candidate in "${rotation_candidates[@]}"; do
@@ -525,7 +525,7 @@ rotate_all_credentials() {
         local age="${candidate##*:}"
         echo "  • $sa_email (${age}d old)"
     done
-    
+
     echo ""
     if [[ "$FORCE" != "true" ]]; then
         read -p "Proceed with batch rotation of ${#rotation_candidates[@]} service accounts? (yes/no): " confirm
@@ -534,21 +534,21 @@ rotate_all_credentials() {
             return 0
         fi
     fi
-    
+
     # Perform rotations
     local success_count=0
     local failure_count=0
-    
+
     for candidate in "${rotation_candidates[@]}"; do
         local sa_email="${candidate%%:*}"
         local sa_name="${sa_email%%@*}"
-        
+
         echo ""
         log_step "Rotating $sa_email..."
-        
+
         # Set SA_NAME for rotation function
         SA_NAME="$sa_name"
-        
+
         if rotate_service_account; then
             ((success_count++))
             log_success "Successfully rotated $sa_email"
@@ -557,12 +557,12 @@ rotate_all_credentials() {
             log_error "Failed to rotate $sa_email"
         fi
     done
-    
+
     echo ""
     echo "Batch rotation complete:"
     echo "  • Successful: $success_count"
     echo "  • Failed: $failure_count"
-    
+
     # Send summary notification
     send_notification \
         "Batch Credential Rotation Complete" \
@@ -573,12 +573,12 @@ rotate_all_credentials() {
 # Create rotation schedule
 create_rotation_schedule() {
     log_step "Creating rotation schedule..."
-    
+
     local schedule_file="${CLOUDSDK_CONFIG:-$HOME/.gcloud}/rotation-schedule.json"
     local schedule_dir
     schedule_dir=$(dirname "$schedule_file")
     mkdir -p "$schedule_dir"
-    
+
     cat > "$schedule_file" <<EOF
 {
   "rotation_policy": {
@@ -604,9 +604,9 @@ create_rotation_schedule() {
   }
 }
 EOF
-    
+
     log_success "Created rotation schedule: $schedule_file"
-    
+
     echo ""
     echo "To enable automatic rotation, consider setting up a cron job:"
     echo "  # Daily credential check at 2 AM"
@@ -621,16 +621,16 @@ EOF
 # Emergency rotation
 emergency_rotate() {
     log_critical "EMERGENCY ROTATION INITIATED"
-    
+
     echo -e "${RED}⚠️  EMERGENCY CREDENTIAL ROTATION${NC}"
     echo "This will immediately rotate all service account credentials"
     echo "in project: $PROJECT_ID"
     echo ""
-    
+
     # Force immediate rotation without normal safeguards
     WARN_THRESHOLD=0
     FORCE=true
-    
+
     if [[ "${SKIP_EMERGENCY_CONFIRMATION:-false}" != "true" ]]; then
         echo "Type 'EMERGENCY_ROTATE' to confirm:"
         read -r confirmation
@@ -639,37 +639,37 @@ emergency_rotate() {
             exit 1
         fi
     fi
-    
+
     log_warning "Proceeding with emergency rotation..."
-    
+
     # Send emergency notification
     send_notification \
         "EMERGENCY: Credential Rotation Initiated" \
         "Emergency credential rotation started for project $PROJECT_ID. All service account keys will be rotated immediately." \
         "CRITICAL"
-    
+
     # Perform emergency rotation
     rotate_all_credentials
-    
+
     # Post-rotation notification
     send_notification \
         "EMERGENCY: Credential Rotation Complete" \
         "Emergency credential rotation completed for project $PROJECT_ID. Review and update all applications immediately." \
         "CRITICAL"
-    
+
     log_critical "EMERGENCY ROTATION COMPLETE - UPDATE ALL APPLICATIONS"
 }
 
 # Show/update rotation policies
 manage_policies() {
     log_step "Managing rotation policies"
-    
+
     local policy_file="${ROTATION_POLICY:-${CLOUDSDK_CONFIG:-$HOME/.gcloud}/rotation-schedule.json}"
-    
+
     if [[ -f "$policy_file" ]]; then
         echo -e "${WHITE}Current Rotation Policy:${NC}"
         echo "────────────────────────────────────────"
-        
+
         if command -v jq >/dev/null 2>&1; then
             jq '.rotation_policy' "$policy_file" 2>/dev/null || cat "$policy_file"
         else
@@ -686,12 +686,12 @@ create_rotation_record() {
     local sa_email="$1"
     local timestamp="$2"
     local key_file="$3"
-    
+
     local records_dir="${CLOUDSDK_CONFIG:-$HOME/.gcloud}/rotation-records"
     mkdir -p "$records_dir"
-    
+
     local record_file="$records_dir/rotation-${timestamp}.json"
-    
+
     cat > "$record_file" <<EOF
 {
   "rotation_event": {
@@ -714,7 +714,7 @@ create_rotation_record() {
   }
 }
 EOF
-    
+
     log_info "Created rotation record: $record_file"
 }
 
@@ -722,12 +722,12 @@ EOF
 create_cleanup_schedule() {
     local sa_email="$1"
     local timestamp="$2"
-    
+
     local cleanup_dir="${CLOUDSDK_CONFIG:-$HOME/.gcloud}/pending-cleanup"
     mkdir -p "$cleanup_dir"
-    
+
     local cleanup_file="$cleanup_dir/cleanup-${timestamp}.json"
-    
+
     cat > "$cleanup_file" <<EOF
 {
   "cleanup_task": {
@@ -739,7 +739,7 @@ create_cleanup_schedule() {
   }
 }
 EOF
-    
+
     log_info "Scheduled cleanup task: $cleanup_file"
 }
 
@@ -747,13 +747,13 @@ EOF
 main() {
     print_banner
     parse_arguments "$@"
-    
+
     # Validate project access
     if ! gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
         log_error "Cannot access project: $PROJECT_ID"
         exit 1
     fi
-    
+
     case "$COMMAND" in
         check)
             check_credentials

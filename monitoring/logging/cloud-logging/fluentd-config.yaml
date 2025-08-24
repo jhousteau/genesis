@@ -12,7 +12,7 @@ data:
     @include sources.conf
     @include filters.conf
     @include outputs.conf
-    
+
   sources.conf: |
     # Kubernetes container logs
     <source>
@@ -236,13 +236,13 @@ data:
       zone "#{ENV['GCP_ZONE']}"
       vm_id "#{ENV['VM_ID']}"
       vm_name "#{ENV['VM_NAME']}"
-      
+
       # Use structured logging
       use_metadata_service true
       detect_json true
       enable_monitoring true
       monitoring_type opencensus
-      
+
       # Buffer configuration
       <buffer>
         @type file
@@ -257,12 +257,12 @@ data:
         queue_limit_length 8
         overflow_action block
       </buffer>
-      
+
       # Resource and labels
       <format>
         @type json
       </format>
-      
+
       # Kubernetes resource detection
       k8s_cluster_name "#{ENV['CLUSTER_NAME']}"
       k8s_cluster_location "#{ENV['CLUSTER_LOCATION']}"

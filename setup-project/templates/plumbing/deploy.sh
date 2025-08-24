@@ -181,12 +181,12 @@ if [[ -f "Dockerfile" ]]; then
         --build-arg ENV="${ENVIRONMENT}" \
         --build-arg VERSION="${DEPLOYMENT_ID}" \
         .
-    
+
     # Tag for registry
     REGISTRY_URL="${REGION}-docker.pkg.dev/${PROJECT_ID}/containers/${PROJECT_NAME}"
     docker tag "${PROJECT_NAME}:${DEPLOYMENT_ID}" "${REGISTRY_URL}:${DEPLOYMENT_ID}"
     docker tag "${PROJECT_NAME}:${DEPLOYMENT_ID}" "${REGISTRY_URL}:${ENVIRONMENT}"
-    
+
     # Push to registry
     echo "Pushing to registry..."
     docker push "${REGISTRY_URL}:${DEPLOYMENT_ID}"
@@ -196,10 +196,10 @@ fi
 # Deploy infrastructure with Terraform if present
 if [[ -d "infrastructure" ]] || [[ -f "main.tf" ]]; then
     echo -e "\n${BLUE}Deploying infrastructure...${NC}"
-    
+
     # Initialize Terraform
     terraform init -backend-config="bucket=${PROJECT_ID}-terraform-state"
-    
+
     # Plan
     terraform plan \
         -var="project_id=${PROJECT_ID}" \
@@ -207,7 +207,7 @@ if [[ -d "infrastructure" ]] || [[ -f "main.tf" ]]; then
         -var="environment=${ENVIRONMENT}" \
         -var="image_tag=${DEPLOYMENT_ID}" \
         -out=tfplan
-    
+
     # Apply
     if [[ "${AUTO_APPROVE}" == "true" ]]; then
         terraform apply tfplan
@@ -230,7 +230,7 @@ case ${PROJECT_TYPE} in
                 --project="${PROJECT_ID}" \
                 --tag="canary" \
                 --no-traffic
-            
+
             gcloud run services update-traffic "${PROJECT_NAME}" \
                 --region="${REGION}" \
                 --project="${PROJECT_ID}" \
@@ -243,24 +243,24 @@ case ${PROJECT_TYPE} in
                 --project="${PROJECT_ID}" \
                 --allow-unauthenticated
         fi
-        
+
         # Get service URL
         SERVICE_URL=$(gcloud run services describe "${PROJECT_NAME}" \
             --region="${REGION}" \
             --project="${PROJECT_ID}" \
             --format="value(status.url)")
-        
+
         echo -e "${GREEN}✅ Deployed to: ${SERVICE_URL}${NC}"
         ;;
-        
+
     cli|library)
         echo "CLI/Library deployment not applicable"
         ;;
-        
+
     infrastructure)
         echo "Infrastructure-only deployment completed"
         ;;
-        
+
     *)
         echo -e "${YELLOW}Unknown project type: ${PROJECT_TYPE}${NC}"
         ;;

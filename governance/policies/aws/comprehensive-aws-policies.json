@@ -4,7 +4,7 @@
     "Description": "Comprehensive AWS governance policies for multi-cloud compliance",
     "LastUpdated": "2024-08-20",
     "PolicyFramework": "Multi-Cloud Governance",
-    
+
     "ServiceControlPolicies": {
       "SecurityBaseline": {
         "Version": "2012-10-17",
@@ -88,7 +88,7 @@
           }
         ]
       },
-      
+
       "ComplianceEnforcement": {
         "Version": "2012-10-17",
         "Statement": [
@@ -139,7 +139,7 @@
           }
         ]
       },
-      
+
       "CostOptimization": {
         "Version": "2012-10-17",
         "Statement": [
@@ -207,7 +207,7 @@
           }
         ]
       },
-      
+
       "DataProtection": {
         "Version": "2012-10-17",
         "Statement": [
@@ -263,7 +263,7 @@
         ]
       }
     },
-    
+
     "ConfigRules": {
       "SecurityCompliance": [
         {
@@ -336,7 +336,7 @@
           }
         }
       ],
-      
+
       "NetworkSecurity": [
         {
           "ConfigRuleName": "security-group-ssh-restricted",
@@ -385,7 +385,7 @@
           }
         }
       ],
-      
+
       "CostOptimization": [
         {
           "ConfigRuleName": "ec2-instance-managed-by-systems-manager",
@@ -427,7 +427,7 @@
           }
         }
       ],
-      
+
       "DataClassification": [
         {
           "ConfigRuleName": "s3-bucket-public-access-prohibited",
@@ -473,7 +473,7 @@
         }
       ]
     },
-    
+
     "IAMPolicies": {
       "SecurityBaseline": {
         "Version": "2012-10-17",
@@ -521,7 +521,7 @@
           }
         ]
       },
-      
+
       "DeveloperAccess": {
         "Version": "2012-10-17",
         "Statement": [
@@ -572,7 +572,7 @@
           }
         ]
       },
-      
+
       "ReadOnlyAccess": {
         "Version": "2012-10-17",
         "Statement": [
@@ -615,7 +615,7 @@
         ]
       }
     },
-    
+
     "AutomationPolicies": {
       "BackupAutomation": {
         "Version": "2012-10-17",
@@ -659,7 +659,7 @@
           }
         ]
       },
-      
+
       "ComplianceAutomation": {
         "Version": "2012-10-17",
         "Statement": [
@@ -705,7 +705,7 @@
           }
         ]
       },
-      
+
       "CostOptimizationAutomation": {
         "Version": "2012-10-17",
         "Statement": [
@@ -741,7 +741,7 @@
         ]
       }
     },
-    
+
     "MonitoringPolicies": {
       "CloudTrailPolicy": {
         "Version": "2012-10-17",
@@ -768,7 +768,7 @@
           }
         ]
       },
-      
+
       "GuardDutyPolicy": {
         "Version": "2012-10-17",
         "Statement": [
@@ -790,7 +790,7 @@
         ]
       }
     },
-    
+
     "ComplianceFrameworks": {
       "SOX": {
         "RequiredControls": [
@@ -809,7 +809,7 @@
           "ChangeTracking": true
         }
       },
-      
+
       "HIPAA": {
         "RequiredControls": [
           "encrypted-volumes",
@@ -826,7 +826,7 @@
           "AuditLogging": "Comprehensive"
         }
       },
-      
+
       "PCI-DSS": {
         "RequiredControls": [
           "encrypted-volumes",
@@ -843,7 +843,7 @@
           "VulnerabilityScanning": "Regular"
         }
       },
-      
+
       "GDPR": {
         "RequiredControls": [
           "encrypted-volumes",
@@ -860,7 +860,7 @@
         }
       }
     },
-    
+
     "AutomationWorkflows": {
       "PolicyEnforcement": {
         "TriggerEvents": [
@@ -878,7 +878,7 @@
           "IncidentCreation"
         ]
       },
-      
+
       "ComplianceReporting": {
         "ReportingFrequency": {
           "Executive": "Monthly",

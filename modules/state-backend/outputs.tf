@@ -99,7 +99,7 @@ output "replication_job_name" {
 
 output "terraform_backend_config" {
   description = "Terraform backend configuration block for using this bucket"
-  value = <<-EOT
+  value       = <<-EOT
     backend "gcs" {
       bucket = "${google_storage_bucket.state_bucket.name}"
       prefix = "terraform/state"
@@ -128,12 +128,12 @@ output "multi_region_buckets" {
 output "multi_region_config" {
   description = "Multi-region configuration summary"
   value = var.multi_region_config.enabled ? {
-    enabled           = var.multi_region_config.enabled
-    primary_region    = var.multi_region_config.primary_region
-    secondary_regions = var.multi_region_config.secondary_regions
+    enabled              = var.multi_region_config.enabled
+    primary_region       = var.multi_region_config.primary_region
+    secondary_regions    = var.multi_region_config.secondary_regions
     replication_strategy = var.multi_region_config.replication_strategy
-    consistency_model = var.multi_region_config.consistency_model
-    geo_redundancy   = var.multi_region_config.geo_redundancy
+    consistency_model    = var.multi_region_config.consistency_model
+    geo_redundancy       = var.multi_region_config.geo_redundancy
   } : null
 }
 
@@ -167,14 +167,14 @@ output "state_backend_summary" {
   description = "Comprehensive summary of the enhanced state backend configuration"
   value = {
     primary_bucket = {
-      name         = google_storage_bucket.state_bucket.name
-      url          = google_storage_bucket.state_bucket.url
-      location     = google_storage_bucket.state_bucket.location
+      name          = google_storage_bucket.state_bucket.name
+      url           = google_storage_bucket.state_bucket.url
+      location      = google_storage_bucket.state_bucket.location
       storage_class = google_storage_bucket.state_bucket.storage_class
     }
     multi_region = {
-      enabled = var.multi_region_config.enabled
-      regions = var.multi_region_config.enabled ? local.all_regions : [var.location]
+      enabled       = var.multi_region_config.enabled
+      regions       = var.multi_region_config.enabled ? local.all_regions : [var.location]
       replica_count = var.multi_region_config.enabled ? length(var.multi_region_config.secondary_regions) : 0
     }
     security = {
@@ -183,9 +183,9 @@ output "state_backend_summary" {
       audit_logging   = var.enhanced_security.audit_logging.enabled
     }
     disaster_recovery = {
-      enabled              = var.disaster_recovery.enabled
-      cross_region_backup  = var.disaster_recovery.cross_region_backup.enabled
-      automated_failover   = var.disaster_recovery.failover_config.automated_failover
+      enabled             = var.disaster_recovery.enabled
+      cross_region_backup = var.disaster_recovery.cross_region_backup.enabled
+      automated_failover  = var.disaster_recovery.failover_config.automated_failover
       rto                 = var.disaster_recovery.failover_config.recovery_time_objective
       rpo                 = var.disaster_recovery.failover_config.recovery_point_objective
     }
@@ -201,13 +201,13 @@ output "state_backend_summary" {
       lifecycle_rules     = length(local.lifecycle_rules)
     }
     compliance = {
-      enabled     = var.compliance_config.enabled
-      frameworks  = var.compliance_config.frameworks
+      enabled        = var.compliance_config.enabled
+      frameworks     = var.compliance_config.frameworks
       classification = var.compliance_config.data_classification
     }
     performance = {
-      transfer_acceleration = var.performance_config.enable_transfer_acceleration
-      cdn_integration      = var.performance_config.cdn_integration.enabled
+      transfer_acceleration  = var.performance_config.enable_transfer_acceleration
+      cdn_integration        = var.performance_config.cdn_integration.enabled
       bandwidth_optimization = var.performance_config.bandwidth_optimization.enabled
     }
     created_at = timestamp()

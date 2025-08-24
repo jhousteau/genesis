@@ -45,7 +45,7 @@ groups:
       # HTTP Latency Alerts
       - alert: HighHTTPLatencyP95
         expr: |
-          histogram_quantile(0.95, 
+          histogram_quantile(0.95,
             rate(http_request_duration_seconds_bucket[5m])
           ) * 1000 > 1000
         for: 3m
@@ -62,7 +62,7 @@ groups:
 
       - alert: CriticalHTTPLatencyP95
         expr: |
-          histogram_quantile(0.95, 
+          histogram_quantile(0.95,
             rate(http_request_duration_seconds_bucket[5m])
           ) * 1000 > 2000
         for: 1m
@@ -78,7 +78,7 @@ groups:
 
       - alert: HighHTTPLatencyP99
         expr: |
-          histogram_quantile(0.99, 
+          histogram_quantile(0.99,
             rate(http_request_duration_seconds_bucket[5m])
           ) * 1000 > 3000
         for: 2m

@@ -20,7 +20,7 @@ data:
       security_retention_days: 2555
       performance_retention_days: 90
       business_retention_days: 1095    # 3 years
-      
+
     # Service-specific retention policies
     services:
       # Critical production services
@@ -29,57 +29,57 @@ data:
         error_retention_days: 365
         audit_retention_days: 2555
         compliance_retention_days: 2555
-        
-      # Development and staging environments  
+
+      # Development and staging environments
       development:
         default_retention_days: 7
         error_retention_days: 30
         debug_retention_days: 3
-        
+
       staging:
         default_retention_days: 14
         error_retention_days: 60
         debug_retention_days: 7
-        
+
       # Security services
       security:
         all_logs_retention_days: 2555  # Keep all security logs for 7 years
         alert_retention_days: 2555
         audit_retention_days: 2555
-        
+
       # Financial services (enhanced compliance)
       financial:
         transaction_logs_retention_days: 2555
         audit_logs_retention_days: 2555
         error_logs_retention_days: 2555
         debug_logs_retention_days: 30
-        
+
     # Log level specific policies
     log_levels:
       DEBUG:
         default_retention_days: 3
         production_retention_days: 7
-        
+
       INFO:
         default_retention_days: 30
         production_retention_days: 90
-        
+
       WARNING:
         default_retention_days: 90
         production_retention_days: 180
-        
+
       ERROR:
         default_retention_days: 365
         production_retention_days: 1095
-        
+
       CRITICAL:
         default_retention_days: 2555
         production_retention_days: 2555
-        
+
       FATAL:
         default_retention_days: 2555
         production_retention_days: 2555
-    
+
     # Archive configurations
     archival:
       # Google Cloud Storage archival
@@ -88,7 +88,7 @@ data:
         bucket: "universal-platform-log-archive"
         storage_class: "COLDLINE"  # Cost-effective for infrequent access
         compression: "gzip"
-        
+
         # Lifecycle policies
         lifecycle_rules:
           - condition:
@@ -96,12 +96,12 @@ data:
             action:
               type: "SetStorageClass"
               storage_class: "ARCHIVE"
-              
+
           - condition:
               age: 2555  # 7 years
             action:
               type: "Delete"
-              
+
       # Elasticsearch archival (if using ELK stack)
       elasticsearch:
         enabled: false
@@ -109,7 +109,7 @@ data:
         warm_retention_days: 30
         cold_retention_days: 90
         delete_after_days: 365
-        
+
     # Compliance requirements
     compliance:
       # SOC2 Type II
@@ -118,20 +118,20 @@ data:
         audit_log_retention_days: 365
         security_log_retention_days: 365
         access_log_retention_days: 365
-        
+
       # HIPAA (if handling health data)
       hipaa:
         enabled: false
         minimum_retention_days: 2555  # 7 years
         audit_trail_retention_days: 2555
-        
+
       # PCI DSS (if handling payment data)
       pci_dss:
         enabled: false
         cardholder_data_logs_retention_days: 365
         security_logs_retention_days: 365
         audit_logs_retention_days: 365
-        
+
       # GDPR (EU data protection)
       gdpr:
         enabled: true
@@ -139,28 +139,28 @@ data:
         consent_logs_retention_days: 2555
         data_processing_logs_retention_days: 2555
         right_to_erasure_logs_retention_days: 2555
-        
+
     # Data classification and handling
     data_classification:
       public:
         retention_days: 30
         archival_required: false
-        
+
       internal:
         retention_days: 90
         archival_required: true
-        
+
       confidential:
         retention_days: 365
         archival_required: true
         encryption_required: true
-        
+
       restricted:
         retention_days: 2555
         archival_required: true
         encryption_required: true
         access_logging_required: true
-        
+
     # Cost optimization settings
     cost_optimization:
       # Sampling rates for different log types in non-production
@@ -168,19 +168,19 @@ data:
         debug_logs: 0.1        # Keep 10% of debug logs
         info_logs: 0.5         # Keep 50% of info logs
         performance_logs: 0.2   # Keep 20% of performance logs
-        
+
       # Compression settings
       compression:
         enabled: true
         algorithm: "gzip"
         compression_level: 6
-        
+
       # Deduplication
       deduplication:
         enabled: true
         window_minutes: 5
         similarity_threshold: 0.95
-        
+
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -279,31 +279,31 @@ data:
       display_name = "Log Retention Service Account"
       description  = "Service account for managing log retention policies"
     }
-    
+
     # IAM roles for log retention service account
     resource "google_project_iam_member" "log_retention_logging_admin" {
       project = var.project_id
       role    = "roles/logging.admin"
       member  = "serviceAccount:${google_service_account.log_retention.email}"
     }
-    
+
     resource "google_project_iam_member" "log_retention_storage_admin" {
       project = var.project_id
       role    = "roles/storage.admin"
       member  = "serviceAccount:${google_service_account.log_retention.email}"
     }
-    
+
     # Cloud Storage bucket for log archival
     resource "google_storage_bucket" "log_archive" {
       name          = "${var.project_id}-log-archive"
       location      = var.region
       storage_class = "COLDLINE"
-      
+
       # Enable versioning
       versioning {
         enabled = true
       }
-      
+
       # Lifecycle management
       lifecycle_rule {
         condition {
@@ -314,7 +314,7 @@ data:
           storage_class = "ARCHIVE"
         }
       }
-      
+
       lifecycle_rule {
         condition {
           age = 2555  # 7 years
@@ -323,51 +323,51 @@ data:
           type = "Delete"
         }
       }
-      
+
       # Encryption
       encryption {
         default_kms_key_name = google_kms_crypto_key.log_encryption_key.id
       }
-      
+
       # Uniform bucket-level access
       uniform_bucket_level_access = true
     }
-    
+
     # KMS key for log encryption
     resource "google_kms_key_ring" "log_encryption" {
       name     = "log-encryption-keyring"
       location = var.region
     }
-    
+
     resource "google_kms_crypto_key" "log_encryption_key" {
       name     = "log-encryption-key"
       key_ring = google_kms_key_ring.log_encryption.id
       purpose  = "ENCRYPT_DECRYPT"
-      
+
       rotation_period = "2592000s"  # 30 days
-      
+
       lifecycle {
         prevent_destroy = true
       }
     }
-    
+
     # Cloud Function for automated log retention enforcement
     resource "google_storage_bucket" "function_source" {
       name     = "${var.project_id}-function-source"
       location = var.region
     }
-    
+
     resource "google_storage_bucket_object" "function_zip" {
       name   = "log-retention-function.zip"
       bucket = google_storage_bucket.function_source.name
       source = "log-retention-function.zip"
     }
-    
+
     resource "google_cloudfunctions_function" "log_retention_enforcer" {
       name        = "log-retention-enforcer"
       description = "Enforces log retention policies"
       runtime     = "python39"
-      
+
       available_memory_mb   = 256
       source_archive_bucket = google_storage_bucket.function_source.name
       source_archive_object = google_storage_bucket_object.function_zip.name
@@ -380,25 +380,25 @@ data:
       timeout               = 60
       entry_point          = "enforce_retention"
       service_account_email = google_service_account.log_retention.email
-      
+
       environment_variables = {
         GCP_PROJECT = var.project_id
         BUCKET_NAME = google_storage_bucket.log_archive.name
       }
     }
-    
+
     # Pub/Sub topic for triggering retention enforcement
     resource "google_pubsub_topic" "log_retention_trigger" {
       name = "log-retention-trigger"
     }
-    
+
     # Cloud Scheduler job to trigger retention enforcement
     resource "google_cloud_scheduler_job" "log_retention_schedule" {
       name        = "log-retention-schedule"
       description = "Triggers log retention enforcement daily"
       schedule    = "0 2 * * *"  # 2 AM daily
       time_zone   = "UTC"
-      
+
       pubsub_target {
         topic_name = google_pubsub_topic.log_retention_trigger.id
         data       = base64encode(jsonencode({
@@ -407,30 +407,30 @@ data:
         }))
       }
     }
-    
+
     # Log sink for archival
     resource "google_logging_project_sink" "archive_sink" {
       name        = "archive-sink"
       destination = "storage.googleapis.com/${google_storage_bucket.log_archive.name}"
-      
+
       # Filter to capture all logs for archival
       filter = "severity >= INFO"
-      
+
       unique_writer_identity = true
     }
-    
+
     # Grant the sink's writer identity access to the bucket
     resource "google_storage_bucket_iam_member" "archive_sink_writer" {
       bucket = google_storage_bucket.log_archive.name
       role   = "roles/storage.objectCreator"
       member = google_logging_project_sink.archive_sink.writer_identity
     }
-    
+
     # Monitoring and alerting for retention compliance
     resource "google_monitoring_alert_policy" "retention_failure" {
       display_name = "Log Retention Failure"
       combiner     = "OR"
-      
+
       conditions {
         display_name = "Log retention job failed"
         condition_threshold {
@@ -438,16 +438,16 @@ data:
           duration        = "300s"
           comparison      = "COMPARISON_GREATER_THAN"
           threshold_value = 0
-          
+
           aggregations {
             alignment_period   = "300s"
             per_series_aligner = "ALIGN_RATE"
           }
         }
       }
-      
+
       notification_channels = var.notification_channels
-      
+
       alert_strategy {
         notification_rate_limit {
           period = "300s"
@@ -455,19 +455,19 @@ data:
         auto_close = "1800s"
       }
     }
-    
+
   variables.tf: |
     variable "project_id" {
       description = "GCP project ID"
       type        = string
     }
-    
+
     variable "region" {
       description = "GCP region"
       type        = string
       default     = "us-central1"
     }
-    
+
     variable "notification_channels" {
       description = "List of notification channels for alerts"
       type        = list(string)

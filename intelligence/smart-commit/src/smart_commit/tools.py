@@ -456,6 +456,8 @@ class ToolMatrix:
         tools = []
         for config in configs:
             command = config.autofix_command or config.command
-            tool = Tool(name=config.name, command=command, check_command=config.check_command)
+            tool = Tool(
+                name=config.name, command=command, check_command=config.check_command
+            )
             tools.append(tool)
         return tools

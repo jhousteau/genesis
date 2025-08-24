@@ -48,7 +48,7 @@ spec:
           protocol: TCP
         - name: websocket
           containerPort: 8080
-          protocol: TCP  
+          protocol: TCP
         - name: metrics
           containerPort: 8081
           protocol: TCP
@@ -242,46 +242,46 @@ data:
         corsOrigins: ["*"]
         maxConnections: 1000
         requestTimeout: 30000
-        
+
       auth:
         enabled: true
-        
+
       monitoring:
         enabled: true
         metricsPort: 8081
         healthCheckInterval: 30
-        
+
       services:
         registry:
           maxServices: 1000
           healthCheckInterval: 30
-          
+
       security:
         rateLimiting:
           enabled: true
           windowMs: 900000  # 15 minutes
           max: 1000         # requests per window
-          
+
         requestValidation:
           enabled: true
           maxRequestSize: "10MB"
-          
+
         securityHeaders:
           enabled: true
-          
+
     claude_talk:
       integration:
         enabled: true
         session_timeout: 3600
         max_concurrent_agents: 100
         streaming_enabled: true
-        
+
       resources:
         defaults:
           memory: "1GB"
           cpu: "500m"
           timeout: 1800
-          
+
         limits:
           memory: "4GB"
           cpu: "2000m"

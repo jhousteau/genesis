@@ -66,20 +66,20 @@ echo ""
 echo "Issue #4 - CLI Development:"
 if [ -f "cli/bin/g" ]; then
     echo -e "  ✅ CLI entry point ${GREEN}DONE${NC}"
-    
+
     # Check if commands are implemented
     if grep -q "def init" cli/commands/*.py 2>/dev/null; then
         echo -e "  ✅ g init command ${GREEN}DONE${NC}"
     else
         echo -e "  ⬜ g init command ${RED}TODO${NC}"
     fi
-    
+
     if grep -q "def new" cli/commands/*.py 2>/dev/null; then
         echo -e "  ✅ g new command ${GREEN}DONE${NC}"
     else
         echo -e "  ⬜ g new command ${RED}TODO${NC}"
     fi
-    
+
     if grep -q "def deploy" cli/commands/*.py 2>/dev/null; then
         echo -e "  ✅ g deploy command ${GREEN}DONE${NC}"
     else
@@ -95,18 +95,18 @@ echo ""
 echo "Issue #5 - GCP Foundation:"
 if [ -d "modules" ]; then
     echo -e "  ✅ Module structure ${GREEN}EXISTS${NC}"
-    
+
     # Count implemented modules
     implemented=0
     total=6
-    
+
     [ -f "modules/service-accounts/main.tf" ] && ((implemented++))
     [ -f "modules/workload-identity/main.tf" ] && ((implemented++))
     [ -f "modules/state-backend/main.tf" ] && ((implemented++))
     [ -f "modules/compute/main.tf" ] && ((implemented++))
     [ -f "modules/networking/main.tf" ] && ((implemented++))
     [ -f "modules/security/main.tf" ] && ((implemented++))
-    
+
     echo -e "  📊 Modules implemented: ${implemented}/${total}"
 else
     echo -e "  ⬜ Module structure ${RED}TODO${NC}"

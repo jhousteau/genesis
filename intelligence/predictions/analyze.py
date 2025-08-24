@@ -867,9 +867,7 @@ def main():
                     confidence_icon = (
                         "🔴"
                         if pred["confidence"] >= 0.8
-                        else "🟡"
-                        if pred["confidence"] >= 0.6
-                        else "🟢"
+                        else "🟡" if pred["confidence"] >= 0.6 else "🟢"
                     )
                     print(
                         f"  {confidence_icon} [{pred['type'].upper()}] {pred['title']}"

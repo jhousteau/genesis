@@ -526,9 +526,7 @@ class ServiceDependencyMapper:
             color = (
                 "red"
                 if error_rate > 5
-                else "yellow"
-                if error_rate > 1
-                else "lightgreen"
+                else "yellow" if error_rate > 1 else "lightgreen"
             )
 
             lines.append(

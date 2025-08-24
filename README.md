@@ -108,6 +108,12 @@ genesis/
 │   ├── solve/            # Problem-solving orchestrator
 │   ├── autofix/          # Automated issue resolution
 │   └── smart-commit/     # Intelligent commit system
+├── cli/                  # Genesis CLI commands
+├── coordination/         # System coordination
+├── governance/           # Compliance and policies
+├── isolation/            # Environment isolation
+├── lib/                  # Shared libraries
+├── templates/            # Project templates
 ├── monitoring/           # Observability stack
 │   ├── alerts/          # Alert rules and routing
 │   ├── dashboards/      # Grafana and GCP dashboards
@@ -199,8 +205,9 @@ pre-commit run --all-files
 - [Getting Started Guide](docs/01-getting-started/quickstart.md)
 - [Git Branch Protection](docs/04-guides/git-branch-protection.md)
 - [GCP Environment Isolation](docs/04-guides/gcp-isolation.md)
-- [API Reference](docs/03-api-reference/)
-- [Operations Runbooks](docs/05-operations/runbooks/)
+- [VM Management Guide](docs/04-guides/vm-management-deployment.md)
+- [Secret Management Guide](docs/security/SECRET_MANAGEMENT_GUIDE.md)
+- [MCP Integration Guide](docs/mcp-integration-guide.md)
 
 ## 🤝 Contributing
 
@@ -254,4 +261,4 @@ For support, please:
 ---
 
 **Current Version**: 0.2.1 (Alpha)
-**Last Updated**: August 22, 2025
+**Last Updated**: August 24, 2025

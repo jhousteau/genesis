@@ -45,7 +45,7 @@ on:
 env:
   PROJECT_NAME: ${{ vars.PROJECT_NAME }}
   TF_VERSION: ${{ vars.TF_VERSION || '1.6.0' }}
-  
+
 permissions:
   contents: read
   id-token: write
@@ -88,27 +88,27 @@ jobs:
             echo "tf_action=plan" >> $GITHUB_OUTPUT
             echo "should_deploy=false" >> $GITHUB_OUTPUT
           fi
-          
+
           # Set GCP project and working directory
           case "${{ steps.env.outputs.environment }}" in
-            dev) 
-              echo "gcp_project=${{ vars.PROJECT_NAME }}-dev" >> $GITHUB_OUTPUT 
+            dev)
+              echo "gcp_project=${{ vars.PROJECT_NAME }}-dev" >> $GITHUB_OUTPUT
               echo "working_directory=environments/dev" >> $GITHUB_OUTPUT
               ;;
-            test) 
-              echo "gcp_project=${{ vars.PROJECT_NAME }}-test" >> $GITHUB_OUTPUT 
+            test)
+              echo "gcp_project=${{ vars.PROJECT_NAME }}-test" >> $GITHUB_OUTPUT
               echo "working_directory=environments/test" >> $GITHUB_OUTPUT
               ;;
-            stage) 
-              echo "gcp_project=${{ vars.PROJECT_NAME }}-stage" >> $GITHUB_OUTPUT 
+            stage)
+              echo "gcp_project=${{ vars.PROJECT_NAME }}-stage" >> $GITHUB_OUTPUT
               echo "working_directory=environments/stage" >> $GITHUB_OUTPUT
               ;;
-            prod) 
-              echo "gcp_project=${{ vars.PROJECT_NAME }}-prod" >> $GITHUB_OUTPUT 
+            prod)
+              echo "gcp_project=${{ vars.PROJECT_NAME }}-prod" >> $GITHUB_OUTPUT
               echo "working_directory=environments/prod" >> $GITHUB_OUTPUT
               ;;
           esac
-          
+
           # Set backend configuration
           echo "backend_config=backend-${{ steps.env.outputs.environment }}.conf" >> $GITHUB_OUTPUT
 
@@ -148,7 +148,7 @@ jobs:
               cd - > /dev/null
             fi
           done
-          
+
           # Validate modules
           for module_dir in modules/*/; do
             if [[ -f "$module_dir/main.tf" ]]; then
@@ -180,7 +180,7 @@ jobs:
           curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/dl/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz
           tar -xzf terraform-docs.tar.gz
           chmod +x terraform-docs
-          
+
           # Check each module has up-to-date documentation
           for module_dir in modules/*/; do
             if [[ -f "$module_dir/main.tf" ]]; then
@@ -236,7 +236,7 @@ jobs:
           bucket = "${{ vars.PROJECT_NAME }}-tfstate-${{ needs.setup.outputs.environment }}"
           prefix = "terraform/state"
           EOF
-          
+
           echo "Backend configuration:"
           cat backend.conf
 
@@ -250,24 +250,24 @@ jobs:
         working-directory: ${{ needs.setup.outputs.working_directory }}
         run: |
           PLAN_FILE="tfplan-${{ github.sha }}"
-          
+
           # Create terraform.tfvars if it doesn't exist
           if [[ ! -f "terraform.tfvars" ]]; then
             cp terraform.tfvars.example terraform.tfvars
             # Update project ID in tfvars
             sed -i "s/PROJECT_ID_PLACEHOLDER/${{ needs.setup.outputs.gcp_project }}/g" terraform.tfvars
           fi
-          
+
           terraform plan \
             -detailed-exitcode \
             -out="$PLAN_FILE" \
             -var="project_id=${{ needs.setup.outputs.gcp_project }}" \
             -var="environment=${{ needs.setup.outputs.environment }}"
-          
+
           PLAN_EXIT_CODE=$?
-          
+
           echo "plan_file=${PLAN_FILE}" >> $GITHUB_OUTPUT
-          
+
           if [[ $PLAN_EXIT_CODE -eq 2 ]]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
             echo "✅ Terraform plan completed with changes"
@@ -291,20 +291,20 @@ jobs:
         working-directory: ${{ needs.setup.outputs.working_directory }}
         run: |
           terraform show -no-color ${{ steps.plan.outputs.plan_file }} > plan_output.txt
-          
+
           # Create PR comment with plan summary
           cat > pr_comment.md << EOF
           ## Terraform Plan Results for \`${{ needs.setup.outputs.environment }}\`
-          
+
           <details>
           <summary>Show Plan</summary>
-          
+
           \`\`\`hcl
           $(cat plan_output.txt)
           \`\`\`
-          
+
           </details>
-          
+
           **Plan File:** \`${{ steps.plan.outputs.plan_file }}\`
           **Has Changes:** \`${{ steps.plan.outputs.has_changes }}\`
           EOF
@@ -313,11 +313,11 @@ jobs:
   apply:
     needs: [setup, plan]
     if: |
-      needs.setup.outputs.should_deploy == 'true' && 
-      needs.setup.outputs.tf_action == 'apply' && 
+      needs.setup.outputs.should_deploy == 'true' &&
+      needs.setup.outputs.tf_action == 'apply' &&
       needs.plan.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: ${{ needs.setup.outputs.environment }}
       url: ${{ steps.output.outputs.console_url }}
     steps:
@@ -376,12 +376,12 @@ jobs:
         run: |
           # Capture terraform outputs
           terraform output -json > terraform_outputs.json
-          
+
           # Extract key outputs
           if command -v jq &> /dev/null; then
             PROJECT_ID=$(terraform output -raw project_id 2>/dev/null || echo "")
             CONSOLE_URL="https://console.cloud.google.com/home/dashboard?project=${PROJECT_ID}"
-            
+
             echo "console_url=${CONSOLE_URL}" >> $GITHUB_OUTPUT
             echo "project_id=${PROJECT_ID}" >> $GITHUB_OUTPUT
           fi
@@ -396,10 +396,10 @@ jobs:
   destroy:
     needs: [setup]
     if: |
-      github.event_name == 'workflow_dispatch' && 
+      github.event_name == 'workflow_dispatch' &&
       github.event.inputs.action == 'destroy'
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: ${{ needs.setup.outputs.environment }}-destroy
     steps:
       - name: Checkout code
@@ -441,7 +441,7 @@ jobs:
             cp terraform.tfvars.example terraform.tfvars
             sed -i "s/PROJECT_ID_PLACEHOLDER/${{ needs.setup.outputs.gcp_project }}/g" terraform.tfvars
           fi
-          
+
           terraform destroy \
             -auto-approve \
             -var="project_id=${{ needs.setup.outputs.gcp_project }}" \
@@ -451,7 +451,7 @@ jobs:
   validate-deployment:
     needs: [setup, apply]
     if: |
-      always() && 
+      always() &&
       needs.apply.result == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -469,7 +469,7 @@ jobs:
         run: |
           echo "Running infrastructure health checks..."
           PROJECT_ID="${{ needs.setup.outputs.gcp_project }}"
-          
+
           # Check project exists and is active
           if gcloud projects describe "$PROJECT_ID" --format="value(lifecycleState)" | grep -q "ACTIVE"; then
             echo "✅ Project $PROJECT_ID is active"
@@ -477,15 +477,15 @@ jobs:
             echo "❌ Project $PROJECT_ID is not active or accessible"
             exit 1
           fi
-          
+
           # Check essential APIs are enabled
           REQUIRED_APIS=(
             "compute.googleapis.com"
-            "container.googleapis.com" 
+            "container.googleapis.com"
             "cloudbuild.googleapis.com"
             "storage.googleapis.com"
           )
-          
+
           for api in "${REQUIRED_APIS[@]}"; do
             if gcloud services list --enabled --filter="name:$api" --format="value(name)" --project="$PROJECT_ID" | grep -q "$api"; then
               echo "✅ API $api is enabled"
@@ -493,7 +493,7 @@ jobs:
               echo "⚠️ API $api is not enabled (may be intentional)"
             fi
           done
-          
+
           # Check basic resource quotas
           echo "📊 Checking resource quotas..."
           gcloud compute project-info describe --project="$PROJECT_ID" --format="table(quotas.metric,quotas.limit,quotas.usage)" --filter="quotas.metric:CPUS" || true
@@ -502,11 +502,11 @@ jobs:
         run: |
           echo "Running compliance checks..."
           PROJECT_ID="${{ needs.setup.outputs.gcp_project }}"
-          
+
           # Check organization policies (if applicable)
           echo "📋 Organization policies:"
           gcloud resource-manager org-policies list --project="$PROJECT_ID" --format="table(constraint,listPolicy.allValues)" || echo "No organization policies found"
-          
+
           # Check IAM recommendations
           echo "🔐 IAM security recommendations:"
           gcloud recommender recommendations list --project="$PROJECT_ID" --recommender="google.iam.policy.Recommender" --location="global" --format="table(name,description)" || echo "No IAM recommendations available"
@@ -549,24 +549,24 @@ jobs:
           bucket = "${{ vars.PROJECT_NAME }}-tfstate-${{ matrix.environment }}"
           prefix = "terraform/state"
           EOF
-          
+
           terraform init -backend-config=backend.conf
-          
+
           # Create terraform.tfvars
           if [[ ! -f "terraform.tfvars" ]]; then
             cp terraform.tfvars.example terraform.tfvars
             sed -i "s/PROJECT_ID_PLACEHOLDER/${{ vars.PROJECT_NAME }}-${{ matrix.environment }}/g" terraform.tfvars
           fi
-          
+
           # Run plan to detect drift
           terraform plan \
             -detailed-exitcode \
             -var="project_id=${{ vars.PROJECT_NAME }}-${{ matrix.environment }}" \
             -var="environment=${{ matrix.environment }}" \
             > drift-report.txt
-          
+
           PLAN_EXIT_CODE=$?
-          
+
           if [[ $PLAN_EXIT_CODE -eq 2 ]]; then
             echo "⚠️ Configuration drift detected in ${{ matrix.environment }}"
             echo "Drift Report:"

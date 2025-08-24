@@ -353,8 +353,9 @@ class TestSecretManagerIntegration:
 
     def test_mcp_auth_bridge_initialization(self):
         """Test MCP authentication bridge initialization."""
-        from lib.javascript.whitehorse.core.src.mcp.secret_auth_bridge import \
-            createSecretAuthBridge
+        from lib.javascript.whitehorse.core.src.mcp.secret_auth_bridge import (
+            createSecretAuthBridge,
+        )
 
         config = {"projectId": TEST_PROJECT_ID or "test-project", "environment": "test"}
 

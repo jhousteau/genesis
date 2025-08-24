@@ -26,9 +26,15 @@ from solve.prompts.constitutional_template import AgentRole
 try:
     from graph.connection import GraphConnection
     from graph.models.adr_models import ADRNode, SystemNode
-    from graph.models.gcp_models import (CloudFunction, CloudRunService,
-                                         CloudStorage, CloudTasks, Firestore,
-                                         GCPPrimitive, PubSubTopic)
+    from graph.models.gcp_models import (
+        CloudFunction,
+        CloudRunService,
+        CloudStorage,
+        CloudTasks,
+        Firestore,
+        GCPPrimitive,
+        PubSubTopic,
+    )
     from graph.repositories.adr_repository import ADRRepository
     from graph.repositories.gcp_repository import GCPRepository
 

@@ -19,9 +19,15 @@ import yaml
 # Import Genesis secret management components
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from config.unified_config import get_config
-from core.secrets import (SecretAccessDeniedError, SecretError, SecretManager,
-                          SecretNotFoundError, SecretRotationError,
-                          SecretValidationError, get_secret_manager)
+from core.secrets import (
+    SecretAccessDeniedError,
+    SecretError,
+    SecretManager,
+    SecretNotFoundError,
+    SecretRotationError,
+    SecretValidationError,
+    get_secret_manager,
+)
 from core.secrets.iam import AccessRequest, IAMSecretAccessManager
 
 

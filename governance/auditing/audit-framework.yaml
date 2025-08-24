@@ -10,7 +10,7 @@ audit_framework:
     - "ISO 27001"
     - "HIPAA"
     - "PCI DSS"
-  
+
   # Audit Configuration
   configuration:
     retention_policy:
@@ -21,22 +21,22 @@ audit_framework:
         hipaa: "2190 days"
         pci_dss: "365 days"
       long_term_storage: "glacier"
-      
+
     audit_levels:
       critical: "All actions logged with full context"
       high: "Security and compliance events"
       medium: "Administrative actions"
       low: "User activities"
-      
+
     data_protection:
       encryption_at_rest: true
       encryption_in_transit: true
       data_integrity_validation: true
       tamper_evident: true
-      
+
   # Event Categories
   event_categories:
-    
+
     # Authentication and Authorization
     authentication:
       events:
@@ -45,7 +45,7 @@ audit_framework:
         - "logout"
         - "password_change"
         - "mfa_enabled"
-        - "mfa_disabled" 
+        - "mfa_disabled"
         - "session_timeout"
         - "account_lockout"
       fields:
@@ -58,7 +58,7 @@ audit_framework:
         - "session_id"
       retention: "2555 days"
       compliance_relevance: ["SOC2", "ISO27001", "HIPAA"]
-      
+
     authorization:
       events:
         - "role_assigned"
@@ -76,7 +76,7 @@ audit_framework:
         - "approval_status"
       retention: "2555 days"
       compliance_relevance: ["SOC2", "ISO27001", "GDPR"]
-      
+
     # Data Access and Modification
     data_access:
       events:
@@ -94,7 +94,7 @@ audit_framework:
         - "data_subjects_affected"
       retention: "2555 days"
       compliance_relevance: ["GDPR", "HIPAA", "SOC2"]
-      
+
     data_modification:
       events:
         - "data_created"
@@ -112,7 +112,7 @@ audit_framework:
         - "change_reason"
       retention: "2555 days"
       compliance_relevance: ["GDPR", "HIPAA", "SOC2"]
-      
+
     # System Administration
     system_administration:
       events:
@@ -134,7 +134,7 @@ audit_framework:
         - "change_ticket"
       retention: "2555 days"
       compliance_relevance: ["SOC2", "ISO27001"]
-      
+
     # Infrastructure Changes
     infrastructure:
       events:
@@ -155,7 +155,7 @@ audit_framework:
         - "rollback_info"
       retention: "2555 days"
       compliance_relevance: ["SOC2", "ISO27001"]
-      
+
     # Security Events
     security:
       events:
@@ -176,7 +176,7 @@ audit_framework:
         - "response_time"
       retention: "2555 days"
       compliance_relevance: ["SOC2", "ISO27001", "HIPAA"]
-      
+
     # Compliance Activities
     compliance:
       events:
@@ -220,7 +220,7 @@ audit_framework:
         - "request_type"
       retention: "2555 days"
       compliance_relevance: ["GDPR"]
-      
+
     data_transfers:
       events:
         - "cross_border_transfer"
@@ -257,7 +257,7 @@ audit_framework:
 
   # Technical Implementation
   logging_infrastructure:
-    
+
     # Log Collectors
     collectors:
       application_logs:
@@ -265,19 +265,19 @@ audit_framework:
         - "Correlation ID tracking"
         - "Request/response logging"
         - "Error and exception logging"
-        
+
       infrastructure_logs:
         - "Cloud platform audit logs"
         - "Network device logs"
         - "Security tool logs"
         - "Container orchestration logs"
-        
+
       security_logs:
         - "SIEM integration"
         - "IDS/IPS logs"
         - "Vulnerability scanner logs"
         - "Endpoint protection logs"
-        
+
     # Log Processing Pipeline
     processing:
       ingestion:
@@ -285,31 +285,31 @@ audit_framework:
         - "Batch log processing"
         - "Log parsing and normalization"
         - "Correlation rule engine"
-        
+
       enrichment:
         - "Contextual information addition"
         - "User and asset lookups"
         - "Geolocation enrichment"
         - "Threat intelligence correlation"
-        
+
       analysis:
         - "Behavioral analytics"
         - "Anomaly detection"
         - "Pattern recognition"
         - "Risk scoring"
-        
+
     # Storage and Retrieval
     storage:
       hot_storage:
         - "Recent data (90 days)"
         - "High-performance search"
         - "Real-time analytics"
-        
+
       warm_storage:
         - "Historical data (1-3 years)"
         - "Standard search performance"
         - "Compliance reporting"
-        
+
       cold_storage:
         - "Long-term retention (7+ years)"
         - "Archive storage"
@@ -323,13 +323,13 @@ audit_framework:
       - "Approval chain execution"
       - "Implementation tracking"
       - "Rollback procedures"
-      
+
     configuration_management:
       - "Configuration item tracking"
       - "Baseline management"
       - "Drift detection"
       - "Remediation workflows"
-      
+
     deployment_tracking:
       - "Code deployment events"
       - "Infrastructure provisioning"
@@ -343,13 +343,13 @@ audit_framework:
       - "Access frequency tracking"
       - "Privilege usage monitoring"
       - "Anomalous activity detection"
-      
+
     system_behavior:
       - "Resource utilization patterns"
       - "Performance trend analysis"
       - "Failure pattern detection"
       - "Capacity planning insights"
-      
+
     security_behavior:
       - "Threat pattern recognition"
       - "Attack sequence detection"
@@ -358,7 +358,7 @@ audit_framework:
 
   # Reporting and Analytics
   reporting_framework:
-    
+
     # Executive Reporting
     executive_reports:
       frequency: "Monthly"
@@ -368,8 +368,8 @@ audit_framework:
         - "Risk trend analysis"
         - "Audit readiness assessment"
       automation: "Fully automated"
-      
-    # Operational Reporting  
+
+    # Operational Reporting
     operational_reports:
       frequency: "Weekly"
       content:
@@ -378,7 +378,7 @@ audit_framework:
         - "Change management statistics"
         - "Access review status"
       automation: "Automated with manual review"
-      
+
     # Compliance Reporting
     compliance_reports:
       frequency: "Quarterly"
@@ -388,7 +388,7 @@ audit_framework:
         - "Regulatory requirement mapping"
         - "Gap analysis reports"
       automation: "Semi-automated"
-      
+
     # Real-time Dashboards
     dashboards:
       security_operations:
@@ -396,13 +396,13 @@ audit_framework:
         - "Incident response status"
         - "Vulnerability management"
         - "System health indicators"
-        
+
       compliance_monitoring:
         - "Control status tracking"
         - "Audit preparation progress"
         - "Risk exposure metrics"
         - "Evidence collection status"
-        
+
       operational_oversight:
         - "Change management pipeline"
         - "Access review progress"
@@ -411,7 +411,7 @@ audit_framework:
 
   # Integration Specifications
   system_integrations:
-    
+
     # Cloud Platforms
     gcp_integration:
       services:
@@ -424,7 +424,7 @@ audit_framework:
         - "Data access log enablement"
         - "Admin activity log enablement"
         - "System event log enablement"
-        
+
     aws_integration:
       services:
         - "CloudTrail"
@@ -436,7 +436,7 @@ audit_framework:
         - "Data event logging"
         - "Management event logging"
         - "Insight event logging"
-        
+
     azure_integration:
       services:
         - "Activity Log"
@@ -448,14 +448,14 @@ audit_framework:
         - "Resource-level diagnostics"
         - "Security event collection"
         - "Compliance monitoring"
-        
+
     # Security Tools
     security_tool_integration:
       - "SIEM platforms (Splunk, QRadar, Sentinel)"
       - "Vulnerability scanners (Nessus, Qualys)"
       - "Endpoint protection (CrowdStrike, SentinelOne)"
       - "Network security (Palo Alto, Fortinet)"
-      
+
     # Identity and Access Management
     iam_integration:
       - "Active Directory audit logs"
@@ -465,38 +465,42 @@ audit_framework:
 
   # Alerting and Notifications
   alert_framework:
-    
+
     # Critical Alerts
     critical_events:
-      - "Privileged account compromise"
-      - "Mass data exfiltration"
-      - "System intrusion"
-      - "Compliance violation"
-      - "Audit log tampering"
+      events:
+        - "Privileged account compromise"
+        - "Mass data exfiltration"
+        - "System intrusion"
+        - "Compliance violation"
+        - "Audit log tampering"
       notification: "Immediate (PagerDuty)"
-      
-    # High Priority Alerts  
+
+    # High Priority Alerts
     high_priority:
-      - "Failed login attempts"
-      - "Unauthorized access"
-      - "Configuration changes"
-      - "Security policy violations"
+      events:
+        - "Failed login attempts"
+        - "Unauthorized access"
+        - "Configuration changes"
+        - "Security policy violations"
       notification: "Real-time (Slack, Email)"
-      
+
     # Medium Priority Alerts
     medium_priority:
-      - "Access pattern anomalies"
-      - "Resource utilization alerts"
-      - "Backup failures"
-      - "Certificate expiration"
+      events:
+        - "Access pattern anomalies"
+        - "Resource utilization alerts"
+        - "Backup failures"
+        - "Certificate expiration"
       notification: "Scheduled (Email)"
-      
+
     # Informational Alerts
     informational:
-      - "Successful deployments"
-      - "Scheduled maintenance"
-      - "Regular report availability"
-      - "Training completion"
+      events:
+        - "Successful deployments"
+        - "Scheduled maintenance"
+        - "Regular report availability"
+        - "Training completion"
       notification: "Daily digest (Email)"
 
 # Audit Trail Validation
@@ -506,13 +510,13 @@ validation_controls:
     - "Digital signature validation"
     - "Tamper detection mechanisms"
     - "Chain of custody tracking"
-    
+
   completeness_checks:
     - "Log volume analysis"
     - "Expected event verification"
     - "Gap detection algorithms"
     - "Source system validation"
-    
+
   accuracy_verification:
     - "Cross-reference validation"
     - "Data quality checks"
@@ -526,13 +530,13 @@ performance_requirements:
     - "Real-time processing capabilities"
     - "High availability (99.99%)"
     - "Disaster recovery (RTO < 4 hours)"
-    
+
   storage_scaling:
     - "Petabyte-scale storage support"
     - "Automatic data tiering"
     - "Compression optimization"
     - "Cost-effective archival"
-    
+
   search_performance:
     - "Sub-second query response"
     - "Complex correlation queries"

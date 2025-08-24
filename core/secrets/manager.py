@@ -16,9 +16,13 @@ from google.cloud import secretmanager
 from google.cloud.exceptions import NotFound, PermissionDenied
 
 from .access_patterns import SecretAccessPattern, SecretCache
-from .exceptions import (SecretAccessDeniedError, SecretConfigurationError,
-                         SecretError, SecretNotFoundError,
-                         SecretValidationError)
+from .exceptions import (
+    SecretAccessDeniedError,
+    SecretConfigurationError,
+    SecretError,
+    SecretNotFoundError,
+    SecretValidationError,
+)
 from .monitoring import SecretMonitor
 from .rotation import SecretRotator
 

@@ -16,6 +16,7 @@ from typing import Any, Protocol
 
 from google.adk.tools import BaseTool as ADKBaseTool
 from google.adk.tools.tool_context import ToolContext as ADKToolContext
+
 # Import SOLVE adapter for compatibility
 from solve.adk_adapter import BaseTool as SOLVEBaseTool
 from solve.adk_adapter import ToolContext as SOLVEToolContext

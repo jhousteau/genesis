@@ -319,11 +319,11 @@ class ContextManager:
                 if previous_value is not None:
                     context_var.set(previous_value)
                 else:
-                    # Reset to default
-                    try:
-                        context_var.delete()
-                    except LookupError:
-                        pass
+                    # Reset to default value based on variable type
+                    if var_name in ["baggage", "metadata"]:
+                        context_var.set({})
+                    else:
+                        context_var.set(None)
 
             self.logger.debug("Request context cleaned up")
 
@@ -417,18 +417,12 @@ class ContextManager:
             if previous_span_id is not None:
                 _span_id.set(previous_span_id)
             else:
-                try:
-                    _span_id.delete()
-                except LookupError:
-                    pass
+                _span_id.set(None)
 
             if previous_parent_span_id is not None:
                 _parent_span_id.set(previous_parent_span_id)
             else:
-                try:
-                    _parent_span_id.delete()
-                except LookupError:
-                    pass
+                _parent_span_id.set(None)
 
     def get_current_context(self) -> Optional[RequestContext]:
         """
@@ -484,23 +478,16 @@ class ContextManager:
 
     def clear_context(self):
         """Clear all context variables"""
-        context_vars = [
-            _correlation_id,
-            _request_id,
-            _user_id,
-            _session_id,
-            _trace_id,
-            _span_id,
-            _parent_span_id,
-            _baggage,
-            _metadata,
-        ]
-
-        for var in context_vars:
-            try:
-                var.delete()
-            except LookupError:
-                pass
+        # Set context variables to their default values
+        _correlation_id.set(None)
+        _request_id.set(None)
+        _user_id.set(None)
+        _session_id.set(None)
+        _trace_id.set(None)
+        _span_id.set(None)
+        _parent_span_id.set(None)
+        _baggage.set({})
+        _metadata.set({})
 
         self.logger.debug("Context cleared")
 
@@ -709,7 +696,14 @@ def get_user_context() -> Optional[UserContext]:
         metadata={
             k.replace("user.", ""): v
             for k, v in metadata.items()
-            if k.startswith("user.") and "." in k[5:]
+            if k.startswith("user.")
+            and k
+            not in [
+                "user.roles",
+                "user.permissions",
+                "user.tenant_id",
+                "user.organization_id",
+            ]
         },
     )
 

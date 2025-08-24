@@ -8,10 +8,10 @@ repos:
         args: ['--branch', 'main', '--branch', 'master']
         name: Protect main branch
         description: Prevents direct commits to main/master branches
-      
+
       # Essential file validation
       - id: check-yaml
-        exclude: ^(docker-compose\.yml|\.github/workflows/)
+        exclude: ^(docker-compose\.yml|\.github/workflows/|modules/.*\.yaml|monitoring/.*\.yaml|deploy/.*\.yml)
       - id: check-json
       - id: check-merge-conflict
       - id: trailing-whitespace

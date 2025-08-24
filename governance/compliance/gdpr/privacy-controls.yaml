@@ -6,7 +6,7 @@ gdpr_compliance:
   framework: "GDPR"
   regulation_reference: "EU 2016/679"
   last_updated: "2024-08-20"
-  
+
   # GDPR Principles (Article 5)
   principles:
     lawfulness:
@@ -21,7 +21,7 @@ gdpr_compliance:
         - "Lawful basis tracking"
         - "Consent status monitoring"
         - "Privacy notice delivery verification"
-        
+
     purpose_limitation:
       article: "Article 5(1)(b)"
       description: "Personal data shall be collected for specified, explicit and legitimate purposes"
@@ -33,7 +33,7 @@ gdpr_compliance:
         - "Purpose validation checks"
         - "Data collection monitoring"
         - "Processing activity logging"
-        
+
     data_minimization:
       article: "Article 5(1)(c)"
       description: "Personal data shall be adequate, relevant and limited to what is necessary"
@@ -45,7 +45,7 @@ gdpr_compliance:
         - "Unnecessary data detection"
         - "Data usage analytics"
         - "Automated data purging"
-        
+
     accuracy:
       article: "Article 5(1)(d)"
       description: "Personal data shall be accurate and kept up to date"
@@ -57,7 +57,7 @@ gdpr_compliance:
         - "Data accuracy checks"
         - "Correction workflow triggers"
         - "Quality metrics tracking"
-        
+
     storage_limitation:
       article: "Article 5(1)(e)"
       description: "Personal data shall be kept only as long as necessary"
@@ -69,7 +69,7 @@ gdpr_compliance:
         - "Retention period monitoring"
         - "Automated deletion workflows"
         - "Archive lifecycle management"
-        
+
     security:
       article: "Article 5(1)(f)"
       description: "Personal data shall be processed securely"
@@ -81,7 +81,7 @@ gdpr_compliance:
         - "Security posture monitoring"
         - "Access pattern analysis"
         - "Encryption compliance checks"
-        
+
     accountability:
       article: "Article 5(2)"
       description: "Controller shall demonstrate compliance with principles"
@@ -113,7 +113,7 @@ gdpr_compliance:
         - "Privacy notice generation"
         - "Consent status tracking"
         - "Information delivery verification"
-        
+
     right_of_access:
       article: "Article 15"
       description: "Right to access personal data"
@@ -132,7 +132,7 @@ gdpr_compliance:
         - "Data discovery and collection"
         - "Response generation"
         - "Timeline tracking"
-        
+
     right_to_rectification:
       article: "Article 16"
       description: "Right to rectify inaccurate personal data"
@@ -148,7 +148,7 @@ gdpr_compliance:
         - "Correction request processing"
         - "Data propagation tracking"
         - "Quality improvement workflows"
-        
+
     right_to_erasure:
       article: "Article 17"
       description: "Right to erasure ('right to be forgotten')"
@@ -165,7 +165,7 @@ gdpr_compliance:
         - "Comprehensive data removal"
         - "Third-party deletion propagation"
         - "Verification reporting"
-        
+
     right_to_restrict_processing:
       article: "Article 18"
       description: "Right to restrict processing"
@@ -181,7 +181,7 @@ gdpr_compliance:
         - "Restriction flag propagation"
         - "Processing prevention controls"
         - "Status monitoring"
-        
+
     right_to_data_portability:
       article: "Article 20"
       description: "Right to data portability"
@@ -197,7 +197,7 @@ gdpr_compliance:
         - "Export request processing"
         - "Data format conversion"
         - "Secure delivery mechanisms"
-        
+
     right_to_object:
       article: "Article 21"
       description: "Right to object to processing"
@@ -218,7 +218,7 @@ gdpr_compliance:
   privacy_by_design:
     technical_measures:
       - "Pseudonymization"
-      - "Encryption" 
+      - "Encryption"
       - "Access controls"
       - "Data masking"
       - "Secure communications"
@@ -234,7 +234,7 @@ gdpr_compliance:
       - "Retention minimization"
       - "Access restriction"
       - "Consent requirements"
-      
+
   # Data Processing Records (Article 30)
   processing_records:
     controller_records:
@@ -251,7 +251,7 @@ gdpr_compliance:
         - "Automatic record generation"
         - "Processing inventory updates"
         - "Change tracking"
-        
+
     processor_records:
       required_information:
         - "Name and contact details of processor"
@@ -295,7 +295,7 @@ gdpr_compliance:
         - "Continuous data discovery"
         - "Classification updates"
         - "Inventory maintenance"
-        
+
     consent_management:
       features:
         - "Granular consent capture"
@@ -306,7 +306,7 @@ gdpr_compliance:
         - "Consent status propagation"
         - "Withdrawal processing"
         - "Compliance monitoring"
-        
+
     data_subject_requests:
       workflow:
         - "Request intake"
@@ -320,7 +320,7 @@ gdpr_compliance:
         - "Data collection automation"
         - "Response template usage"
         - "Timeline management"
-        
+
     data_retention:
       capabilities:
         - "Retention policy engine"
@@ -331,7 +331,7 @@ gdpr_compliance:
         - "Policy-driven retention"
         - "Deletion workflow triggers"
         - "Legal hold enforcement"
-        
+
     breach_detection:
       monitoring:
         - "Unauthorized access detection"
@@ -357,7 +357,7 @@ gdpr_compliance:
         - "Operational metrics"
         - "Risk indicators"
         - "Audit readiness status"
-        
+
     audit_preparation:
       evidence_collection:
         - "Processing records"
@@ -386,7 +386,7 @@ gdpr_compliance:
         - "Purview integration"
         - "Information Protection"
         - "Compliance Manager"
-        
+
     application_frameworks:
       - "Privacy API development"
       - "Consent management SDKs"
@@ -408,7 +408,7 @@ notification_procedures:
         - "High risk to rights and freedoms"
         - "Cannot demonstrate adequate protection"
       timeline: "Without undue delay"
-      
+
   automation:
     breach_detection: "real-time"
     impact_assessment: "automated"

@@ -37,28 +37,28 @@ get_compute_usage() {
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     log_step "Checking compute instance usage..."
-    
+
     # Get instance count by region
     local instances_data
     instances_data=$(gcloud compute instances list \
         --project="$project_id" \
         --format="json" 2>/dev/null || echo "[]")
-    
+
     local total_instances
     total_instances=$(echo "$instances_data" | jq 'length')
-    
+
     local running_instances
     running_instances=$(echo "$instances_data" | jq '[.[] | select(.status == "RUNNING")] | length')
-    
+
     # Get instance types summary
     local instance_types
     instance_types=$(echo "$instances_data" | jq -r '
-        group_by(.machineType | split("/")[-1]) | 
-        map({type: .[0].machineType | split("/")[-1], count: length}) | 
+        group_by(.machineType | split("/")[-1]) |
+        map({type: .[0].machineType | split("/")[-1], count: length}) |
         .[]' 2>/dev/null || echo '{}')
-    
+
     cat <<EOF
 {
     "total_instances": $total_instances,
@@ -75,30 +75,30 @@ get_storage_usage() {
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     log_step "Checking storage usage..."
-    
+
     # Get bucket count and sizes
     local buckets_data
     buckets_data=$(gcloud storage buckets list \
         --project="$project_id" \
         --format="json" 2>/dev/null || echo "[]")
-    
+
     local bucket_count
     bucket_count=$(echo "$buckets_data" | jq 'length')
-    
+
     # Get persistent disk usage
     local disks_data
     disks_data=$(gcloud compute disks list \
         --project="$project_id" \
         --format="json" 2>/dev/null || echo "[]")
-    
+
     local total_disk_size
     total_disk_size=$(echo "$disks_data" | jq '[.[].sizeGb | tonumber] | add // 0')
-    
+
     local disk_count
     disk_count=$(echo "$disks_data" | jq 'length')
-    
+
     cat <<EOF
 {
     "bucket_count": $bucket_count,
@@ -114,36 +114,36 @@ get_network_usage() {
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     log_step "Checking network usage..."
-    
+
     # Get VPC count
     local vpc_data
     vpc_data=$(gcloud compute networks list \
         --project="$project_id" \
         --format="json" 2>/dev/null || echo "[]")
-    
+
     local vpc_count
     vpc_count=$(echo "$vpc_data" | jq 'length')
-    
+
     # Get firewall rules count
     local firewall_data
     firewall_data=$(gcloud compute firewall-rules list \
         --project="$project_id" \
         --format="json" 2>/dev/null || echo "[]")
-    
+
     local firewall_count
     firewall_count=$(echo "$firewall_data" | jq 'length')
-    
+
     # Get load balancer count
     local lb_data
     lb_data=$(gcloud compute url-maps list \
         --project="$project_id" \
         --format="json" 2>/dev/null || echo "[]")
-    
+
     local lb_count
     lb_count=$(echo "$lb_data" | jq 'length')
-    
+
     cat <<EOF
 {
     "vpc_count": $vpc_count,
@@ -157,37 +157,37 @@ EOF
 get_quota_usage() {
     local project_id="${PROJECT_ID:-}"
     local region="${REGION:-us-central1}"
-    
+
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     log_step "Checking quota usage..."
-    
+
     # Cache quota information to avoid rate limiting
     local cache_age=0
     if [[ -f "$QUOTA_CACHE_FILE" ]]; then
         cache_age=$(( $(date +%s) - $(stat -c %Y "$QUOTA_CACHE_FILE" 2>/dev/null || stat -f %m "$QUOTA_CACHE_FILE" 2>/dev/null || echo 0) ))
     fi
-    
+
     # Refresh cache if older than 5 minutes
     if [[ $cache_age -gt 300 ]]; then
         log_info "Refreshing quota cache..."
         mkdir -p "$(dirname "$QUOTA_CACHE_FILE")"
-        
+
         # Get compute quotas for the region
         local quota_data
         quota_data=$(gcloud compute project-info describe \
             --project="$project_id" \
             --format="json" 2>/dev/null || echo '{"quotas":[]}')
-        
+
         echo "$quota_data" > "$QUOTA_CACHE_FILE"
     fi
-    
+
     # Extract relevant quotas
     local quota_summary
     quota_summary=$(jq -r '
-        .quotas[] | 
+        .quotas[] |
         select(.metric | test("INSTANCES|CPUS|DISKS_TOTAL_GB|STATIC_ADDRESSES")) |
         {
             metric: .metric,
@@ -195,33 +195,33 @@ get_quota_usage() {
             usage: .usage,
             percentage: ((.usage / .limit) * 100 | floor)
         }' "$QUOTA_CACHE_FILE" 2>/dev/null || echo '{}')
-    
+
     echo "[$quota_summary]" | jq -c '.'
 }
 
 check_resource_thresholds() {
     log_step "Checking resource thresholds..."
-    
+
     # Load configuration
     local warning_threshold=75
     local critical_threshold=90
-    
+
     if [[ -f "$RESOURCE_CONFIG_FILE" ]]; then
         warning_threshold=$(jq -r '.warning_threshold // 75' "$RESOURCE_CONFIG_FILE" 2>/dev/null || echo "75")
         critical_threshold=$(jq -r '.critical_threshold // 90' "$RESOURCE_CONFIG_FILE" 2>/dev/null || echo "90")
     fi
-    
+
     # Get resource usage
     local compute_usage storage_usage network_usage quota_usage
     compute_usage=$(get_compute_usage)
     storage_usage=$(get_storage_usage)
     network_usage=$(get_network_usage)
     quota_usage=$(get_quota_usage)
-    
+
     # Check quota thresholds
     local alert_level="OK"
     local alerts=()
-    
+
     while IFS= read -r quota; do
         if [[ -n "$quota" && "$quota" != "null" ]]; then
             local metric percentage limit usage
@@ -229,7 +229,7 @@ check_resource_thresholds() {
             percentage=$(echo "$quota" | jq -r '.percentage')
             limit=$(echo "$quota" | jq -r '.limit')
             usage=$(echo "$quota" | jq -r '.usage')
-            
+
             if [[ "$percentage" -ge "$critical_threshold" ]]; then
                 alert_level="CRITICAL"
                 alerts+=("CRITICAL: $metric at ${percentage}% (${usage}/${limit})")
@@ -245,7 +245,7 @@ check_resource_thresholds() {
             fi
         fi
     done < <(echo "$quota_usage" | jq -c '.[]?')
-    
+
     # Create resource summary
     local resource_summary
     resource_summary=$(cat <<EOF
@@ -267,11 +267,11 @@ check_resource_thresholds() {
 }
 EOF
 )
-    
+
     # Log the check
     mkdir -p "$(dirname "$RESOURCE_LOG_FILE")"
     echo "$resource_summary" >> "$RESOURCE_LOG_FILE"
-    
+
     # Return appropriate exit code
     case "$alert_level" in
         "CRITICAL") return 2 ;;
@@ -283,22 +283,22 @@ EOF
 # Resource cleanup suggestions
 suggest_cleanup() {
     log_step "Analyzing resources for cleanup opportunities..."
-    
+
     local project_id="${PROJECT_ID:-}"
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     echo -e "${CYAN}═══ CLEANUP SUGGESTIONS ═══${NC}"
     echo ""
-    
+
     # Check for stopped instances
     local stopped_instances
     stopped_instances=$(gcloud compute instances list \
         --project="$project_id" \
         --filter="status:TERMINATED" \
         --format="value(name,zone)" 2>/dev/null | wc -l)
-    
+
     if [[ "$stopped_instances" -gt 0 ]]; then
         echo -e "${YELLOW}Stopped Instances ($stopped_instances found):${NC}"
         echo "# Delete stopped instances:"
@@ -311,14 +311,14 @@ suggest_cleanup() {
         done
         echo ""
     fi
-    
+
     # Check for unattached disks
     local unattached_disks
     unattached_disks=$(gcloud compute disks list \
         --project="$project_id" \
         --filter="-users:*" \
         --format="value(name,zone)" 2>/dev/null | wc -l)
-    
+
     if [[ "$unattached_disks" -gt 0 ]]; then
         echo -e "${YELLOW}Unattached Disks ($unattached_disks found):${NC}"
         echo "# Delete unattached disks:"
@@ -331,19 +331,19 @@ suggest_cleanup() {
         done
         echo ""
     fi
-    
+
     # Check for old snapshots
     echo -e "${YELLOW}Old Snapshots:${NC}"
     echo "# List snapshots older than 30 days:"
     echo "gcloud compute snapshots list --filter='creationTimestamp<$(date -d '30 days ago' -u +%Y-%m-%dT%H:%M:%SZ)' --format='table(name,creationTimestamp)'"
     echo ""
-    
+
     # Check for unused static IPs
     echo -e "${YELLOW}Static IP Addresses:${NC}"
     echo "# List unused static IP addresses:"
     echo "gcloud compute addresses list --filter='status:RESERVED' --format='table(name,region,status)'"
     echo ""
-    
+
     # Check for old images
     echo -e "${YELLOW}Custom Images:${NC}"
     echo "# List custom images (review for cleanup):"
@@ -357,19 +357,19 @@ emergency_shutdown() {
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     echo -e "${RED}🚨 EMERGENCY RESOURCE SHUTDOWN${NC}"
     echo ""
     echo -e "${RED}WARNING: This will stop/scale down resources to minimize costs!${NC}"
     echo ""
-    
+
     if [[ "${CONFIRM_EMERGENCY:-}" != "I_UNDERSTAND" ]]; then
         echo "To proceed, set: export CONFIRM_EMERGENCY=I_UNDERSTAND"
         return 1
     fi
-    
+
     log_warning "Emergency shutdown initiated for project: $project_id"
-    
+
     # Stop all running instances
     log_step "Stopping all compute instances..."
     if gcloud compute instances list --project="$project_id" --filter="status:RUNNING" --format="value(name,zone)" | \
@@ -383,7 +383,7 @@ emergency_shutdown() {
     else
         log_warning "Some instances may have failed to stop"
     fi
-    
+
     # Scale down GKE clusters if any
     log_step "Scaling down GKE clusters..."
     if gcloud container clusters list --project="$project_id" --format="value(name,location)" 2>/dev/null | \
@@ -397,10 +397,10 @@ emergency_shutdown() {
     else
         log_info "No GKE clusters found or failed to scale"
     fi
-    
+
     # Create emergency flag
     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "${REPO_GCLOUD_HOME:-$HOME/.gcloud}/.emergency_resource_flag"
-    
+
     log_warning "Emergency shutdown complete. Review resources and restart as needed."
 }
 
@@ -408,24 +408,24 @@ emergency_shutdown() {
 show_dashboard() {
     echo -e "${CYAN}═══ RESOURCE GUARDIAN DASHBOARD ═══${NC}"
     echo ""
-    
+
     # Current project info
     local project_id="${PROJECT_ID:-}"
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "unknown")
     fi
-    
+
     echo -e "${WHITE}Project: $project_id${NC}"
     echo -e "${WHITE}Environment: ${ENVIRONMENT:-unknown}${NC}"
     echo -e "${WHITE}Region: ${REGION:-unknown}${NC}"
     echo ""
-    
+
     # Check emergency flags
     if [[ -f "${REPO_GCLOUD_HOME:-$HOME/.gcloud}/.emergency_resource_flag" ]]; then
         echo -e "${RED}🚨 EMERGENCY RESOURCE FLAG ACTIVE${NC}"
         echo ""
     fi
-    
+
     # Run resource check
     if check_resource_thresholds; then
         echo ""
@@ -434,7 +434,7 @@ show_dashboard() {
         echo ""
         log_warning "Some resources require attention"
     fi
-    
+
     echo ""
     echo -e "${WHITE}Quick Actions:${NC}"
     echo "• Run cleanup analysis: resource-guardian cleanup"
@@ -445,7 +445,7 @@ show_dashboard() {
 # Main function
 main() {
     local command="${1:-check}"
-    
+
     case "$command" in
         "check"|"c")
             check_resource_thresholds
@@ -468,7 +468,7 @@ main() {
             if [[ -f "$RESOURCE_LOG_FILE" ]]; then
                 log_info "Recent resource checks (last $limit):"
                 tail -n "$limit" "$RESOURCE_LOG_FILE" | jq -r '
-                    [.timestamp, .alert_level, (.alerts | length)] | 
+                    [.timestamp, .alert_level, (.alerts | length)] |
                     @tsv' | \
                 while IFS=$'\t' read -r timestamp level alert_count; do
                     case "$level" in

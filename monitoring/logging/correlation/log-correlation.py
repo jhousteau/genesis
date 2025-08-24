@@ -416,7 +416,9 @@ class LogCorrelator:
                         }
                         for log in related_logs
                         if log != log_entry
-                    ][:10]  # Limit to 10 related logs
+                    ][
+                        :10
+                    ]  # Limit to 10 related logs
 
             results.append(result)
 

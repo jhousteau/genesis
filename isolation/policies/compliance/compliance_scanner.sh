@@ -55,15 +55,15 @@ print_banner() {
 # Initialize compliance configuration
 init_compliance_config() {
     log_step "Initializing compliance configuration..."
-    
+
     mkdir -p "$(dirname "$COMPLIANCE_CONFIG_FILE")"
     mkdir -p "$COMPLIANCE_REPORT_DIR"
     mkdir -p "$(dirname "$COMPLIANCE_LOG_FILE")"
-    
+
     if [[ ! -f "$COMPLIANCE_CONFIG_FILE" ]]; then
         create_default_compliance_config
     fi
-    
+
     log_success "Compliance configuration initialized"
 }
 
@@ -117,7 +117,7 @@ load_compliance_config() {
     if [[ ! -f "$COMPLIANCE_CONFIG_FILE" ]]; then
         init_compliance_config
     fi
-    
+
     PRIMARY_FRAMEWORK=$(jq -r '.frameworks.primary // "SOC2"' "$COMPLIANCE_CONFIG_FILE")
     PROJECT_ID=$(jq -r '.project_id // ""' "$COMPLIANCE_CONFIG_FILE")
     ENVIRONMENT=$(jq -r '.environment // ""' "$COMPLIANCE_CONFIG_FILE")
@@ -126,14 +126,14 @@ load_compliance_config() {
 # Check organization policies compliance
 check_organization_policies() {
     log_step "Checking organization policies compliance..."
-    
+
     local findings=()
     local project_id="${PROJECT_ID:-}"
-    
+
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     # Check for required organization policies based on framework
     case "$PRIMARY_FRAMEWORK" in
         "SOC2"|"ISO27001")
@@ -155,7 +155,7 @@ check_organization_policies() {
             check_policy_finding "constraints/gcp.resourceLocations" "HIGH" "Resource location restrictions required for GDPR" findings
             ;;
     esac
-    
+
     echo "${findings[@]}"
 }
 
@@ -165,26 +165,26 @@ check_policy_finding() {
     local severity="$2"
     local description="$3"
     local -n findings_ref="$4"
-    
+
     local project_id="${PROJECT_ID:-}"
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     # Check if policy exists and is enforced
     local policy_status="NOT_FOUND"
     if gcloud resource-manager org-policies describe "$constraint" \
         --project="$project_id" >/dev/null 2>&1; then
-        
+
         local policy_data
         policy_data=$(gcloud resource-manager org-policies describe "$constraint" \
             --project="$project_id" --format="json" 2>/dev/null || echo '{}')
-        
+
         if [[ -n "$policy_data" && "$policy_data" != "{}" ]]; then
             # Check if boolean policy is enforced
             local enforced
             enforced=$(echo "$policy_data" | jq -r '.booleanPolicy.enforced // false')
-            
+
             if [[ "$enforced" == "true" ]]; then
                 policy_status="COMPLIANT"
             else
@@ -192,7 +192,7 @@ check_policy_finding() {
             fi
         fi
     fi
-    
+
     if [[ "$policy_status" != "COMPLIANT" ]]; then
         local finding
         finding=$(cat <<EOF
@@ -216,24 +216,24 @@ EOF
 # Check IAM policies compliance
 check_iam_policies() {
     log_step "Checking IAM policies compliance..."
-    
+
     local findings=()
     local project_id="${PROJECT_ID:-}"
-    
+
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     # Get IAM policy
     local iam_policy
     iam_policy=$(gcloud projects get-iam-policy "$project_id" --format="json" 2>/dev/null || echo '{}')
-    
+
     # Check for overprivileged roles
     local privileged_roles=("roles/owner" "roles/editor" "roles/admin")
     for role in "${privileged_roles[@]}"; do
         local members
         members=$(echo "$iam_policy" | jq -r ".bindings[]? | select(.role == \"$role\") | .members[]?" 2>/dev/null || echo "")
-        
+
         if [[ -n "$members" ]]; then
             while IFS= read -r member; do
                 if [[ -n "$member" ]]; then
@@ -257,20 +257,20 @@ EOF
             done <<< "$members"
         fi
     done
-    
+
     # Check for service accounts with keys
     local service_accounts
     service_accounts=$(gcloud iam service-accounts list --project="$project_id" --format="json" 2>/dev/null || echo '[]')
-    
+
     while IFS= read -r sa_email; do
         if [[ -n "$sa_email" && "$sa_email" != "null" ]]; then
             local keys
             keys=$(gcloud iam service-accounts keys list --iam-account="$sa_email" \
                 --project="$project_id" --format="json" 2>/dev/null || echo '[]')
-            
+
             local key_count
             key_count=$(echo "$keys" | jq 'length // 0')
-            
+
             if [[ "$key_count" -gt 1 ]]; then  # More than just the Google-managed key
                 local finding
                 finding=$(cat <<EOF
@@ -291,25 +291,25 @@ EOF
             fi
         fi
     done < <(echo "$service_accounts" | jq -r '.[].email // empty')
-    
+
     echo "${findings[@]}"
 }
 
 # Check network security compliance
 check_network_security() {
     log_step "Checking network security compliance..."
-    
+
     local findings=()
     local project_id="${PROJECT_ID:-}"
-    
+
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     # Check firewall rules for overly permissive access
     local firewall_rules
     firewall_rules=$(gcloud compute firewall-rules list --project="$project_id" --format="json" 2>/dev/null || echo '[]')
-    
+
     while IFS= read -r rule_data; do
         if [[ -n "$rule_data" && "$rule_data" != "null" ]]; then
             local rule_name direction source_ranges allowed
@@ -317,7 +317,7 @@ check_network_security() {
             direction=$(echo "$rule_data" | jq -r '.direction // "INGRESS"')
             source_ranges=$(echo "$rule_data" | jq -r '.sourceRanges[]? // empty')
             allowed=$(echo "$rule_data" | jq -r '.allowed[]?.ports[]? // empty')
-            
+
             # Check for rules allowing access from anywhere (0.0.0.0/0)
             if echo "$source_ranges" | grep -q "0.0.0.0/0" && [[ "$direction" == "INGRESS" ]]; then
                 local finding
@@ -340,34 +340,34 @@ EOF
             fi
         fi
     done < <(echo "$firewall_rules" | jq -c '.[]?')
-    
+
     echo "${findings[@]}"
 }
 
 # Check data encryption compliance
 check_data_encryption() {
     log_step "Checking data encryption compliance..."
-    
+
     local findings=()
     local project_id="${PROJECT_ID:-}"
-    
+
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     # Check Cloud Storage buckets for encryption
     local buckets
     buckets=$(gcloud storage buckets list --project="$project_id" --format="json" 2>/dev/null || echo '[]')
-    
+
     while IFS= read -r bucket_name; do
         if [[ -n "$bucket_name" && "$bucket_name" != "null" ]]; then
             # Check if bucket has public access (indicates potential data exposure)
             local bucket_iam
             bucket_iam=$(gcloud storage buckets get-iam-policy "gs://$bucket_name" --format="json" 2>/dev/null || echo '{}')
-            
+
             local public_members
             public_members=$(echo "$bucket_iam" | jq -r '.bindings[]? | select(.members[]? | test("allUsers|allAuthenticatedUsers")) | .members[]?' 2>/dev/null || echo "")
-            
+
             if [[ -n "$public_members" ]]; then
                 local finding
                 finding=$(cat <<EOF
@@ -387,38 +387,38 @@ EOF
             fi
         fi
     done < <(echo "$buckets" | jq -r '.[].name // empty')
-    
+
     echo "${findings[@]}"
 }
 
 # Check logging and monitoring compliance
 check_logging_monitoring() {
     log_step "Checking logging and monitoring compliance..."
-    
+
     local findings=()
     local project_id="${PROJECT_ID:-}"
-    
+
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     # Check if audit logs are enabled
     local audit_config
     audit_config=$(gcloud logging sinks list --project="$project_id" --format="json" 2>/dev/null || echo '[]')
-    
+
     local has_audit_sink=false
     while IFS= read -r sink_data; do
         if [[ -n "$sink_data" && "$sink_data" != "null" ]]; then
             local filter
             filter=$(echo "$sink_data" | jq -r '.filter // ""')
-            
+
             if echo "$filter" | grep -q "protoPayload\|auditlog"; then
                 has_audit_sink=true
                 break
             fi
         fi
     done < <(echo "$audit_config" | jq -c '.[]?')
-    
+
     if [[ "$has_audit_sink" == false ]]; then
         local finding
         finding=$(cat <<EOF
@@ -435,7 +435,7 @@ EOF
 )
         findings+=("$finding")
     fi
-    
+
     echo "${findings[@]}"
 }
 
@@ -443,29 +443,29 @@ EOF
 generate_compliance_report() {
     local scan_results="$1"
     local report_format="${2:-json}"
-    
+
     log_step "Generating compliance report..."
-    
+
     local timestamp
     timestamp=$(date -u +%Y%m%d_%H%M%S)
     local report_file="$COMPLIANCE_REPORT_DIR/compliance_report_${timestamp}.${report_format}"
-    
+
     # Parse scan results
     local all_findings=()
     IFS=$'\n' read -d '' -r -a all_findings <<< "$scan_results" || true
-    
+
     # Calculate statistics
     local total_findings="${#all_findings[@]}"
     local critical_count=0
     local high_count=0
     local medium_count=0
     local low_count=0
-    
+
     for finding in "${all_findings[@]}"; do
         if [[ -n "$finding" ]]; then
             local severity
             severity=$(echo "$finding" | jq -r '.severity // "UNKNOWN"')
-            
+
             case "$severity" in
                 "CRITICAL") ((critical_count++)) ;;
                 "HIGH") ((high_count++)) ;;
@@ -474,7 +474,7 @@ generate_compliance_report() {
             esac
         fi
     done
-    
+
     # Generate report
     case "$report_format" in
         "json")
@@ -487,7 +487,7 @@ generate_compliance_report() {
             generate_csv_report "$report_file" "$all_findings"
             ;;
     esac
-    
+
     log_success "Compliance report generated: $report_file"
     echo "$report_file"
 }
@@ -501,14 +501,14 @@ generate_json_report() {
     local high="$5"
     local medium="$6"
     local low="$7"
-    
+
     local findings_json="[]"
     if [[ "${#findings_ref[@]}" -gt 0 ]]; then
         printf '%s\n' "${findings_ref[@]}" | jq -s '.' > /tmp/findings.json
         findings_json=$(cat /tmp/findings.json)
         rm -f /tmp/findings.json
     fi
-    
+
     cat > "$report_file" <<EOF
 {
     "metadata": {
@@ -548,7 +548,7 @@ generate_html_report() {
     local high="$5"
     local medium="$6"
     local low="$7"
-    
+
     cat > "${report_file%.json}.html" <<EOF
 <!DOCTYPE html>
 <html>
@@ -574,7 +574,7 @@ generate_html_report() {
         <p>Project: ${PROJECT_ID:-}</p>
         <p>Environment: ${ENVIRONMENT:-}</p>
     </div>
-    
+
     <div class="summary">
         <h2>Summary</h2>
         <div class="stats">
@@ -585,11 +585,11 @@ generate_html_report() {
             <div class="stat">Low: $low</div>
         </div>
     </div>
-    
+
     <div class="findings">
         <h2>Findings</h2>
 EOF
-    
+
     for finding in "${findings_ref[@]}"; do
         if [[ -n "$finding" ]]; then
             local severity description remediation category
@@ -597,7 +597,7 @@ EOF
             description=$(echo "$finding" | jq -r '.description // "No description"')
             remediation=$(echo "$finding" | jq -r '.remediation // "No remediation provided"')
             category=$(echo "$finding" | jq -r '.category // "Unknown"')
-            
+
             cat >> "${report_file%.json}.html" <<EOF
         <div class="finding ${severity,,}">
             <h3>$category - $severity</h3>
@@ -607,7 +607,7 @@ EOF
 EOF
         fi
     done
-    
+
     cat >> "${report_file%.json}.html" <<EOF
     </div>
 </body>
@@ -619,9 +619,9 @@ EOF
 generate_csv_report() {
     local report_file="$1"
     local -n findings_ref="$2"
-    
+
     echo "Category,Severity,Description,Remediation,Framework,Timestamp" > "${report_file%.json}.csv"
-    
+
     for finding in "${findings_ref[@]}"; do
         if [[ -n "$finding" ]]; then
             local category severity description remediation framework timestamp
@@ -631,7 +631,7 @@ generate_csv_report() {
             remediation=$(echo "$finding" | jq -r '.remediation // "No remediation"' | sed 's/,/;/g')
             framework=$(echo "$finding" | jq -r '.framework // "Unknown"')
             timestamp=$(echo "$finding" | jq -r '.timestamp // ""')
-            
+
             echo "\"$category\",\"$severity\",\"$description\",\"$remediation\",\"$framework\",\"$timestamp\"" >> "${report_file%.json}.csv"
         fi
     done
@@ -641,15 +641,15 @@ generate_csv_report() {
 run_compliance_scan() {
     local framework="${1:-$PRIMARY_FRAMEWORK}"
     local report_format="${2:-json}"
-    
+
     log_step "Starting compliance scan for framework: $framework"
-    
+
     # Initialize
     load_compliance_config
-    
+
     # Collect all findings
     local all_findings=""
-    
+
     # Run individual checks
     local org_policy_findings iam_findings network_findings encryption_findings logging_findings
     org_policy_findings=$(check_organization_policies)
@@ -657,7 +657,7 @@ run_compliance_scan() {
     network_findings=$(check_network_security)
     encryption_findings=$(check_data_encryption)
     logging_findings=$(check_logging_monitoring)
-    
+
     # Combine all findings
     all_findings=$(printf '%s\n%s\n%s\n%s\n%s\n' \
         "$org_policy_findings" \
@@ -666,14 +666,14 @@ run_compliance_scan() {
         "$encryption_findings" \
         "$logging_findings" | \
         grep -v '^$')
-    
+
     # Generate report
     local report_file
     report_file=$(generate_compliance_report "$all_findings" "$report_format")
-    
+
     # Log scan completion
     log_compliance_scan "$framework" "$report_file"
-    
+
     log_success "Compliance scan completed: $report_file"
     echo "$report_file"
 }
@@ -682,7 +682,7 @@ run_compliance_scan() {
 log_compliance_scan() {
     local framework="$1"
     local report_file="$2"
-    
+
     local log_entry
     log_entry=$(cat <<EOF
 {
@@ -697,7 +697,7 @@ log_compliance_scan() {
 }
 EOF
 )
-    
+
     mkdir -p "$(dirname "$COMPLIANCE_LOG_FILE")"
     echo "$log_entry" >> "$COMPLIANCE_LOG_FILE"
 }
@@ -706,21 +706,21 @@ EOF
 show_compliance_dashboard() {
     echo -e "${CYAN}═══ COMPLIANCE DASHBOARD ═══${NC}"
     echo ""
-    
+
     load_compliance_config
-    
+
     echo -e "${WHITE}Current Configuration:${NC}"
     echo "Framework: $PRIMARY_FRAMEWORK"
     echo "Project: ${PROJECT_ID:-unknown}"
     echo "Environment: ${ENVIRONMENT:-unknown}"
     echo ""
-    
+
     echo -e "${WHITE}Available Frameworks:${NC}"
     for framework in "${!COMPLIANCE_FRAMEWORKS[@]}"; do
         echo "• $framework - ${COMPLIANCE_FRAMEWORKS[$framework]}"
     done
     echo ""
-    
+
     echo -e "${WHITE}Recent Reports:${NC}"
     if [[ -d "$COMPLIANCE_REPORT_DIR" ]]; then
         find "$COMPLIANCE_REPORT_DIR" -name "*.json" -type f -exec basename {} \; | \
@@ -735,7 +735,7 @@ show_compliance_dashboard() {
 # Main function
 main() {
     local command="${1:-dashboard}"
-    
+
     case "$command" in
         "init")
             init_compliance_config

@@ -67,9 +67,9 @@ log_test_result() {
     local status="$3"
     local message="$4"
     local details="${5:-}"
-    
+
     ((TOTAL_TESTS++))
-    
+
     case "$status" in
         "PASS")
             ((PASSED_TESTS++))
@@ -91,7 +91,7 @@ log_test_result() {
             echo -e "${BLUE}⏭️  [$category] $test_name${NC}: $message"
             ;;
     esac
-    
+
     # Log to file
     local log_entry
     log_entry=$(cat <<EOF
@@ -106,7 +106,7 @@ log_test_result() {
 }
 EOF
 )
-    
+
     mkdir -p "$(dirname "$VALIDATION_LOG_FILE")"
     echo "$log_entry" >> "$VALIDATION_LOG_FILE"
 }
@@ -114,15 +114,15 @@ EOF
 # Initialize validation framework
 init_validation_framework() {
     log_step "Initializing validation framework..."
-    
+
     mkdir -p "$(dirname "$VALIDATION_CONFIG_FILE")"
     mkdir -p "$(dirname "$VALIDATION_REPORT_FILE")"
     mkdir -p "$(dirname "$VALIDATION_LOG_FILE")"
-    
+
     if [[ ! -f "$VALIDATION_CONFIG_FILE" ]]; then
         create_default_validation_config
     fi
-    
+
     log_success "Validation framework initialized"
 }
 
@@ -227,24 +227,24 @@ EOF
 # Run environment configuration tests
 test_environment_configuration() {
     log_step "Running environment configuration tests..."
-    
+
     # Test environment variables
     if [[ -n "${PROJECT_ID:-}" ]]; then
         log_test_result "PROJECT_ID_SET" "environment" "PASS" "PROJECT_ID environment variable is set"
     else
         log_test_result "PROJECT_ID_SET" "environment" "FAIL" "PROJECT_ID environment variable is not set"
     fi
-    
+
     if [[ -n "${ENVIRONMENT:-}" ]]; then
         log_test_result "ENVIRONMENT_SET" "environment" "PASS" "ENVIRONMENT variable is set to: ${ENVIRONMENT}"
     else
         log_test_result "ENVIRONMENT_SET" "environment" "FAIL" "ENVIRONMENT variable is not set"
     fi
-    
+
     # Test directory structure
     if [[ -n "${REPO_GCLOUD_HOME:-}" && -d "$REPO_GCLOUD_HOME" ]]; then
         log_test_result "ISOLATION_DIRECTORY" "environment" "PASS" "Isolation directory exists: $REPO_GCLOUD_HOME"
-        
+
         # Check directory permissions
         local perms
         perms=$(stat -c %a "$REPO_GCLOUD_HOME" 2>/dev/null || stat -f %A "$REPO_GCLOUD_HOME" 2>/dev/null || echo "unknown")
@@ -256,7 +256,7 @@ test_environment_configuration() {
     else
         log_test_result "ISOLATION_DIRECTORY" "environment" "FAIL" "Isolation directory not found or not set"
     fi
-    
+
     # Test configuration files
     local config_files=(".envrc" "terraform.tfvars" "Makefile")
     for config_file in "${config_files[@]}"; do
@@ -266,11 +266,11 @@ test_environment_configuration() {
             log_test_result "CONFIG_FILE_${config_file^^}" "environment" "WARN" "Configuration file missing: $config_file"
         fi
     done
-    
+
     # Test initialization markers
     if [[ -n "${REPO_GCLOUD_HOME:-}" && -f "$REPO_GCLOUD_HOME/.initialized" ]]; then
         log_test_result "INITIALIZATION_MARKER" "environment" "PASS" "Initialization marker found"
-        
+
         # Check marker content
         if grep -q "SCRIPT_VERSION=" "$REPO_GCLOUD_HOME/.initialized" 2>/dev/null; then
             local version
@@ -285,7 +285,7 @@ test_environment_configuration() {
 # Run credential management tests
 test_credential_management() {
     log_step "Running credential management tests..."
-    
+
     # Test GCP authentication
     if command -v gcloud >/dev/null 2>&1; then
         if gcloud auth list --filter=status:ACTIVE --format="value(account)" >/dev/null 2>&1; then
@@ -298,7 +298,7 @@ test_credential_management() {
     else
         log_test_result "GCP_AUTHENTICATION" "credentials" "SKIP" "gcloud CLI not available"
     fi
-    
+
     # Test AWS authentication
     if command -v aws >/dev/null 2>&1; then
         if aws sts get-caller-identity >/dev/null 2>&1; then
@@ -311,7 +311,7 @@ test_credential_management() {
     else
         log_test_result "AWS_AUTHENTICATION" "credentials" "SKIP" "AWS CLI not available"
     fi
-    
+
     # Test Azure authentication
     if command -v az >/dev/null 2>&1; then
         if az account show >/dev/null 2>&1; then
@@ -324,14 +324,14 @@ test_credential_management() {
     else
         log_test_result "AZURE_AUTHENTICATION" "credentials" "SKIP" "Azure CLI not available"
     fi
-    
+
     # Test credential isolation
     if [[ -n "${CLOUDSDK_CONFIG:-}" ]]; then
         log_test_result "CREDENTIAL_ISOLATION" "credentials" "PASS" "Credential isolation active (CLOUDSDK_CONFIG set)"
     else
         log_test_result "CREDENTIAL_ISOLATION" "credentials" "FAIL" "Credential isolation not active"
     fi
-    
+
     # Test workload identity configuration
     if [[ -f "${REPO_GCLOUD_HOME:-$HOME/.gcloud}/wif-config.json" ]]; then
         log_test_result "WORKLOAD_IDENTITY" "credentials" "PASS" "Workload Identity configuration found"
@@ -343,25 +343,25 @@ test_credential_management() {
 # Run isolation boundary tests
 test_isolation_boundaries() {
     log_step "Running isolation boundary tests..."
-    
+
     # Test PATH isolation
     if echo "$PATH" | grep -q "${REPO_GCLOUD_HOME:-/nonexistent}/bin"; then
         log_test_result "PATH_ISOLATION" "isolation" "PASS" "PATH includes isolation directory"
     else
         log_test_result "PATH_ISOLATION" "isolation" "WARN" "PATH isolation not detected"
     fi
-    
+
     # Test configuration isolation
     if [[ "${CLOUDSDK_CONFIG:-}" == "${REPO_GCLOUD_HOME:-}" ]]; then
         log_test_result "CONFIG_ISOLATION" "isolation" "PASS" "Configuration isolation active"
     else
         log_test_result "CONFIG_ISOLATION" "isolation" "FAIL" "Configuration isolation not properly configured"
     fi
-    
+
     # Test guard scripts
     if [[ -f "${REPO_GCLOUD_HOME:-/nonexistent}/bin/gcloud" ]]; then
         log_test_result "GUARD_SCRIPTS" "isolation" "PASS" "Guard scripts installed"
-        
+
         # Test guard script functionality
         if [[ -x "${REPO_GCLOUD_HOME:-/nonexistent}/bin/gcloud" ]]; then
             log_test_result "GUARD_EXECUTABLE" "isolation" "PASS" "Guard script is executable"
@@ -371,7 +371,7 @@ test_isolation_boundaries() {
     else
         log_test_result "GUARD_SCRIPTS" "isolation" "FAIL" "Guard scripts not found"
     fi
-    
+
     # Test cross-contamination prevention
     local system_gcloud_config="${HOME}/.config/gcloud"
     if [[ -d "$system_gcloud_config" && "${CLOUDSDK_CONFIG:-}" != "$system_gcloud_config" ]]; then
@@ -384,11 +384,11 @@ test_isolation_boundaries() {
 # Run security configuration tests
 test_security_configuration() {
     log_step "Running security configuration tests..."
-    
+
     # Test production mode detection
     if [[ "${PRODUCTION_MODE:-false}" == "true" ]]; then
         log_test_result "PRODUCTION_MODE" "security" "PASS" "Production mode enabled"
-        
+
         # Test production confirmations
         if [[ "${CONFIRM_PROD:-}" == "I_UNDERSTAND" ]]; then
             log_test_result "PRODUCTION_CONFIRMATION" "security" "WARN" "Production confirmation is set (destructive ops allowed)"
@@ -398,11 +398,11 @@ test_security_configuration() {
     else
         log_test_result "PRODUCTION_MODE" "security" "PASS" "Development/staging mode"
     fi
-    
+
     # Test audit logging
     if [[ "${AUDIT_ENABLED:-true}" == "true" ]]; then
         log_test_result "AUDIT_LOGGING" "security" "PASS" "Audit logging enabled"
-        
+
         # Check for audit logs
         if [[ -d "${REPO_GCLOUD_HOME:-/nonexistent}/logs" ]]; then
             log_test_result "AUDIT_LOG_DIRECTORY" "security" "PASS" "Audit log directory exists"
@@ -412,7 +412,7 @@ test_security_configuration() {
     else
         log_test_result "AUDIT_LOGGING" "security" "WARN" "Audit logging disabled"
     fi
-    
+
     # Test encryption settings
     local isolation_level="${ISOLATION_LEVEL:-standard}"
     case "$isolation_level" in
@@ -434,21 +434,21 @@ test_security_configuration() {
 # Run compliance tests
 test_compliance_framework() {
     log_step "Running compliance framework tests..."
-    
+
     # Test compliance framework detection
     if [[ -n "${COMPLIANCE_FRAMEWORK:-}" ]]; then
         log_test_result "COMPLIANCE_FRAMEWORK" "compliance" "PASS" "Compliance framework set: ${COMPLIANCE_FRAMEWORK}"
     else
         log_test_result "COMPLIANCE_FRAMEWORK" "compliance" "WARN" "No compliance framework specified"
     fi
-    
+
     # Test data classification
     if [[ -n "${DATA_CLASSIFICATION:-}" ]]; then
         log_test_result "DATA_CLASSIFICATION" "compliance" "PASS" "Data classification set: ${DATA_CLASSIFICATION}"
     else
         log_test_result "DATA_CLASSIFICATION" "compliance" "WARN" "No data classification specified"
     fi
-    
+
     # Test retention policies
     if [[ -n "${LOG_RETENTION_DAYS:-}" ]]; then
         local retention_days="${LOG_RETENTION_DAYS}"
@@ -460,7 +460,7 @@ test_compliance_framework() {
     else
         log_test_result "LOG_RETENTION" "compliance" "WARN" "No log retention policy specified"
     fi
-    
+
     # Test compliance scanner
     if [[ -f "${SCRIPT_DIR}/../policies/compliance/compliance_scanner.sh" ]]; then
         log_test_result "COMPLIANCE_SCANNER" "compliance" "PASS" "Compliance scanner available"
@@ -472,7 +472,7 @@ test_compliance_framework() {
 # Run integration tests
 test_integration() {
     log_step "Running integration tests..."
-    
+
     # Test CLI integration
     if command -v gcloud >/dev/null 2>&1; then
         if timeout 10s gcloud config list >/dev/null 2>&1; then
@@ -483,12 +483,12 @@ test_integration() {
     else
         log_test_result "GCLOUD_CLI" "integration" "SKIP" "gcloud CLI not available"
     fi
-    
+
     # Test Terraform integration
     if command -v terraform >/dev/null 2>&1; then
         if [[ -f "main.tf" || -f "terraform/main.tf" ]]; then
             log_test_result "TERRAFORM_CONFIG" "integration" "PASS" "Terraform configuration found"
-            
+
             # Test Terraform variables
             if [[ -n "${TF_VAR_project_id:-}" ]]; then
                 log_test_result "TERRAFORM_VARS" "integration" "PASS" "Terraform variables configured"
@@ -501,7 +501,7 @@ test_integration() {
     else
         log_test_result "TERRAFORM_CLI" "integration" "SKIP" "Terraform CLI not available"
     fi
-    
+
     # Test CI/CD integration
     local ci_configs=(".github/workflows" ".gitlab-ci.yml" "azure-pipelines.yml" "Jenkinsfile")
     local ci_found=false
@@ -512,7 +512,7 @@ test_integration() {
             break
         fi
     done
-    
+
     if [[ "$ci_found" == false ]]; then
         log_test_result "CI_CD_CONFIG" "integration" "WARN" "No CI/CD configuration found"
     fi
@@ -521,7 +521,7 @@ test_integration() {
 # Run performance tests
 test_performance() {
     log_step "Running performance tests..."
-    
+
     # Test command latency
     if command -v gcloud >/dev/null 2>&1; then
         local start_time end_time duration
@@ -529,7 +529,7 @@ test_performance() {
         gcloud config list >/dev/null 2>&1 || true
         end_time=$(date +%s.%N)
         duration=$(echo "$end_time - $start_time" | bc 2>/dev/null || echo "unknown")
-        
+
         if [[ "$duration" != "unknown" ]] && (( $(echo "$duration < 5.0" | bc -l 2>/dev/null || echo 0) )); then
             log_test_result "COMMAND_LATENCY" "performance" "PASS" "gcloud command latency: ${duration}s"
         else
@@ -538,7 +538,7 @@ test_performance() {
     else
         log_test_result "COMMAND_LATENCY" "performance" "SKIP" "gcloud CLI not available"
     fi
-    
+
     # Test resource usage
     local isolation_size
     if [[ -d "${REPO_GCLOUD_HOME:-/nonexistent}" ]]; then
@@ -552,7 +552,7 @@ test_performance() {
 # Generate validation report
 generate_validation_report() {
     log_step "Generating validation report..."
-    
+
     local report_data
     report_data=$(cat <<EOF
 {
@@ -579,20 +579,20 @@ generate_validation_report() {
 }
 EOF
 )
-    
+
     # Add recommendations based on results
     if [[ $FAILED_TESTS -gt 0 ]]; then
         report_data=$(echo "$report_data" | jq '.recommendations += ["Address critical test failures before proceeding"]')
     fi
-    
+
     if [[ $WARNING_TESTS -gt 0 ]]; then
         report_data=$(echo "$report_data" | jq '.recommendations += ["Review warning conditions and consider improvements"]')
     fi
-    
+
     # Save report
     mkdir -p "$(dirname "$VALIDATION_REPORT_FILE")"
     echo "$report_data" > "$VALIDATION_REPORT_FILE"
-    
+
     log_success "Validation report generated: $VALIDATION_REPORT_FILE"
 }
 
@@ -607,21 +607,21 @@ print_validation_summary() {
     echo -e "• Failed:         ${RED}$FAILED_TESTS${NC}"
     echo -e "• Warnings:       ${YELLOW}$WARNING_TESTS${NC}"
     echo -e "• Skipped:        ${BLUE}$SKIPPED_TESTS${NC}"
-    
+
     if [[ $TOTAL_TESTS -gt 0 ]]; then
         local success_rate=$(( (PASSED_TESTS * 100) / TOTAL_TESTS ))
         echo "• Success Rate:   $success_rate%"
     fi
-    
+
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     if [[ $FAILED_TESTS -eq 0 ]]; then
         echo -e "${GREEN}🎉 All critical validations passed!${NC}"
         echo "Your isolation configuration is working correctly."
     else
         echo -e "${RED}⚠️  Some validations failed. Please address the issues above.${NC}"
     fi
-    
+
     echo ""
     echo -e "${WHITE}Validation Report:${NC} $VALIDATION_REPORT_FILE"
 }
@@ -629,52 +629,52 @@ print_validation_summary() {
 # Run full validation suite
 run_full_validation() {
     local categories="${1:-all}"
-    
+
     log_step "Starting comprehensive isolation validation..."
-    
+
     # Initialize
     init_validation_framework
-    
+
     # Reset counters
     PASSED_TESTS=0
     FAILED_TESTS=0
     WARNING_TESTS=0
     SKIPPED_TESTS=0
     TOTAL_TESTS=0
-    
+
     # Run test categories
     if [[ "$categories" == "all" || "$categories" =~ environment ]]; then
         test_environment_configuration
     fi
-    
+
     if [[ "$categories" == "all" || "$categories" =~ credentials ]]; then
         test_credential_management
     fi
-    
+
     if [[ "$categories" == "all" || "$categories" =~ isolation ]]; then
         test_isolation_boundaries
     fi
-    
+
     if [[ "$categories" == "all" || "$categories" =~ security ]]; then
         test_security_configuration
     fi
-    
+
     if [[ "$categories" == "all" || "$categories" =~ compliance ]]; then
         test_compliance_framework
     fi
-    
+
     if [[ "$categories" == "all" || "$categories" =~ integration ]]; then
         test_integration
     fi
-    
+
     if [[ "$categories" == "all" || "$categories" =~ performance ]]; then
         test_performance
     fi
-    
+
     # Generate report and summary
     generate_validation_report
     print_validation_summary
-    
+
     # Return appropriate exit code
     if [[ $FAILED_TESTS -eq 0 ]]; then
         return 0
@@ -686,7 +686,7 @@ run_full_validation() {
 # Main function
 main() {
     local command="${1:-validate}"
-    
+
     case "$command" in
         "init")
             init_validation_framework
@@ -707,7 +707,7 @@ main() {
                 "compliance") test_compliance_framework ;;
                 "integration") test_integration ;;
                 "performance") test_performance ;;
-                *) 
+                *)
                     log_error "Unknown test category: $category"
                     echo "Available categories: ${!TEST_CATEGORIES[*]}"
                     exit 1

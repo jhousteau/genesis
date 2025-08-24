@@ -391,9 +391,9 @@ strategies=("rolling" "rolling" "blue_green")
 for i in "${!environments[@]}"; do
     env="${environments[$i]}"
     strategy="${strategies[$i]}"
-    
+
     log_info "Deploying to $env with $strategy strategy"
-    
+
     if deploy_application "my-app" "$env" "my-gcp-project-$env" "$strategy"; then
         log_info "Deployment to $env successful"
     else
@@ -418,16 +418,16 @@ source lib/bash/common/logging/logger.sh
 handle_deployment_error() {
     local exit_code=$?
     local line_number=$1
-    
+
     log_error "Deployment failed at line $line_number" \
         '{"exit_code": '$exit_code', "deployment_id": "'$deployment_id'"}'
-    
+
     # Attempt rollback
     if [[ "${ROLLBACK_ENABLED:-true}" == "true" ]]; then
         log_info "Attempting automatic rollback"
         rollback_deployment "$deployment_id"
     fi
-    
+
     exit $exit_code
 }
 
@@ -448,15 +448,15 @@ source lib/bash/common/logging/logger.sh
 monitor_performance() {
     local operation="$1"
     shift
-    
+
     local start_time=$(date +%s.%N)
-    
+
     log_info "Starting operation: $operation"
-    
+
     if "$@"; then
         local end_time=$(date +%s.%N)
         local duration=$(echo "$end_time - $start_time" | bc -l)
-        
+
         log_performance "$operation" "$start_time" "$end_time" "true"
         log_info "Operation completed successfully" \
             '{"operation": "'$operation'", "duration_seconds": '$duration'}'
@@ -465,7 +465,7 @@ monitor_performance() {
         local exit_code=$?
         local end_time=$(date +%s.%N)
         local duration=$(echo "$end_time - $start_time" | bc -l)
-        
+
         log_performance "$operation" "$start_time" "$end_time" "false"
         log_error "Operation failed" \
             '{"operation": "'$operation'", "duration_seconds": '$duration', "exit_code": '$exit_code'}'
@@ -518,10 +518,10 @@ cd lib/bash/common/
    ```bash
    # Check gcloud installation
    which gcloud
-   
+
    # Verify authentication
    gcloud auth list
-   
+
    # Re-authenticate
    gcloud auth login
    ```
@@ -530,7 +530,7 @@ cd lib/bash/common/
    ```bash
    # Check log level
    echo "Current log level: $LOG_LEVEL"
-   
+
    # Enable debug logging
    export LOG_LEVEL="DEBUG"
    export DEBUG="true"

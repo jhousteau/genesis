@@ -4,7 +4,7 @@ Comprehensive GCP-native security automation platform
 
 SHIELD Components:
 - S (Scan): GCP Security Command Center + Chronicle Threat Hunting
-- H (Harden): Cloud Armor + Just-in-Time IAM + Security Policies  
+- H (Harden): Cloud Armor + Just-in-Time IAM + Security Policies
 - I (Isolate): VPC Security + Network Segmentation + Resource Isolation
 - E (Encrypt): Secret Manager + KMS + End-to-End Encryption
 - L (Log): Comprehensive Security Logging + Audit Trails
@@ -13,33 +13,63 @@ SHIELD Components:
 
 # Import existing secret manager components
 from ..secrets.manager import SecretManager, SecretMetadata, get_secret_manager
-from .chronicle_threat_hunting import (ChronicleAPI, ChroniclethreatHunting,
-                                       HuntingQuery, IOCType, ThreatCategory,
-                                       ThreatHuntingScope, ThreatHuntResult,
-                                       ThreatIndicator,
-                                       create_chronicle_threat_hunting)
-from .cloud_armor_automation import (AttackEvent, AttackPattern,
-                                     CloudArmorAutomation, RuleAction,
-                                     SecurityPolicyType, SecurityRule,
-                                     ThreatIntelligence,
-                                     create_cloud_armor_automation)
-from .gcp_security_center import (GCPSecurityCenter, IncidentResponse,
-                                  IncidentStatus, SecurityFinding,
-                                  ThreatSeverity, create_security_center)
-from .incident_response_automation import (ContainmentLevel,
-                                           IncidentResponseAutomation,
-                                           IsolatedResource, NetworkAction,
-                                           ResponseAction, ResponseExecution,
-                                           ResponseWorkflow,
-                                           create_incident_response_automation)
-from .jit_iam_automation import (AccessJustification, AccessPolicy,
-                                 AccessRequest, AccessRequestStatus,
-                                 ActiveAccess, ElevationLevel,
-                                 JITIAMAutomation, create_jit_iam_automation)
+from .chronicle_threat_hunting import (
+    ChronicleAPI,
+    ChroniclethreatHunting,
+    HuntingQuery,
+    IOCType,
+    ThreatCategory,
+    ThreatHuntingScope,
+    ThreatHuntResult,
+    ThreatIndicator,
+    create_chronicle_threat_hunting,
+)
+from .cloud_armor_automation import (
+    AttackEvent,
+    AttackPattern,
+    CloudArmorAutomation,
+    RuleAction,
+    SecurityPolicyType,
+    SecurityRule,
+    ThreatIntelligence,
+    create_cloud_armor_automation,
+)
+from .gcp_security_center import (
+    GCPSecurityCenter,
+    IncidentResponse,
+    IncidentStatus,
+    SecurityFinding,
+    ThreatSeverity,
+    create_security_center,
+)
+from .incident_response_automation import (
+    ContainmentLevel,
+    IncidentResponseAutomation,
+    IsolatedResource,
+    NetworkAction,
+    ResponseAction,
+    ResponseExecution,
+    ResponseWorkflow,
+    create_incident_response_automation,
+)
+from .jit_iam_automation import (
+    AccessJustification,
+    AccessPolicy,
+    AccessRequest,
+    AccessRequestStatus,
+    ActiveAccess,
+    ElevationLevel,
+    JITIAMAutomation,
+    create_jit_iam_automation,
+)
 from .security_automation_orchestrator import (
-    SecurityAutomationLevel, SecurityAutomationOrchestrator, SecurityEvent,
-    SecurityEventType, SecurityMetrics,
-    create_security_automation_orchestrator)
+    SecurityAutomationLevel,
+    SecurityAutomationOrchestrator,
+    SecurityEvent,
+    SecurityEventType,
+    SecurityMetrics,
+    create_security_automation_orchestrator,
+)
 
 __all__ = [
     # GCP Security Command Center

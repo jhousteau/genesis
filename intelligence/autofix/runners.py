@@ -1,7 +1,12 @@
 """Runners for executing autofix operations."""
 
-from .fixers import (BaseFixer, EndOfFileFixer, RuffAutoFixer, RuffFormatter,
-                     TrailingWhitespaceFixer)
+from .fixers import (
+    BaseFixer,
+    EndOfFileFixer,
+    RuffAutoFixer,
+    RuffFormatter,
+    TrailingWhitespaceFixer,
+)
 
 
 class AutofixRunner:

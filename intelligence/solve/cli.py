@@ -33,10 +33,12 @@ except ImportError:
 
 try:
     from solve.cli_lesson_handlers import CLIError as LessonCLIError
-    from solve.cli_lesson_handlers import (handle_gcp_command,
-                                           handle_lessons_command,
-                                           handle_report_command,
-                                           handle_templates_command)
+    from solve.cli_lesson_handlers import (
+        handle_gcp_command,
+        handle_lessons_command,
+        handle_report_command,
+        handle_templates_command,
+    )
 
     LESSON_HANDLERS_AVAILABLE = True
 except ImportError:

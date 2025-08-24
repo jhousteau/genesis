@@ -63,7 +63,7 @@ declare -A test_results
 # Function to install performance testing tools
 install_performance_tools() {
     log_progress "Installing performance testing tools"
-    
+
     # Install k6
     if ! command -v k6 &> /dev/null; then
         log_info "Installing k6..."
@@ -75,13 +75,13 @@ install_performance_tools() {
             sudo mv k6-v${K6_VERSION}-linux-amd64/k6 /usr/local/bin/
         }
     fi
-    
+
     # Install Artillery
     if ! command -v artillery &> /dev/null; then
         log_info "Installing Artillery..."
         npm install -g artillery@${ARTILLERY_VERSION}
     fi
-    
+
     # Install wrk (if available)
     if ! command -v wrk &> /dev/null && [[ "$TEST_TYPE" == "all" || "$TEST_TYPE" == "load" ]]; then
         log_info "Installing wrk..."
@@ -89,7 +89,7 @@ install_performance_tools() {
             log_warning "wrk installation failed, continuing without it"
         }
     fi
-    
+
     # Install Apache Bench (ab)
     if ! command -v ab &> /dev/null; then
         log_info "Installing Apache Bench..."
@@ -97,21 +97,21 @@ install_performance_tools() {
             log_warning "Apache Bench installation failed, continuing without it"
         }
     fi
-    
+
     log_success "Performance tools installation completed"
 }
 
 # Basic connectivity and health check
 verify_target_availability() {
     log_progress "Verifying target availability"
-    
+
     if [[ -z "$TARGET_URL" ]]; then
         log_error "TARGET_URL is required for performance testing"
         exit 1
     fi
-    
+
     log_info "Testing connectivity to: $TARGET_URL"
-    
+
     # Basic connectivity test
     for attempt in {1..5}; do
         if curl -f "$TARGET_URL" --max-time 10 --silent --head > /dev/null; then
@@ -126,20 +126,20 @@ verify_target_availability() {
             sleep 5
         fi
     done
-    
+
     # Get baseline metrics
     log_info "Collecting baseline metrics..."
     local baseline_response_time
     baseline_response_time=$(curl -o /dev/null -s -w '%{time_total}' "$TARGET_URL" --max-time 10)
     performance_metrics["baseline_response_time"]="$baseline_response_time"
-    
+
     log_info "Baseline response time: ${baseline_response_time}s"
 }
 
 # Generate k6 test scripts
 generate_k6_scripts() {
     log_progress "Generating k6 test scripts"
-    
+
     # Load Test Script
     cat > "$OUTPUT_DIR/k6-load-test.js" << 'EOF'
 import http from 'k6/http';
@@ -163,18 +163,18 @@ export let options = {
 
 export default function() {
   const response = http.get(__ENV.TARGET_URL);
-  
+
   const result = check(response, {
     'status is 200': (r) => r.status === 200,
     'response time < 2000ms': (r) => r.timings.duration < 2000,
   });
-  
+
   errorRate.add(!result);
-  
+
   sleep(1);
 }
 EOF
-    
+
     # Stress Test Script
     cat > "$OUTPUT_DIR/k6-stress-test.js" << 'EOF'
 import http from 'k6/http';
@@ -198,18 +198,18 @@ export let options = {
 
 export default function() {
   const response = http.get(__ENV.TARGET_URL);
-  
+
   const result = check(response, {
     'status is 200': (r) => r.status === 200,
     'response time < 5000ms': (r) => r.timings.duration < 5000,
   });
-  
+
   errorRate.add(!result);
-  
+
   sleep(Math.random() * 2); // Random sleep between 0-2 seconds
 }
 EOF
-    
+
     # Spike Test Script
     cat > "$OUTPUT_DIR/k6-spike-test.js" << 'EOF'
 import http from 'k6/http';
@@ -234,25 +234,25 @@ export let options = {
 
 export default function() {
   const response = http.get(__ENV.TARGET_URL);
-  
+
   const result = check(response, {
     'status is 200': (r) => r.status === 200,
     'response time < 10000ms': (r) => r.timings.duration < 10000,
   });
-  
+
   errorRate.add(!result);
-  
+
   sleep(0.5);
 }
 EOF
-    
+
     log_success "k6 test scripts generated"
 }
 
 # Generate Artillery test configurations
 generate_artillery_configs() {
     log_progress "Generating Artillery test configurations"
-    
+
     # Load Test Configuration
     cat > "$OUTPUT_DIR/artillery-load-test.yml" << EOF
 config:
@@ -280,7 +280,7 @@ scenarios:
           url: "/health"
       - think: 2
 EOF
-    
+
     # Artillery processor for custom metrics
     cat > "$OUTPUT_DIR/artillery-processor.js" << 'EOF'
 module.exports = {
@@ -301,7 +301,7 @@ function logResponse(requestParams, response, context, ee, next) {
   return next();
 }
 EOF
-    
+
     log_success "Artillery configurations generated"
 }
 
@@ -310,9 +310,9 @@ run_load_tests() {
     if [[ "$TEST_TYPE" != "all" && "$TEST_TYPE" != "load" ]]; then
         return 0
     fi
-    
+
     log_progress "Running load tests"
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         # k6 Load Test
         log_perf "Running k6 load test..."
@@ -321,7 +321,7 @@ run_load_tests() {
             --out json="$OUTPUT_DIR/k6-load-results.json" \
             --summary-export="$OUTPUT_DIR/k6-load-summary.json" \
             "$OUTPUT_DIR/k6-load-test.js" || true
-        
+
         # Artillery Load Test
         if command -v artillery &> /dev/null; then
             log_perf "Running Artillery load test..."
@@ -329,7 +329,7 @@ run_load_tests() {
                 --output "$OUTPUT_DIR/artillery-load-results.json" \
                 "$OUTPUT_DIR/artillery-load-test.yml" || true
         fi
-        
+
         # wrk Load Test (if available)
         if command -v wrk &> /dev/null; then
             log_perf "Running wrk load test..."
@@ -337,7 +337,7 @@ run_load_tests() {
                 --script="$OUTPUT_DIR/wrk-script.lua" \
                 "$TARGET_URL" > "$OUTPUT_DIR/wrk-load-results.txt" 2>&1 || true
         fi
-        
+
         # Apache Bench Test
         if command -v ab &> /dev/null; then
             log_perf "Running Apache Bench test..."
@@ -345,7 +345,7 @@ run_load_tests() {
                 "$TARGET_URL" > "$OUTPUT_DIR/ab-load-results.txt" 2>&1 || true
         fi
     fi
-    
+
     test_results["load"]="completed"
     log_success "Load testing completed"
 }
@@ -355,9 +355,9 @@ run_stress_tests() {
     if [[ "$TEST_TYPE" != "all" && "$TEST_TYPE" != "stress" ]]; then
         return 0
     fi
-    
+
     log_progress "Running stress tests"
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         # k6 Stress Test
         log_perf "Running k6 stress test..."
@@ -366,7 +366,7 @@ run_stress_tests() {
             --out json="$OUTPUT_DIR/k6-stress-results.json" \
             --summary-export="$OUTPUT_DIR/k6-stress-summary.json" \
             "$OUTPUT_DIR/k6-stress-test.js" || true
-        
+
         # High-concurrency wrk test (if available)
         if command -v wrk &> /dev/null; then
             log_perf "Running wrk stress test..."
@@ -374,7 +374,7 @@ run_stress_tests() {
                 "$TARGET_URL" > "$OUTPUT_DIR/wrk-stress-results.txt" 2>&1 || true
         fi
     fi
-    
+
     test_results["stress"]="completed"
     log_success "Stress testing completed"
 }
@@ -384,9 +384,9 @@ run_spike_tests() {
     if [[ "$TEST_TYPE" != "all" && "$TEST_TYPE" != "spike" ]]; then
         return 0
     fi
-    
+
     log_progress "Running spike tests"
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         # k6 Spike Test
         log_perf "Running k6 spike test..."
@@ -396,7 +396,7 @@ run_spike_tests() {
             --summary-export="$OUTPUT_DIR/k6-spike-summary.json" \
             "$OUTPUT_DIR/k6-spike-test.js" || true
     fi
-    
+
     test_results["spike"]="completed"
     log_success "Spike testing completed"
 }
@@ -406,16 +406,16 @@ run_volume_tests() {
     if [[ "$TEST_TYPE" != "all" && "$TEST_TYPE" != "volume" ]]; then
         return 0
     fi
-    
+
     log_progress "Running volume tests"
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         # Volume test with sustained load
         log_perf "Running volume test..."
         export TARGET_URL
         export VOLUME_USERS=100
         export VOLUME_DURATION=1800  # 30 minutes
-        
+
         # Create volume test script
         cat > "$OUTPUT_DIR/k6-volume-test.js" << 'EOF'
 import http from 'k6/http';
@@ -439,24 +439,24 @@ export let options = {
 
 export default function() {
   const response = http.get(__ENV.TARGET_URL);
-  
+
   const result = check(response, {
     'status is 200': (r) => r.status === 200,
     'response time < 3000ms': (r) => r.timings.duration < 3000,
   });
-  
+
   errorRate.add(!result);
-  
+
   sleep(Math.random() * 3 + 1); // Random sleep between 1-4 seconds
 }
 EOF
-        
+
         k6 run \
             --out json="$OUTPUT_DIR/k6-volume-results.json" \
             --summary-export="$OUTPUT_DIR/k6-volume-summary.json" \
             "$OUTPUT_DIR/k6-volume-test.js" || true
     fi
-    
+
     test_results["volume"]="completed"
     log_success "Volume testing completed"
 }
@@ -466,16 +466,16 @@ run_endurance_tests() {
     if [[ "$TEST_TYPE" != "all" && "$TEST_TYPE" != "endurance" ]]; then
         return 0
     fi
-    
+
     log_progress "Running endurance tests"
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         # Endurance test with extended duration
         log_perf "Running endurance test (this will take a while)..."
         export TARGET_URL
         export ENDURANCE_USERS=25
         export ENDURANCE_DURATION=3600  # 1 hour
-        
+
         # Create endurance test script
         cat > "$OUTPUT_DIR/k6-endurance-test.js" << 'EOF'
 import http from 'k6/http';
@@ -499,24 +499,24 @@ export let options = {
 
 export default function() {
   const response = http.get(__ENV.TARGET_URL);
-  
+
   const result = check(response, {
     'status is 200': (r) => r.status === 200,
     'response time < 2000ms': (r) => r.timings.duration < 2000,
   });
-  
+
   errorRate.add(!result);
-  
+
   sleep(Math.random() * 5 + 2); // Random sleep between 2-7 seconds
 }
 EOF
-        
+
         k6 run \
             --out json="$OUTPUT_DIR/k6-endurance-results.json" \
             --summary-export="$OUTPUT_DIR/k6-endurance-summary.json" \
             "$OUTPUT_DIR/k6-endurance-test.js" || true
     fi
-    
+
     test_results["endurance"]="completed"
     log_success "Endurance testing completed"
 }
@@ -524,39 +524,39 @@ EOF
 # Analyze test results
 analyze_test_results() {
     log_progress "Analyzing test results"
-    
+
     # Analyze k6 results
     for test_type in load stress spike volume endurance; do
         local result_file="$OUTPUT_DIR/k6-${test_type}-summary.json"
-        
+
         if [[ -f "$result_file" ]]; then
             log_info "Analyzing $test_type test results..."
-            
+
             # Extract key metrics using jq
             local avg_duration=$(jq -r '.metrics.http_req_duration.avg // 0' "$result_file" 2>/dev/null || echo "0")
             local p95_duration=$(jq -r '.metrics.http_req_duration."p(95)" // 0' "$result_file" 2>/dev/null || echo "0")
             local error_rate=$(jq -r '.metrics.http_req_failed.rate // 0' "$result_file" 2>/dev/null || echo "0")
             local throughput=$(jq -r '.metrics.http_reqs.rate // 0' "$result_file" 2>/dev/null || echo "0")
-            
+
             performance_metrics["${test_type}_avg_duration"]="$avg_duration"
             performance_metrics["${test_type}_p95_duration"]="$p95_duration"
             performance_metrics["${test_type}_error_rate"]="$error_rate"
             performance_metrics["${test_type}_throughput"]="$throughput"
-            
+
             log_perf "$test_type results - Avg: ${avg_duration}ms, P95: ${p95_duration}ms, Error Rate: ${error_rate}%, Throughput: ${throughput} req/s"
         fi
     done
-    
+
     log_success "Test results analysis completed"
 }
 
 # Generate performance report
 generate_performance_report() {
     log_progress "Generating comprehensive performance report"
-    
+
     local report_file="$OUTPUT_DIR/performance-summary-report.json"
     local html_report="$OUTPUT_DIR/performance-summary-report.html"
-    
+
     # Create JSON summary
     cat > "$report_file" << EOF
 {
@@ -575,7 +575,7 @@ generate_performance_report() {
   "test_results": $(printf '%s\n' "${!test_results[@]}" | jq -R . | jq -s 'map(split(":") | {(.[0]): .[1]}) | add'),
   "performance_metrics": {
 EOF
-    
+
     # Add performance metrics
     local first=true
     for key in "${!performance_metrics[@]}"; do
@@ -585,12 +585,12 @@ EOF
         echo "    \"$key\": \"${performance_metrics[$key]}\"" >> "$report_file"
         first=false
     done
-    
+
     cat >> "$report_file" << 'EOF'
   }
 }
 EOF
-    
+
     # Generate HTML report
     cat > "$html_report" << 'EOF'
 <!DOCTYPE html>
@@ -619,28 +619,28 @@ EOF
         <p><strong>Test Type:</strong> $TEST_TYPE</p>
     </div>
 EOF
-    
+
     # Add metrics summary to HTML
     echo '<div class="section">' >> "$html_report"
     echo '<h2>📊 Performance Metrics Summary</h2>' >> "$html_report"
     echo '<table>' >> "$html_report"
     echo '<tr><th>Test Type</th><th>Avg Response Time</th><th>P95 Response Time</th><th>Error Rate</th><th>Throughput</th></tr>' >> "$html_report"
-    
+
     for test_type in load stress spike volume endurance; do
         if [[ -n "${performance_metrics[${test_type}_avg_duration]:-}" ]]; then
             local avg_duration="${performance_metrics[${test_type}_avg_duration]}"
             local p95_duration="${performance_metrics[${test_type}_p95_duration]}"
             local error_rate="${performance_metrics[${test_type}_error_rate]}"
             local throughput="${performance_metrics[${test_type}_throughput]}"
-            
+
             echo "<tr><td>$test_type</td><td>${avg_duration}ms</td><td>${p95_duration}ms</td><td>${error_rate}%</td><td>${throughput} req/s</td></tr>" >> "$html_report"
         fi
     done
-    
+
     echo '</table>' >> "$html_report"
     echo '</div>' >> "$html_report"
     echo '</body></html>' >> "$html_report"
-    
+
     log_success "Performance report generated: $report_file"
     log_success "HTML report generated: $html_report"
 }
@@ -648,42 +648,42 @@ EOF
 # Evaluate performance against thresholds
 evaluate_performance() {
     log_progress "Evaluating performance against thresholds"
-    
+
     local exit_code=0
     local failed_tests=()
-    
+
     # Check each test type against thresholds
     for test_type in load stress spike; do
         if [[ -n "${performance_metrics[${test_type}_avg_duration]:-}" ]]; then
             local avg_duration="${performance_metrics[${test_type}_avg_duration]}"
             local error_rate="${performance_metrics[${test_type}_error_rate]}"
             local throughput="${performance_metrics[${test_type}_throughput]}"
-            
+
             # Convert to numbers for comparison
             local avg_duration_ms=$(echo "$avg_duration * 1000" | bc 2>/dev/null || echo "0")
             local error_rate_percent=$(echo "$error_rate * 100" | bc 2>/dev/null || echo "0")
-            
+
             # Response time check
             if (( $(echo "$avg_duration_ms > $RESPONSE_TIME_THRESHOLD" | bc -l 2>/dev/null || echo "0") )); then
                 log_error "$test_type test failed: Average response time ${avg_duration_ms}ms exceeds threshold ${RESPONSE_TIME_THRESHOLD}ms"
                 failed_tests+=("$test_type:response_time")
                 exit_code=1
             fi
-            
+
             # Error rate check
             if (( $(echo "$error_rate_percent > $ERROR_RATE_THRESHOLD" | bc -l 2>/dev/null || echo "0") )); then
                 log_error "$test_type test failed: Error rate ${error_rate_percent}% exceeds threshold ${ERROR_RATE_THRESHOLD}%"
                 failed_tests+=("$test_type:error_rate")
                 exit_code=1
             fi
-            
+
             # Throughput check (for load test only)
             if [[ "$test_type" == "load" ]] && (( $(echo "$throughput < $THROUGHPUT_THRESHOLD" | bc -l 2>/dev/null || echo "0") )); then
                 log_warning "$test_type test warning: Throughput ${throughput} req/s below threshold ${THROUGHPUT_THRESHOLD} req/s"
             fi
         fi
     done
-    
+
     # Summary
     if [[ $exit_code -eq 0 ]]; then
         log_success "Performance validation passed!"
@@ -692,7 +692,7 @@ evaluate_performance() {
         log_error "Performance validation failed!"
         log_error "Failed tests: ${failed_tests[*]}"
     fi
-    
+
     return $exit_code
 }
 
@@ -748,34 +748,34 @@ main() {
                 ;;
         esac
     done
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "🧪 Running in DRY RUN mode"
     fi
-    
+
     # Verify target availability
     verify_target_availability
-    
+
     # Install tools if not in dry run mode
     if [[ "$DRY_RUN" == "false" ]]; then
         install_performance_tools
     fi
-    
+
     # Generate test configurations
     generate_k6_scripts
     generate_artillery_configs
-    
+
     # Execute tests based on type
     run_load_tests
     run_stress_tests
     run_spike_tests
     run_volume_tests
     run_endurance_tests
-    
+
     # Analyze and report
     analyze_test_results
     generate_performance_report
-    
+
     # Evaluate performance
     evaluate_performance
 }

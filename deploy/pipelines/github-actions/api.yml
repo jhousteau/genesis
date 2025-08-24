@@ -34,7 +34,7 @@ on:
 env:
   PROJECT_NAME: ${{ vars.PROJECT_NAME }}
   REGISTRY_REGION: ${{ vars.REGISTRY_REGION || 'us-central1' }}
-  
+
 permissions:
   contents: read
   id-token: write
@@ -73,7 +73,7 @@ jobs:
             echo "environment=dev" >> $GITHUB_OUTPUT
             echo "should_deploy=false" >> $GITHUB_OUTPUT
           fi
-          
+
           # Auto-detect deployment type if not specified
           if [[ -z "${{ github.event.inputs.deployment_type }}" ]]; then
             if [[ -f "main.py" ]] && grep -q "functions_framework" requirements.txt 2>/dev/null; then
@@ -84,7 +84,7 @@ jobs:
               echo "deployment_type=cloud-run" >> $GITHUB_OUTPUT
             fi
           fi
-          
+
           # Set GCP project and function name
           case "${{ steps.env.outputs.environment }}" in
             dev) echo "gcp_project=${{ vars.PROJECT_NAME }}-dev" >> $GITHUB_OUTPUT ;;
@@ -92,7 +92,7 @@ jobs:
             stage) echo "gcp_project=${{ vars.PROJECT_NAME }}-stage" >> $GITHUB_OUTPUT ;;
             prod) echo "gcp_project=${{ vars.PROJECT_NAME }}-prod" >> $GITHUB_OUTPUT ;;
           esac
-          
+
           echo "function_name=${{ vars.PROJECT_NAME }}-api" >> $GITHUB_OUTPUT
 
   # API-specific quality checks
@@ -216,17 +216,17 @@ jobs:
         run: |
           IMAGE_TAG="${{ github.sha }}-$(date +%Y%m%d%H%M%S)"
           IMAGE_URL="${{ env.REGISTRY_REGION }}-docker.pkg.dev/${{ needs.setup.outputs.gcp_project }}/containers/${{ env.PROJECT_NAME }}-api"
-          
+
           docker build \
             --tag "${IMAGE_URL}:${IMAGE_TAG}" \
             --tag "${IMAGE_URL}:${{ needs.setup.outputs.environment }}" \
             --build-arg ENV="${{ needs.setup.outputs.environment }}" \
             --build-arg VERSION="${IMAGE_TAG}" \
             .
-          
+
           docker push "${IMAGE_URL}:${IMAGE_TAG}"
           docker push "${IMAGE_URL}:${{ needs.setup.outputs.environment }}"
-          
+
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "image_url=${IMAGE_URL}" >> $GITHUB_OUTPUT
 
@@ -245,7 +245,7 @@ jobs:
         id: build
         run: |
           ARCHIVE_NAME="source-${{ github.sha }}.zip"
-          
+
           # Create deployment package
           zip -r "$ARCHIVE_NAME" . \
             -x "*.git*" \
@@ -254,7 +254,7 @@ jobs:
             -x "*node_modules*" \
             -x "*.md" \
             -x "docs/*"
-          
+
           echo "source_archive=${ARCHIVE_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload source archive
@@ -284,7 +284,7 @@ jobs:
           echo "Running API load testing..."
           # Install load testing tool
           npm install -g artillery
-          
+
           # Create basic load test if none exists
           if [[ ! -f "load-test.yml" ]]; then
             cat > load-test.yml << EOF
@@ -300,7 +300,7 @@ jobs:
                     url: "/health"
           EOF
           fi
-          
+
           echo "⚡ Load test configuration ready"
 
       - name: API contract testing
@@ -315,7 +315,7 @@ jobs:
     needs: [setup, build-cloud-run, validate-api]
     if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.deployment_type == 'cloud-run'
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: ${{ needs.setup.outputs.environment }}
       url: ${{ steps.deploy.outputs.service_url }}
     outputs:
@@ -335,7 +335,7 @@ jobs:
         id: deploy
         run: |
           IMAGE_URL="${{ needs.build-cloud-run.outputs.image_url }}:${{ needs.build-cloud-run.outputs.image_tag }}"
-          
+
           gcloud run deploy "${{ env.PROJECT_NAME }}-api" \
             --image="${IMAGE_URL}" \
             --region="${{ env.REGISTRY_REGION }}" \
@@ -349,12 +349,12 @@ jobs:
             --timeout=300 \
             --set-env-vars="ENV=${{ needs.setup.outputs.environment }}" \
             --set-env-vars="VERSION=${{ needs.build-cloud-run.outputs.image_tag }}"
-          
+
           SERVICE_URL=$(gcloud run services describe "${{ env.PROJECT_NAME }}-api" \
             --region="${{ env.REGISTRY_REGION }}" \
             --project="${{ needs.setup.outputs.gcp_project }}" \
             --format="value(status.url)")
-          
+
           echo "service_url=${SERVICE_URL}" >> $GITHUB_OUTPUT
 
   # Deploy Cloud Functions
@@ -398,7 +398,7 @@ jobs:
             echo "❌ Unable to determine runtime"
             exit 1
           fi
-          
+
           gcloud functions deploy "${{ needs.setup.outputs.function_name }}" \
             --source=. \
             --entry-point="$ENTRY_POINT" \
@@ -410,12 +410,12 @@ jobs:
             --timeout=300 \
             --allow-unauthenticated \
             --set-env-vars="ENV=${{ needs.setup.outputs.environment }}"
-          
+
           FUNCTION_URL=$(gcloud functions describe "${{ needs.setup.outputs.function_name }}" \
             --region="${{ env.REGISTRY_REGION }}" \
             --project="${{ needs.setup.outputs.gcp_project }}" \
             --format="value(httpsTrigger.url)")
-          
+
           echo "function_url=${FUNCTION_URL}" >> $GITHUB_OUTPUT
 
   # API health and performance validation
@@ -431,21 +431,21 @@ jobs:
           else
             API_URL="${{ needs.deploy-functions.outputs.function_url }}"
           fi
-          
+
           echo "Testing API health at: ${API_URL}"
-          
+
           # Wait for API to be ready
           for i in {1..30}; do
             if curl -f "${API_URL}/health" --max-time 10; then
               echo "✅ API health check passed"
               break
             fi
-            
+
             if [[ $i -eq 30 ]]; then
               echo "❌ API health check failed"
               exit 1
             fi
-            
+
             sleep 10
           done
 
@@ -456,18 +456,18 @@ jobs:
           else
             API_URL="${{ needs.deploy-functions.outputs.function_url }}"
           fi
-          
+
           echo "Running API performance tests..."
-          
+
           # Simple response time test
           RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "${API_URL}/health")
           echo "Response time: ${RESPONSE_TIME}s"
-          
+
           if (( $(echo "${RESPONSE_TIME} > 10.0" | bc -l) )); then
             echo "❌ API response time too high"
             exit 1
           fi
-          
+
           echo "✅ API performance within acceptable range"
 
       - name: API integration tests

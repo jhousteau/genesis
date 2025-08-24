@@ -138,7 +138,7 @@ groups:
   - name: infrastructure_slo_alerts
     rules:
       # === SLO BURN RATE ALERTS ===
-      
+
       # Fast burn rate: 2% error budget in 1 hour (14.4x burn rate)
       - alert: InfrastructureSLOFastBurn
         expr: |
@@ -270,7 +270,7 @@ groups:
         annotations:
           summary: "High disk utilization on {{ $labels.instance }}"
           description: |
-            Disk utilization is {{ $value }}% on {{ $labels.device }} 
+            Disk utilization is {{ $value }}% on {{ $labels.device }}
             ({{ $labels.mountpoint }}) on instance {{ $labels.instance }}.
 
       - alert: CriticalDiskUtilization
@@ -283,7 +283,7 @@ groups:
         annotations:
           summary: "Critical disk utilization on {{ $labels.instance }}"
           description: |
-            Disk utilization is {{ $value }}% on {{ $labels.device }} 
+            Disk utilization is {{ $value }}% on {{ $labels.device }}
             ({{ $labels.mountpoint }}) on instance {{ $labels.instance }}.
             Risk of disk full conditions.
 
@@ -297,7 +297,7 @@ groups:
         annotations:
           summary: "High network error rate on {{ $labels.instance }}"
           description: |
-            Network error rate is {{ $value }} errors/sec on 
+            Network error rate is {{ $value }} errors/sec on
             interface {{ $labels.device }} on instance {{ $labels.instance }}.
 
       - alert: NodeDown
@@ -351,7 +351,7 @@ groups:
         annotations:
           summary: "High disk IOPS on {{ $labels.instance }}"
           description: |
-            Disk IOPS is {{ $value }} ops/sec on {{ $labels.device }} 
+            Disk IOPS is {{ $value }} ops/sec on {{ $labels.device }}
             on instance {{ $labels.instance }}.
 
       - alert: HighNetworkThroughput
@@ -364,5 +364,5 @@ groups:
         annotations:
           summary: "High network throughput on {{ $labels.instance }}"
           description: |
-            Network throughput is {{ $value | humanize1024 }}B/s on 
+            Network throughput is {{ $value | humanize1024 }}B/s on
             interface {{ $labels.device }} on instance {{ $labels.instance }}.

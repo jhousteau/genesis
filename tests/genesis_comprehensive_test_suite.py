@@ -468,9 +468,9 @@ class GenesisTestSuite:
                     "iterations": 100,
                     "blocked_count": blocked_calls,
                     "total_time": blocked_duration,
-                    "avg_time_per_call": blocked_duration / 100
-                    if blocked_duration > 0
-                    else 0,
+                    "avg_time_per_call": (
+                        blocked_duration / 100 if blocked_duration > 0 else 0
+                    ),
                 },
             }
 
@@ -1157,9 +1157,7 @@ class GenesisTestSuite:
             shield_color = (
                 "success"
                 if shield_score >= 8
-                else "warning"
-                if shield_score >= 6
-                else "danger"
+                else "warning" if shield_score >= 6 else "danger"
             )
 
             security_html = f"""
@@ -1187,7 +1185,7 @@ class GenesisTestSuite:
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .badge-success {{ background-color: #28a745 !important; }}
-        .badge-warning {{ background-color: #ffc107 !important; }}  
+        .badge-warning {{ background-color: #ffc107 !important; }}
         .badge-danger {{ background-color: #dc3545 !important; }}
         .metric-card {{ margin-bottom: 20px; }}
         .production-ready {{ color: #28a745; font-weight: bold; }}
@@ -1202,7 +1200,7 @@ class GenesisTestSuite:
                 <h2 class="text-center mb-5">Comprehensive Test Report (VERIFY Methodology)</h2>
             </div>
         </div>
-        
+
         <!-- Executive Summary -->
         <div class="row mb-4">
             <div class="col-12">
@@ -1250,7 +1248,7 @@ class GenesisTestSuite:
                 </div>
             </div>
         </div>
-        
+
         <!-- Quality Gates -->
         <div class="row mb-4">
             <div class="col-12">
@@ -1276,7 +1274,7 @@ class GenesisTestSuite:
                 </div>
             </div>
         </div>
-        
+
         <!-- Category Results -->
         <div class="row mb-4">
             <div class="col-12">
@@ -1306,12 +1304,12 @@ class GenesisTestSuite:
                 </div>
             </div>
         </div>
-        
+
         <!-- Security Assessment -->
         <div class="row mb-4">
             {security_html}
         </div>
-        
+
         <!-- Recommendations -->
         <div class="row mb-4">
             <div class="col-12">
@@ -1327,12 +1325,12 @@ class GenesisTestSuite:
                 </div>
             </div>
         </div>
-        
+
         <!-- Report Footer -->
         <div class="row">
             <div class="col-12 text-center">
                 <small class="text-muted">
-                    Generated on {execution_summary['timestamp']} | 
+                    Generated on {execution_summary['timestamp']} |
                     Total Duration: {execution_summary['total_duration']:.1f} seconds |
                     VERIFY Methodology Implementation
                 </small>

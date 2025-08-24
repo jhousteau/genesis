@@ -58,7 +58,7 @@ bootstrap deploy my-api dev
 ## Project Types
 
 - **api** - REST API services
-- **web-app** - Web applications  
+- **web-app** - Web applications
 - **cli** - Command-line tools
 - **library** - Shared libraries
 - **infrastructure** - Terraform/IaC projects
@@ -170,7 +170,7 @@ The CLI serves as the unified interface to the Universal Project Platform:
 ```
 bootstrapper/
 ├── bin/bootstrap           # This CLI
-├── setup-project/          # Project templates and generators  
+├── setup-project/          # Project templates and generators
 ├── modules/               # Terraform infrastructure modules
 ├── lib/                   # Shared libraries (plumbing)
 ├── isolation/             # GCP isolation templates

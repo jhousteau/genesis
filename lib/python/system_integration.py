@@ -13,6 +13,7 @@ from typing import Any, Dict, List
 
 import yaml
 from whitehorse_core.intelligence import IntelligenceCoordinator
+
 # Import all components
 from whitehorse_core.registry import ProjectRegistry
 
@@ -122,8 +123,7 @@ class SystemIntegrator:
             elif component == "intelligence":
                 # Check intelligence layer
                 try:
-                    from whitehorse_core.intelligence import \
-                        IntelligenceCoordinator
+                    from whitehorse_core.intelligence import IntelligenceCoordinator
 
                     status.enabled = True
                     status.healthy = True
@@ -298,7 +298,7 @@ class SystemIntegrator:
 
 terraform {{
   required_version = ">= 1.0"
-  
+
   backend "gcs" {{
     bucket = "{project_name}-terraform-state"
     prefix = "terraform/state"

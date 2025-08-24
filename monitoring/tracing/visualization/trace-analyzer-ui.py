@@ -22,12 +22,12 @@ except ImportError:
     pd = None
 
 import os
+
 # Import our service dependency mapper
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from analysis.service_dependency_mapper import (ServiceDependencyMapper,
-                                                TraceSpan)
+from analysis.service_dependency_mapper import ServiceDependencyMapper, TraceSpan
 
 
 class TraceAnalyzerUI:
@@ -155,26 +155,26 @@ class TraceAnalyzerUI:
             st.markdown(
                 """
             ## Welcome to Trace Analysis
-            
+
             Get started by loading trace data from one of these sources:
-            
+
             ### 📁 Upload JSON File
             Upload a JSON file containing trace data in Jaeger or OpenTelemetry format.
-            
+
             ### 🔗 Connect to Jaeger
             Connect directly to a Jaeger instance to analyze real-time traces.
-            
+
             ### ☁️ Connect to GCP Trace
             Connect to Google Cloud Trace to analyze traces from your GCP services.
-            
+
             ### 🎯 Sample Data
             Load sample trace data to explore the features and capabilities.
-            
+
             ---
-            
+
             ### Features Available:
             - 🕸️ **Service Dependency Graph** - Visualize service relationships
-            - 📊 **Performance Analysis** - Identify bottlenecks and latency issues  
+            - 📊 **Performance Analysis** - Identify bottlenecks and latency issues
             - 🔍 **Error Analysis** - Track error patterns across services
             - 📈 **Metrics Dashboard** - Key performance indicators
             - 🎯 **Blast Radius Analysis** - Understand failure impact

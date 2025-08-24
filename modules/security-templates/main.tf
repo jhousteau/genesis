@@ -10,11 +10,11 @@
 locals {
   # Standard labels following Genesis patterns
   default_labels = {
-    managed_by   = "terraform"
-    module       = "security-templates"
-    environment  = var.environment
-    component    = "security"
-    purpose      = "infrastructure-protection"
+    managed_by  = "terraform"
+    module      = "security-templates"
+    environment = var.environment
+    component   = "security"
+    purpose     = "infrastructure-protection"
   }
 
   merged_labels = merge(local.default_labels, var.labels)
@@ -28,7 +28,7 @@ locals {
   ]
 
   # Non-sensitive keys for for_each loops to avoid sensitivity exposure
-  agent_secret_keys = nonsensitive(keys(var.agent_secrets))
+  agent_secret_keys      = nonsensitive(keys(var.agent_secrets))
   kubernetes_secret_keys = nonsensitive(keys(var.kubernetes_secrets))
 
   # Security policies by agent type
@@ -131,7 +131,7 @@ resource "kubernetes_service_account" "agent_k8s_service_accounts" {
     labels = merge(
       local.merged_labels,
       {
-        "agent-type" = each.value
+        "agent-type"     = each.value
         "security-level" = local.agent_security_policies[each.value].security_level
       }
     )
@@ -257,14 +257,14 @@ resource "kubernetes_manifest" "pod_security_policy" {
     kind       = "PodSecurityPolicy"
 
     metadata = {
-      name = "${var.name_prefix}-pod-security-policy"
+      name   = "${var.name_prefix}-pod-security-policy"
       labels = local.merged_labels
     }
 
     spec = {
-      privileged                = false
-      allowPrivilegeEscalation  = false
-      requiredDropCapabilities  = ["ALL"]
+      privileged               = false
+      allowPrivilegeEscalation = false
+      requiredDropCapabilities = ["ALL"]
       volumes = [
         "configMap",
         "emptyDir",
@@ -381,7 +381,7 @@ resource "google_secret_manager_secret_version" "agent_secret_versions" {
 }
 
 # Secret Manager IAM (temporarily disabled due to sensitivity constraints)
-# TODO: Refactor to avoid sensitive for_each after issue #36 resolution
+# NOTE: Requires refactoring to avoid sensitive for_each after issue #36 resolution
 # resource "google_secret_manager_secret_iam_member" "agent_secret_access" {
 #   for_each = {
 #     for combo in flatten([
@@ -468,7 +468,7 @@ resource "google_bigquery_dataset" "security_audit_dataset" {
   }
 
   access {
-    role         = "READER"
+    role          = "READER"
     special_group = "projectReaders"
   }
 }
@@ -477,8 +477,8 @@ resource "google_bigquery_dataset" "security_audit_dataset" {
 resource "google_cloud_asset_project_feed" "security_asset_feed" {
   count = var.enable_asset_inventory_feed ? 1 : 0
 
-  project     = var.project_id
-  feed_id     = "${var.name_prefix}-security-asset-feed"
+  project      = var.project_id
+  feed_id      = "${var.name_prefix}-security-asset-feed"
   content_type = "RESOURCE"
 
   asset_types = [
@@ -531,9 +531,9 @@ resource "google_binary_authorization_policy" "genesis_binary_auth_policy" {
     for_each = var.gke_clusters
 
     content {
-      cluster                = cluster_admission_rules.value
-      evaluation_mode        = "REQUIRE_ATTESTATION"
-      enforcement_mode       = "ENFORCED_BLOCK_AND_AUDIT_LOG"
+      cluster          = cluster_admission_rules.value
+      evaluation_mode  = "REQUIRE_ATTESTATION"
+      enforcement_mode = "ENFORCED_BLOCK_AND_AUDIT_LOG"
       require_attestations_by = [
         "projects/${var.project_id}/attestors/${var.name_prefix}-attestor"
       ]
@@ -553,7 +553,7 @@ resource "google_binary_authorization_attestor" "genesis_attestor" {
 
     public_keys {
       ascii_armored_pgp_public_key = var.attestor_public_key
-      id                          = "pgp-key-1"
+      id                           = "pgp-key-1"
     }
   }
 }

@@ -212,15 +212,21 @@ class MCPPerformanceValidator:
             avg_response_time=statistics.mean(response_times),
             min_response_time=min(response_times),
             max_response_time=max(response_times),
-            p95_response_time=statistics.quantiles(response_times, n=20)[18]
-            if len(response_times) > 20
-            else max(response_times),
-            p99_response_time=statistics.quantiles(response_times, n=100)[98]
-            if len(response_times) > 100
-            else max(response_times),
-            throughput=len(response_times) / (max(response_times) / 1000)
-            if response_times
-            else 0,
+            p95_response_time=(
+                statistics.quantiles(response_times, n=20)[18]
+                if len(response_times) > 20
+                else max(response_times)
+            ),
+            p99_response_time=(
+                statistics.quantiles(response_times, n=100)[98]
+                if len(response_times) > 100
+                else max(response_times)
+            ),
+            throughput=(
+                len(response_times) / (max(response_times) / 1000)
+                if response_times
+                else 0
+            ),
             error_rate=(errors / request_count) * 100,
             success_count=len(response_times),
             error_count=errors,
@@ -301,15 +307,21 @@ class MCPPerformanceValidator:
             avg_response_time=statistics.mean(response_times),
             min_response_time=min(response_times),
             max_response_time=max(response_times),
-            p95_response_time=statistics.quantiles(response_times, n=20)[18]
-            if len(response_times) > 20
-            else max(response_times),
-            p99_response_time=statistics.quantiles(response_times, n=100)[98]
-            if len(response_times) > 100
-            else max(response_times),
-            throughput=len(response_times) / (sum(response_times) / 1000)
-            if response_times
-            else 0,
+            p95_response_time=(
+                statistics.quantiles(response_times, n=20)[18]
+                if len(response_times) > 20
+                else max(response_times)
+            ),
+            p99_response_time=(
+                statistics.quantiles(response_times, n=100)[98]
+                if len(response_times) > 100
+                else max(response_times)
+            ),
+            throughput=(
+                len(response_times) / (sum(response_times) / 1000)
+                if response_times
+                else 0
+            ),
             error_rate=(errors / request_count) * 100,
             success_count=len(response_times),
             error_count=errors,
@@ -1089,16 +1101,18 @@ async def main():
                         "status": r.status,
                         "details": r.details,
                         "error_message": r.error_message,
-                        "metrics": {
-                            "avg_response_time": r.metrics.avg_response_time,
-                            "p95_response_time": r.metrics.p95_response_time,
-                            "throughput": r.metrics.throughput,
-                            "error_rate": r.metrics.error_rate,
-                            "success_count": r.metrics.success_count,
-                            "error_count": r.metrics.error_count,
-                        }
-                        if r.metrics
-                        else None,
+                        "metrics": (
+                            {
+                                "avg_response_time": r.metrics.avg_response_time,
+                                "p95_response_time": r.metrics.p95_response_time,
+                                "throughput": r.metrics.throughput,
+                                "error_rate": r.metrics.error_rate,
+                                "success_count": r.metrics.success_count,
+                                "error_count": r.metrics.error_count,
+                            }
+                            if r.metrics
+                            else None
+                        ),
                     }
                     for r in results
                 ],

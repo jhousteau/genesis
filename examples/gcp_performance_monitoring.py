@@ -11,11 +11,17 @@ import asyncio
 import json
 import logging
 
-from core.performance import (BenchmarkConfig, CostOptimizationMonitor,
-                              OptimizedSecretManager, PerformanceBenchmarks,
-                              PerformanceMonitor, PerformanceOptimizer,
-                              PerformanceProfiler, ProfilerConfig,
-                              RegressionDetector)
+from core.performance import (
+    BenchmarkConfig,
+    CostOptimizationMonitor,
+    OptimizedSecretManager,
+    PerformanceBenchmarks,
+    PerformanceMonitor,
+    PerformanceOptimizer,
+    PerformanceProfiler,
+    ProfilerConfig,
+    RegressionDetector,
+)
 
 # Configure logging
 logging.basicConfig(

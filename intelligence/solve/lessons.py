@@ -17,8 +17,7 @@ from typing import Any
 
 from solve.autofix.models import FixResult
 from solve.exceptions import LessonCaptureError
-from solve.models import \
-    Lesson as ModelLesson  # Rename import to avoid conflict
+from solve.models import Lesson as ModelLesson  # Rename import to avoid conflict
 
 logger = logging.getLogger(__name__)
 
@@ -670,7 +669,9 @@ class LessonCapture:
                         "examples": pattern_data["examples"],
                         "prevention_strategies": list(
                             pattern_data["prevention_strategies"]
-                        )[:3],  # Top 3
+                        )[
+                            :3
+                        ],  # Top 3
                     },
                 )
 

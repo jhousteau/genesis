@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from .config_manager import ConfigurationManager
+
 # Import local modules
 from .service_discovery import DiscoveredService, ServiceDiscovery
 

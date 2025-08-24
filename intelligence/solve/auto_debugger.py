@@ -1491,7 +1491,9 @@ Output the complete fixed code below:
                 "--output-format=json",
                 str(file_path),
             ]
-            result = subprocess.run(cmd, capture_output=True, text=True, check=False)  # noqa: S603
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=False
+            )  # noqa: S603
 
             if result.returncode == 0:
                 # No errors at all - great!

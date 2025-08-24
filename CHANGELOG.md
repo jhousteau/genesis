@@ -8,14 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Enhanced documentation consistency across all README files
+- Comprehensive documentation update and reorganization
+- Complete README files for all major directories (cli, coordination, governance, projects, templates)
+- Enhanced documentation consistency across all components
 - Updated project registry for improved validation and organization
-- Comprehensive documentation update workflow
+- Comprehensive documentation cleanup workflow
 
 ### Changed
-- Fixed date inconsistencies in documentation files
-- Updated version tracking to 0.2.1
+- Major documentation restructure with 50% reduction in outdated files
+- Fixed broken links and references in main documentation
+- Updated all CLI examples to match actual implementation
+- Consolidated project reports into organized archive structure
 - Improved documentation structure and navigation
+- Updated dates across documentation to 2025-08-24
+
+### Removed
+- Outdated documentation from legacy "GCP Bootstrap Deployer" era
+- Redundant project completion reports and migration documents
+- Obsolete architecture documents that don't match current implementation
+- Empty placeholder directories that provided no value
 
 ## [0.2.1] - 2025-08-22
 

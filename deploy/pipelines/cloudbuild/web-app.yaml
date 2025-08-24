@@ -16,7 +16,7 @@ options:
   machineType: 'E2_HIGHCPU_8'
   diskSizeGb: 100
   logging: CLOUD_LOGGING_ONLY
-  
+
   # Environment variables
   env:
     - 'NODE_ENV=production'
@@ -33,7 +33,7 @@ steps:
       - '-c'
       - |
         echo "🔧 Setting up build environment..."
-        
+
         # Determine environment based on branch
         if [[ "$BRANCH_NAME" == "main" ]]; then
           echo "prod" > /workspace/environment.txt
@@ -44,12 +44,12 @@ steps:
         else
           echo "dev" > /workspace/environment.txt
         fi
-        
+
         ENVIRONMENT=$(cat /workspace/environment.txt)
         echo "Environment: $ENVIRONMENT"
         echo "Branch: $BRANCH_NAME"
         echo "Commit: $COMMIT_SHA"
-        
+
         # Framework detection
         if [[ -f "package.json" ]]; then
           if grep -q "react" package.json; then
@@ -69,13 +69,13 @@ steps:
           echo "static" > /workspace/framework.txt
           echo "." > /workspace/build_output.txt
         fi
-        
+
         FRAMEWORK=$(cat /workspace/framework.txt)
         BUILD_OUTPUT=$(cat /workspace/build_output.txt)
-        
+
         echo "Framework: $FRAMEWORK"
         echo "Build output: $BUILD_OUTPUT"
-        
+
         # Create build metadata
         cat > /workspace/build-metadata.json << EOF
         {
@@ -97,7 +97,7 @@ steps:
       - '-c'
       - |
         echo "📦 Restoring build cache..."
-        
+
         if [[ -f "package.json" ]]; then
           # Restore node_modules cache
           if gsutil -q stat gs://${_CACHE_BUCKET}/node_modules-cache.tar.gz; then
@@ -108,7 +108,7 @@ steps:
             echo "No node_modules cache found"
           fi
         fi
-        
+
         echo "✅ Cache restoration completed"
 
   # Step 3: Dependency Installation
@@ -119,13 +119,13 @@ steps:
       - '-c'
       - |
         echo "📦 Installing dependencies..."
-        
+
         if [[ -f "package.json" ]]; then
           # Install dependencies
           npm ci --prefer-offline --no-audit
-          
+
           echo "✅ Dependencies installed successfully"
-          
+
           # List installed packages for debugging
           npm list --depth=0 || true
         else
@@ -140,26 +140,26 @@ steps:
       - '-c'
       - |
         echo "🔍 Running code quality checks..."
-        
+
         if [[ -f "package.json" ]]; then
           # ESLint
           if npm list eslint > /dev/null 2>&1; then
             echo "Running ESLint..."
             npx eslint . --ext .js,.jsx,.ts,.tsx --format compact || echo "⚠️ Linting issues found"
           fi
-          
+
           # Prettier
           if npm list prettier > /dev/null 2>&1; then
             echo "Running Prettier check..."
             npx prettier --check . || echo "⚠️ Formatting issues found"
           fi
-          
+
           # TypeScript check
           if [[ -f "tsconfig.json" ]]; then
             echo "Running TypeScript check..."
             npx tsc --noEmit || echo "⚠️ TypeScript issues found"
           fi
-          
+
           echo "✅ Code quality checks completed"
         else
           echo "No package.json found, skipping code quality checks"
@@ -173,7 +173,7 @@ steps:
       - '-c'
       - |
         echo "🧪 Running unit tests..."
-        
+
         if [[ -f "package.json" ]]; then
           # Run tests
           if npm run test:ci > /dev/null 2>&1; then
@@ -185,7 +185,7 @@ steps:
           else
             echo "No test runner found"
           fi
-          
+
           echo "✅ Unit tests completed"
         else
           echo "No package.json found, skipping tests"
@@ -199,16 +199,16 @@ steps:
       - '-c'
       - |
         echo "🔒 Running security audit..."
-        
+
         if [[ -f "package.json" ]]; then
           # NPM Audit
           echo "Running npm audit..."
           npm audit --audit-level=high || echo "⚠️ Security vulnerabilities found"
-          
+
           # Check for common vulnerabilities
           echo "Checking for known vulnerable packages..."
           npm ls | grep -E "(lodash@[^4]|moment@[^2])" && echo "⚠️ Potentially vulnerable packages found" || echo "✅ No known vulnerable packages"
-          
+
           echo "✅ Security audit completed"
         else
           echo "No package.json found, skipping security audit"
@@ -222,15 +222,15 @@ steps:
       - '-c'
       - |
         echo "🏗️ Building application..."
-        
+
         FRAMEWORK=$(cat /workspace/framework.txt)
         BUILD_OUTPUT=$(cat /workspace/build_output.txt)
         ENVIRONMENT=$(cat /workspace/environment.txt)
-        
+
         echo "Framework: $FRAMEWORK"
         echo "Environment: $ENVIRONMENT"
         echo "Build output: $BUILD_OUTPUT"
-        
+
         if [[ "$FRAMEWORK" != "static" ]]; then
           # Set environment variables for build
           export NODE_ENV=production
@@ -239,7 +239,7 @@ steps:
           export NG_APP_VERSION="${COMMIT_SHA:0:8}"
           export REACT_APP_ENV="$ENVIRONMENT"
           export VUE_APP_ENV="$ENVIRONMENT"
-          
+
           # Framework-specific optimizations
           case "$FRAMEWORK" in
             react)
@@ -253,16 +253,16 @@ steps:
               export NG_BUILD_CACHE=.angular/cache
               ;;
           esac
-          
+
           # Run build
           echo "Running build command..."
           npm run build
-          
+
           # Verify build output
           if [[ -d "$BUILD_OUTPUT" ]]; then
             echo "✅ Build completed successfully"
             echo "Build size: $(du -sh $BUILD_OUTPUT)"
-            
+
             # List key files
             find $BUILD_OUTPUT -type f -name "*.js" -o -name "*.css" -o -name "*.html" | head -10
           else
@@ -272,7 +272,7 @@ steps:
         else
           echo "Static site - no build required"
         fi
-        
+
         # Copy build metadata
         cp /workspace/build-metadata.json $BUILD_OUTPUT/
 
@@ -284,14 +284,14 @@ steps:
       - '-c'
       - |
         echo "📊 Analyzing build output..."
-        
+
         BUILD_OUTPUT=$(cat /workspace/build_output.txt)
-        
+
         if [[ -d "$BUILD_OUTPUT" ]]; then
           # Bundle size analysis
           echo "Bundle size analysis:"
           find $BUILD_OUTPUT -name "*.js" -type f -exec basename {} \; -exec wc -c {} \; | paste - - | sort -k2 -nr | head -10
-          
+
           # Check for large files
           LARGE_FILES=$(find $BUILD_OUTPUT -type f -size +1M)
           if [[ -n "$LARGE_FILES" ]]; then
@@ -300,7 +300,7 @@ steps:
               echo "  $(basename $file): $(wc -c < $file) bytes"
             done
           fi
-          
+
           # Gzip simulation
           if command -v gzip > /dev/null; then
             echo "Estimated gzipped sizes:"
@@ -310,7 +310,7 @@ steps:
               echo "  $(basename $file): $ORIGINAL_SIZE → $GZIPPED_SIZE bytes"
             done
           fi
-          
+
           echo "✅ Build analysis completed"
         fi
 
@@ -322,13 +322,13 @@ steps:
       - '-c'
       - |
         echo "💾 Saving build cache..."
-        
+
         if [[ -d "node_modules" ]]; then
           echo "Saving node_modules cache..."
           tar -czf node_modules-cache.tar.gz node_modules/
           gsutil cp node_modules-cache.tar.gz gs://${_CACHE_BUCKET}/ || echo "Failed to save cache"
         fi
-        
+
         echo "✅ Cache saving completed"
 
   # Step 10: Deploy to Firebase Hosting
@@ -340,13 +340,13 @@ steps:
       - |
         if [[ "${_DEPLOYMENT_TARGET}" == "firebase" ]]; then
           echo "🚀 Deploying to Firebase Hosting..."
-          
+
           BUILD_OUTPUT=$(cat /workspace/build_output.txt)
           ENVIRONMENT=$(cat /workspace/environment.txt)
-          
+
           # Install Firebase CLI
           npm install -g firebase-tools
-          
+
           # Create firebase.json if it doesn't exist
           if [[ ! -f "firebase.json" ]]; then
             echo "Creating firebase.json..."
@@ -380,11 +380,11 @@ steps:
         }
         EOF
           fi
-          
+
           # Deploy to Firebase
           firebase use ${PROJECT_ID}
           firebase deploy --only hosting --project ${PROJECT_ID}
-          
+
           echo "✅ Deployed to Firebase Hosting"
           echo "URL: https://${PROJECT_ID}.web.app"
         else
@@ -400,29 +400,29 @@ steps:
       - |
         if [[ "${_DEPLOYMENT_TARGET}" == "gcs" ]]; then
           echo "🚀 Deploying to Cloud Storage with CDN..."
-          
+
           BUILD_OUTPUT=$(cat /workspace/build_output.txt)
           ENVIRONMENT=$(cat /workspace/environment.txt)
           BUCKET_NAME="${PROJECT_ID}-web-$ENVIRONMENT"
-          
+
           # Create bucket if it doesn't exist
           if ! gsutil ls -b gs://$BUCKET_NAME > /dev/null 2>&1; then
             echo "Creating bucket: $BUCKET_NAME"
             gsutil mb -l ${_REGISTRY_REGION} gs://$BUCKET_NAME
             gsutil web set -m index.html -e 404.html gs://$BUCKET_NAME
           fi
-          
+
           # Sync files to bucket
           echo "Syncing files to bucket..."
           gsutil -m rsync -r -d $BUILD_OUTPUT/ gs://$BUCKET_NAME/
-          
+
           # Set cache control headers
           gsutil -m setmeta -h "Cache-Control:max-age=31536000" gs://$BUCKET_NAME/static/**
           gsutil -m setmeta -h "Cache-Control:no-cache" gs://$BUCKET_NAME/index.html
-          
+
           # Make bucket publicly readable
           gsutil iam ch allUsers:objectViewer gs://$BUCKET_NAME
-          
+
           echo "✅ Deployed to Cloud Storage"
           echo "URL: https://storage.googleapis.com/$BUCKET_NAME/index.html"
         else
@@ -438,31 +438,31 @@ steps:
       - |
         if [[ "${_DEPLOYMENT_TARGET}" == "cloudrun" ]]; then
           echo "🚀 Deploying to Cloud Run..."
-          
+
           BUILD_OUTPUT=$(cat /workspace/build_output.txt)
           ENVIRONMENT=$(cat /workspace/environment.txt)
           IMAGE_TAG="${COMMIT_SHA:0:8}-$(date +%Y%m%d%H%M%S)"
           IMAGE_URL="${_REGISTRY_REGION}-docker.pkg.dev/${PROJECT_ID}/containers/${_PROJECT_NAME}-web"
-          
+
           # Create Dockerfile if it doesn't exist
           if [[ ! -f "Dockerfile" ]]; then
             echo "Creating Dockerfile for web app..."
             cat > Dockerfile << 'EOF'
         FROM nginx:alpine
-        
+
         # Copy build output
         COPY ${BUILD_OUTPUT}/ /usr/share/nginx/html/
-        
+
         # Copy nginx configuration
         COPY nginx.conf /etc/nginx/nginx.conf
-        
+
         # Expose port 8080 (Cloud Run requirement)
         EXPOSE 8080
-        
+
         # Start nginx
         CMD ["nginx", "-g", "daemon off;"]
         EOF
-            
+
             # Create nginx config
             cat > nginx.conf << 'EOF'
         events { worker_connections 1024; }
@@ -470,22 +470,22 @@ steps:
           include /etc/nginx/mime.types;
           sendfile on;
           keepalive_timeout 65;
-          
+
           server {
             listen 8080;
             server_name localhost;
-            
+
             location / {
               root /usr/share/nginx/html;
               index index.html;
               try_files $$uri $$uri/ /index.html;
             }
-            
+
             location /static/ {
               expires 1y;
               add_header Cache-Control "public, immutable";
             }
-            
+
             # Health check endpoint
             location /health {
               return 200 'OK';
@@ -495,11 +495,11 @@ steps:
         }
         EOF
           fi
-          
+
           # Build and push image
           docker build -t $IMAGE_URL:$IMAGE_TAG --build-arg BUILD_OUTPUT=$BUILD_OUTPUT .
           docker push $IMAGE_URL:$IMAGE_TAG
-          
+
           # Deploy to Cloud Run
           gcloud run deploy ${_PROJECT_NAME}-web \
             --image=$IMAGE_URL:$IMAGE_TAG \
@@ -512,13 +512,13 @@ steps:
             --concurrency=100 \
             --max-instances=10 \
             --set-env-vars="ENV=$ENVIRONMENT,VERSION=$IMAGE_TAG"
-          
+
           # Get service URL
           SERVICE_URL=$(gcloud run services describe ${_PROJECT_NAME}-web \
             --region=${_REGISTRY_REGION} \
             --project=${PROJECT_ID} \
             --format="value(status.url)")
-          
+
           echo "✅ Deployed to Cloud Run"
           echo "URL: $SERVICE_URL"
         else
@@ -533,7 +533,7 @@ steps:
       - '-c'
       - |
         echo "🔍 Verifying deployment..."
-        
+
         # Determine deployment URL based on target
         case "${_DEPLOYMENT_TARGET}" in
           firebase)
@@ -550,10 +550,10 @@ steps:
               --format="value(status.url)")
             ;;
         esac
-        
+
         if [[ -n "$DEPLOYMENT_URL" ]]; then
           echo "Testing deployment at: $DEPLOYMENT_URL"
-          
+
           # Health check with retries
           for i in {1..5}; do
             if curl -f "$DEPLOYMENT_URL" --max-time 10 --silent; then
@@ -568,15 +568,15 @@ steps:
               sleep 10
             fi
           done
-          
+
           # Performance check
           RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "$DEPLOYMENT_URL")
           echo "📊 Response time: ${RESPONSE_TIME}s"
-          
+
           if (( $(echo "$RESPONSE_TIME > 3.0" | bc -l) )); then
             echo "⚠️ Slow response time detected"
           fi
-          
+
           echo "✅ Deployment verification completed"
         else
           echo "❌ No deployment URL available for verification"
@@ -592,10 +592,10 @@ steps:
       - |
         echo "📋 Deployment Summary"
         echo "===================="
-        
+
         FRAMEWORK=$(cat /workspace/framework.txt)
         ENVIRONMENT=$(cat /workspace/environment.txt)
-        
+
         echo "Project: ${PROJECT_ID}"
         echo "Environment: $ENVIRONMENT"
         echo "Framework: $FRAMEWORK"
@@ -604,7 +604,7 @@ steps:
         echo "Build ID: $BUILD_ID"
         echo "Deployment Target: ${_DEPLOYMENT_TARGET}"
         echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-        
+
         # Create deployment record
         cat > deployment-record.json << EOF
         {
@@ -619,10 +619,10 @@ steps:
           "status": "success"
         }
         EOF
-        
+
         # Upload deployment record
         gsutil cp deployment-record.json gs://${_CACHE_BUCKET}/deployments/
-        
+
         echo "✅ Deployment completed successfully!"
 
 # Timeout configuration

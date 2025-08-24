@@ -4,7 +4,7 @@
 naming_conventions:
   version: "1.0.0"
   organization: "whitehorse"
-  
+
   # Global patterns
   global:
     separator: "-"
@@ -12,7 +12,7 @@ naming_conventions:
     max_length: 63
     allowed_characters: "[a-z0-9-]"
     pattern: "{organization}-{project}-{environment}-{resource_type}-{identifier}"
-    
+
   # Project naming
   projects:
     pattern: "{organization}-{project_name}"
@@ -24,17 +24,17 @@ naming_conventions:
       min_length: 3
       max_length: 30
       regex: "^whitehorse-[a-z][a-z0-9-]*[a-z0-9]$"
-      
+
   # Environment naming
   environments:
     allowed_values:
       - "dev"
-      - "test" 
+      - "test"
       - "staging"
       - "prod"
     validation:
       regex: "^(dev|test|staging|prod)$"
-      
+
   # Cloud provider specific patterns
   gcp:
     projects:
@@ -46,57 +46,57 @@ naming_conventions:
         min_length: 6
         max_length: 30
         regex: "^[a-z][a-z0-9-]*[a-z0-9]$"
-        
+
     resources:
       compute_engine:
         pattern: "{project}-{environment}-vm-{purpose}-{number:02d}"
         examples:
           - "agent-cage-prod-vm-web-01"
           - "claude-talk-dev-vm-api-02"
-          
+
       cloud_run:
         pattern: "{project}-{environment}-{service_name}"
         examples:
           - "agent-cage-prod-api"
           - "claude-talk-dev-frontend"
-          
+
       cloud_functions:
         pattern: "{project}-{environment}-func-{function_name}"
         examples:
           - "agent-cage-prod-func-process-message"
           - "claude-talk-dev-func-auth-handler"
-          
+
       cloud_storage:
         pattern: "{organization}-{project}-{environment}-{purpose}"
         examples:
           - "whitehorse-agent-cage-prod-artifacts"
           - "whitehorse-claude-talk-dev-uploads"
-          
+
       bigquery:
         dataset_pattern: "{project}_{environment}_{purpose}"
         table_pattern: "{entity}_{date_partition}"
         examples:
           - "agent_cage_prod_analytics"
           - "claude_talk_dev_user_events"
-          
+
       cloud_sql:
         pattern: "{project}-{environment}-{db_type}-{purpose}"
         examples:
           - "agent-cage-prod-postgres-main"
           - "claude-talk-dev-mysql-sessions"
-          
+
       vpc_networks:
         pattern: "{project}-{environment}-vpc"
         examples:
           - "agent-cage-prod-vpc"
           - "claude-talk-dev-vpc"
-          
+
       subnets:
         pattern: "{project}-{environment}-subnet-{zone}-{purpose}"
         examples:
           - "agent-cage-prod-subnet-us-central1-a-web"
           - "claude-talk-dev-subnet-us-west1-b-data"
-          
+
   aws:
     resources:
       ec2:
@@ -104,31 +104,31 @@ naming_conventions:
         examples:
           - "agent-cage-prod-ec2-web-01"
           - "claude-talk-dev-ec2-api-02"
-          
+
       s3:
         pattern: "{organization}-{project}-{environment}-{purpose}"
         examples:
           - "whitehorse-agent-cage-prod-artifacts"
           - "whitehorse-claude-talk-dev-uploads"
-          
+
       rds:
         pattern: "{project}-{environment}-rds-{engine}-{purpose}"
         examples:
           - "agent-cage-prod-rds-postgres-main"
           - "claude-talk-dev-rds-mysql-sessions"
-          
+
       lambda:
         pattern: "{project}-{environment}-lambda-{function_name}"
         examples:
           - "agent-cage-prod-lambda-process-message"
           - "claude-talk-dev-lambda-auth-handler"
-          
+
       vpc:
         pattern: "{project}-{environment}-vpc"
         examples:
           - "agent-cage-prod-vpc"
           - "claude-talk-dev-vpc"
-          
+
   azure:
     resources:
       virtual_machine:
@@ -136,7 +136,7 @@ naming_conventions:
         examples:
           - "agent-cage-prod-vm-web-01"
           - "claude-talk-dev-vm-api-02"
-          
+
       storage_account:
         pattern: "{organization}{project}{environment}{purpose}"
         examples:
@@ -147,19 +147,19 @@ naming_conventions:
           max_length: 24
           case: "lowercase"
           allowed_characters: "[a-z0-9]"
-          
+
       app_service:
         pattern: "{project}-{environment}-app-{service_name}"
         examples:
           - "agent-cage-prod-app-api"
           - "claude-talk-dev-app-frontend"
-          
+
       sql_server:
         pattern: "{project}-{environment}-sql-{purpose}"
         examples:
           - "agent-cage-prod-sql-main"
           - "claude-talk-dev-sql-sessions"
-          
+
   # Kubernetes resources
   kubernetes:
     namespaces:
@@ -167,61 +167,61 @@ naming_conventions:
       examples:
         - "agent-cage-prod"
         - "claude-talk-dev"
-        
+
     deployments:
       pattern: "{service_name}-{version}"
       examples:
         - "api-server-v1"
         - "frontend-v2"
-        
+
     services:
       pattern: "{service_name}-svc"
       examples:
         - "api-server-svc"
         - "database-svc"
-        
+
     configmaps:
       pattern: "{service_name}-config"
       examples:
         - "api-server-config"
         - "nginx-config"
-        
+
     secrets:
       pattern: "{service_name}-secret"
       examples:
         - "api-server-secret"
         - "database-secret"
-        
+
   # Validation rules
   validation:
     global_rules:
       - name: "no_consecutive_separators"
         regex: "^(?!.*--)"
         message: "Consecutive separators (--) are not allowed"
-        
-      - name: "no_leading_trailing_separator" 
+
+      - name: "no_leading_trailing_separator"
         regex: "^[a-z0-9].*[a-z0-9]$"
         message: "Names cannot start or end with a separator"
-        
+
       - name: "lowercase_alphanumeric_hyphen"
         regex: "^[a-z0-9-]+$"
         message: "Only lowercase letters, numbers, and hyphens are allowed"
-        
+
       - name: "meaningful_name"
         min_length: 3
         message: "Names must be at least 3 characters long and meaningful"
-        
+
     environment_specific:
       prod:
         additional_rules:
           - name: "no_test_suffix"
             regex: "^(?!.*-test$)"
             message: "Production resources cannot end with -test"
-            
-          - name: "no_dev_suffix"  
+
+          - name: "no_dev_suffix"
             regex: "^(?!.*-dev$)"
             message: "Production resources cannot end with -dev"
-            
+
   # Reserved names (cannot be used)
   reserved_names:
     - "admin"
@@ -239,7 +239,7 @@ naming_conventions:
     - "private"
     - "internal"
     - "external"
-    
+
   # Abbreviations dictionary
   abbreviations:
     virtual_machine: "vm"
@@ -258,13 +258,13 @@ naming_conventions:
     continuous_integration: "ci"
     continuous_deployment: "cd"
     infrastructure_as_code: "iac"
-    
+
 # Usage examples and templates
 templates:
   new_project:
     gcp_project_id: "whitehorse-{project_name}-{environment}"
     resource_prefix: "{project_name}-{environment}"
-    
+
   new_service:
     name_pattern: "{project}-{environment}-{service_type}-{service_name}"
     examples:

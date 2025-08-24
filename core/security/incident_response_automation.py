@@ -235,9 +235,9 @@ class IncidentResponseAutomation:
             approval_required=False,
             rollback_timeout_minutes=60,
         )
-        self.workflows[
-            unauthorized_access_workflow.workflow_id
-        ] = unauthorized_access_workflow
+        self.workflows[unauthorized_access_workflow.workflow_id] = (
+            unauthorized_access_workflow
+        )
 
         # Vulnerability exploitation response
         vulnerability_workflow = ResponseWorkflow(

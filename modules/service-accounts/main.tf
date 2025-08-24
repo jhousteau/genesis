@@ -215,9 +215,9 @@ locals {
   wif_providers = flatten([
     for pool in var.workload_identity_config.identity_pools : [
       for provider in pool.providers : {
-        pool_id = pool.pool_id
+        pool_id     = pool.pool_id
         provider_id = provider.provider_id
-        provider = provider
+        provider    = provider
       }
     ]
     if var.workload_identity_config.enabled
@@ -234,10 +234,10 @@ locals {
     for sa_key, sa in var.service_accounts : [
       for project in var.cross_project_access.target_projects : [
         for role in project.roles : {
-          sa_key = sa_key
-          sa_email = google_service_account.service_accounts[sa_key].email
+          sa_key     = sa_key
+          sa_email   = google_service_account.service_accounts[sa_key].email
           project_id = project.project_id
-          role = role
+          role       = role
           conditions = project.conditions
         }
       ]
@@ -249,19 +249,19 @@ locals {
   cicd_bindings = flatten([
     # GitHub Actions
     for repo in var.cicd_platforms.github_actions.repositories : {
-      platform = "github"
-      key = "${repo.owner}/${repo.repo}"
-      sa_key = repo.service_account_key
+      platform    = "github"
+      key         = "${repo.owner}/${repo.repo}"
+      sa_key      = repo.service_account_key
       provider_id = "github-${repo.owner}-${repo.repo}"
       attribute_mapping = {
-        "google.subject" = "assertion.sub"
-        "attribute.actor" = "assertion.actor"
+        "google.subject"       = "assertion.sub"
+        "attribute.actor"      = "assertion.actor"
         "attribute.repository" = "assertion.repository"
-        "attribute.ref" = "assertion.ref"
+        "attribute.ref"        = "assertion.ref"
       }
       attribute_condition = "assertion.repository == '${repo.owner}/${repo.repo}' && assertion.ref == 'refs/heads/${repo.ref}'"
       oidc_config = {
-        issuer_uri = "https://token.actions.githubusercontent.com"
+        issuer_uri        = "https://token.actions.githubusercontent.com"
         allowed_audiences = ["https://github.com/${repo.owner}"]
       }
     }
@@ -406,7 +406,7 @@ resource "google_cloud_scheduler_job" "key_rotation" {
   }
 
   project     = coalesce(each.value.project_id, var.project_id)
-  region      = "us-central1"  # Default region for scheduler
+  region      = "us-central1" # Default region for scheduler
   name        = "${each.value.account_id}-key-rotation"
   description = "Automated key rotation for ${each.value.account_id}"
   schedule    = var.enhanced_security.key_rotation_schedule
@@ -415,7 +415,7 @@ resource "google_cloud_scheduler_job" "key_rotation" {
   http_target {
     uri         = "https://cloudfunctions.googleapis.com/v1/projects/${var.project_id}/locations/us-central1/functions/rotate-service-account-key:call"
     http_method = "POST"
-    body        = base64encode(jsonencode({
+    body = base64encode(jsonencode({
       service_account = google_service_account.service_accounts[each.key].email
       project_id      = coalesce(each.value.project_id, var.project_id)
     }))
@@ -501,9 +501,9 @@ resource "google_monitoring_alert_policy" "service_account_alerts" {
     display_name = each.value.name
 
     condition_threshold {
-      filter         = each.value.condition
-      duration       = "300s"
-      comparison     = "COMPARISON_GREATER_THAN"
+      filter          = each.value.condition
+      duration        = "300s"
+      comparison      = "COMPARISON_GREATER_THAN"
       threshold_value = each.value.threshold
 
       aggregations {
@@ -528,9 +528,9 @@ resource "google_cloudfunctions_function" "key_rotation_function" {
   region  = "us-central1"
   name    = "rotate-service-account-key"
 
-  description          = "Automated service account key rotation function"
-  available_memory_mb  = 256
-  timeout              = 540
+  description         = "Automated service account key rotation function"
+  available_memory_mb = 256
+  timeout             = 540
   entry_point         = "rotateKey"
   runtime             = "python39"
 
@@ -538,7 +538,7 @@ resource "google_cloudfunctions_function" "key_rotation_function" {
   source_archive_object = "key-rotation.zip"
 
   environment_variables = {
-    PROJECT_ID = var.project_id
+    PROJECT_ID         = var.project_id
     NOTIFICATION_TOPIC = "service-account-notifications"
   }
 
@@ -582,7 +582,7 @@ resource "google_storage_bucket" "service_account_backup" {
   labels = merge(
     var.labels,
     {
-      purpose = "service-account-backup"
+      purpose     = "service-account-backup"
       backup_type = var.backup_config.cross_region_backup ? "cross-region" : "regional"
     }
   )
@@ -602,8 +602,8 @@ resource "google_cloud_scheduler_job" "backup_scheduler" {
   http_target {
     uri         = "https://cloudfunctions.googleapis.com/v1/projects/${var.project_id}/locations/us-central1/functions/backup-service-accounts:call"
     http_method = "POST"
-    body        = base64encode(jsonencode({
-      backup_bucket = google_storage_bucket.service_account_backup[0].name
+    body = base64encode(jsonencode({
+      backup_bucket  = google_storage_bucket.service_account_backup[0].name
       retention_days = var.backup_config.retention_days
     }))
 

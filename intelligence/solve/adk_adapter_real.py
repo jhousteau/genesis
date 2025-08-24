@@ -11,11 +11,21 @@ from datetime import datetime
 from typing import Any
 
 from solve.knowledge_loader import KnowledgeLoader
+
 # Use centralized ADK imports with proper fallbacks
-from solve_core.adk_imports import (BaseAgent, BaseTool, Content, Event,
-                                    InMemorySessionService, LlmAgent,
-                                    ParallelAgent, RunConfig, Runner,
-                                    SequentialAgent, is_adk_available)
+from solve_core.adk_imports import (
+    BaseAgent,
+    BaseTool,
+    Content,
+    Event,
+    InMemorySessionService,
+    LlmAgent,
+    ParallelAgent,
+    RunConfig,
+    Runner,
+    SequentialAgent,
+    is_adk_available,
+)
 
 logger = logging.getLogger(__name__)
 

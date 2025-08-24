@@ -11,10 +11,18 @@ Based on ADR-004: Comprehensive Autofix/Autocommit System Architecture
 
 from .backup import BackupManager
 from .eval_adapter import AutofixEvalAdapter
-from .fixers import (EndOfFileFixer, RuffAutoFixer, RuffFormatter,
-                     TrailingWhitespaceFixer)
-from .llm_fixer import (ContextBuilder, ErrorGrouper, ManualFixOrchestrator,
-                        XMLPromptFormatter)
+from .fixers import (
+    EndOfFileFixer,
+    RuffAutoFixer,
+    RuffFormatter,
+    TrailingWhitespaceFixer,
+)
+from .llm_fixer import (
+    ContextBuilder,
+    ErrorGrouper,
+    ManualFixOrchestrator,
+    XMLPromptFormatter,
+)
 from .metrics import MetricsCollector
 from .models import AutofixConfig, FixResult, ValidationResult
 from .runner import AutoFixerRunner

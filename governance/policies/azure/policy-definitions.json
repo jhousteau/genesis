@@ -32,7 +32,7 @@
         }
       }
     },
-    
+
     "enforceNamingConvention": {
       "properties": {
         "displayName": "Enforce naming convention for resources",
@@ -57,7 +57,7 @@
         }
       }
     },
-    
+
     "requireEncryption": {
       "properties": {
         "displayName": "Require encryption for storage accounts",
@@ -82,7 +82,7 @@
         }
       }
     },
-    
+
     "restrictVMSizes": {
       "properties": {
         "displayName": "Allowed virtual machine size SKUs",
@@ -121,7 +121,7 @@
         }
       }
     },
-    
+
     "restrictLocations": {
       "properties": {
         "displayName": "Allowed locations",
@@ -150,7 +150,7 @@
         }
       }
     },
-    
+
     "requireManagedDisks": {
       "properties": {
         "displayName": "Require managed disks for VMs",
@@ -175,7 +175,7 @@
         }
       }
     },
-    
+
     "enforceHTTPS": {
       "properties": {
         "displayName": "Secure transfer to storage accounts should be enabled",
@@ -200,7 +200,7 @@
         }
       }
     },
-    
+
     "preventPublicStorage": {
       "properties": {
         "displayName": "Storage accounts should restrict network access",
@@ -225,7 +225,7 @@
         }
       }
     },
-    
+
     "requireBackup": {
       "properties": {
         "displayName": "Azure Backup should be enabled for Virtual Machines",
@@ -253,7 +253,7 @@
         }
       }
     },
-    
+
     "requireNetworkSecurityGroup": {
       "properties": {
         "displayName": "Subnets should be associated with a Network Security Group",
@@ -279,7 +279,7 @@
       }
     }
   },
-  
+
   "initiatives": {
     "securityBaseline": {
       "properties": {
@@ -307,7 +307,7 @@
         ]
       }
     },
-    
+
     "governanceBaseline": {
       "properties": {
         "displayName": "Governance Baseline Initiative",
@@ -332,7 +332,7 @@
       }
     }
   },
-  
+
   "assignments": {
     "production": {
       "initiative": "securityBaseline",

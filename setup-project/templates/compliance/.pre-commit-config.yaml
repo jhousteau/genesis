@@ -132,7 +132,8 @@ repos:
 
       - id: check-todos
         name: Check TODO Count
-        entry: bash -c 'TODO_COUNT=$(grep -r "TODO\|FIXME\|HACK" . --exclude-dir=.git | wc -l); test $TODO_COUNT -le 10 || (echo "Too many TODOs: $TODO_COUNT (max 10)" && exit 1)'
+        entry: |
+          bash -c 'TODO_COUNT=$(grep -r "TODO\|FIXME\|HACK" . --exclude-dir=.git | wc -l); test $TODO_COUNT -le 10 || (echo "Too many TODOs: $TODO_COUNT (max 10)" && exit 1)'
         language: system
         pass_filenames: false
 

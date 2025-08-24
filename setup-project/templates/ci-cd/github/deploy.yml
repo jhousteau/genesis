@@ -36,7 +36,7 @@ jobs:
       environment: ${{ steps.env.outputs.environment }}
       gcp_project: ${{ steps.env.outputs.gcp_project }}
       requires_approval: ${{ steps.env.outputs.requires_approval }}
-    
+
     steps:
     - name: Determine environment
       id: env
@@ -46,9 +46,9 @@ jobs:
         else
           ENV="dev"
         fi
-        
+
         echo "environment=$ENV" >> $GITHUB_OUTPUT
-        
+
         case $ENV in
           dev)
             echo "gcp_project=${GCP_PROJECT_DEV}" >> $GITHUB_OUTPUT
@@ -72,33 +72,33 @@ jobs:
     name: Pre-deployment Checks
     runs-on: ubuntu-latest
     needs: determine-environment
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Setup dependencies
       run: |
         if [ -f requirements.txt ]; then
           pip install -r requirements.txt
         fi
-        
+
     - name: Run compliance validation
       if: ${{ github.event.inputs.skip_tests != 'true' }}
       run: |
         chmod +x scripts/validate-compliance.sh
         ./scripts/validate-compliance.sh
-        
+
     - name: Run tests
       if: ${{ github.event.inputs.skip_tests != 'true' }}
       run: |
         make test || echo "Tests failed but continuing due to emergency deployment"
-        
+
     - name: Security scan
       run: |
         # Quick security check
         bandit -r src/ -f json -o bandit-report.json || true
-        
+
     - name: Upload security report
       uses: actions/upload-artifact@v3
       with:
@@ -109,29 +109,29 @@ jobs:
     name: Deploy to ${{ needs.determine-environment.outputs.environment }}
     runs-on: ubuntu-latest
     needs: [determine-environment, pre-deployment-checks]
-    environment: 
+    environment:
       name: ${{ needs.determine-environment.outputs.environment }}
       url: https://${{ needs.determine-environment.outputs.gcp_project }}.appspot.com
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
-        
+
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ needs.determine-environment.outputs.gcp_project }}
-        
+
     - name: Configure GCP project
       run: |
         gcloud config set project ${{ needs.determine-environment.outputs.gcp_project }}
         gcloud auth configure-docker
-        
+
     - name: Build and deploy
       env:
         DEPLOY_ENV: ${{ needs.determine-environment.outputs.environment }}
@@ -139,23 +139,23 @@ jobs:
       run: |
         chmod +x scripts/deploy.sh
         ./scripts/deploy.sh --env=$DEPLOY_ENV --project=$GCP_PROJECT
-        
+
     - name: Run post-deployment tests
       run: |
         # Health check
         sleep 30  # Wait for service to start
-        
+
         # Basic health check
         if command -v curl >/dev/null 2>&1; then
           curl -f https://${{ needs.determine-environment.outputs.gcp_project }}.appspot.com/health || true
         fi
-        
+
         # Run smoke tests if available
         if [ -f scripts/smoke-tests.sh ]; then
           chmod +x scripts/smoke-tests.sh
           ./scripts/smoke-tests.sh ${{ needs.determine-environment.outputs.environment }}
         fi
-        
+
     - name: Notify deployment status
       if: always()
       run: |
@@ -170,21 +170,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: [determine-environment, deploy]
     if: failure() && needs.determine-environment.outputs.environment != 'dev'
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
-        
+
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ needs.determine-environment.outputs.gcp_project }}
-        
+
     - name: Rollback deployment
       run: |
         if [ -f scripts/rollback.sh ]; then

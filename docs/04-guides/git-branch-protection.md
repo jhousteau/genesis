@@ -10,7 +10,7 @@ The Genesis project implements comprehensive git branch protection to prevent ac
 
 The pre-commit framework prevents direct commits to the main branch:
 - **Location**: Managed by `.pre-commit-config.yaml`
-- **Hook**: `no-commit-to-branch` 
+- **Hook**: `no-commit-to-branch`
 - **Protected branches**: `main`, `master`
 - **Additional checks**:
   - Secret detection (gitleaks)

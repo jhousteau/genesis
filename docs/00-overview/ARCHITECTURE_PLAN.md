@@ -24,14 +24,14 @@ graph TB
         CLI[g command CLI]
         Config[Configuration Manager]
     end
-    
+
     subgraph "Layer 2: Intelligence (SOLVE)"
         SC[Smart Commit]
         AF[Autofix Pipeline]
         GO[Graph Orchestrator]
         MA[Multi-Agent Coordinator]
     end
-    
+
     subgraph "Layer 3: Core Foundation"
         ERR[Error Handler]
         LOG[Logger]
@@ -39,29 +39,29 @@ graph TB
         CTX[Context Manager]
         HEALTH[Health Checker]
     end
-    
+
     subgraph "Layer 4: GCP Abstractions"
         TF[Terraform Generator]
         SA[Service Account Manager]
         WIF[Workload Identity]
         SM[Secret Manager]
     end
-    
+
     subgraph "Layer 5: Project Templates"
         TPL[Template Engine]
         SCAFF[Scaffolder]
         MIG[Migration Tools]
     end
-    
+
     CLI --> Config
     CLI --> SC
     SC --> AF
     AF --> GO
     GO --> MA
-    
+
     SC --> ERR
     SC --> LOG
-    
+
     TPL --> TF
     SCAFF --> TF
 ```
@@ -101,7 +101,7 @@ class GenesisError:
     - Error categorization
     - Correlation ID attachment
 
-# core/logging/logger.py  
+# core/logging/logger.py
 class GenesisLogger:
     - Structured JSON output
     - Log levels

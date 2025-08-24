@@ -17,23 +17,23 @@ jobs:
   tfsec:
     name: TFSec Security Scan
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Run TFSec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
           soft_fail: false
           format: sarif
           out: tfsec-results.sarif
-      
+
       - name: Upload TFSec Results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: tfsec-results.sarif
-      
+
       - name: TFSec PR Comment
         uses: aquasecurity/tfsec-pr-commenter-action@v1.3.1
         if: github.event_name == 'pull_request'
@@ -43,11 +43,11 @@ jobs:
   terrascan:
     name: Terrascan Policy Scan
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Run Terrascan
         id: terrascan
         uses: tenable/terrascan-action@main
@@ -57,7 +57,7 @@ jobs:
           policy_type: 'gcp'
           only_warn: false
           sarif_upload: true
-      
+
       - name: Upload Terrascan Results
         if: always()
         uses: github/codeql-action/upload-sarif@v3
@@ -67,13 +67,13 @@ jobs:
   secrets-scan:
     name: Secrets Detection
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: TruffleHog Secret Scan
         uses: trufflesecurity/trufflehog@main
         with:
@@ -81,7 +81,7 @@ jobs:
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
           extra_args: --debug --only-verified
-      
+
       - name: GitLeaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
         env:
@@ -90,11 +90,11 @@ jobs:
   dependency-check:
     name: Dependency Security Check
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Run Snyk Security Scan
         uses: snyk/actions/iac@master
         continue-on-error: true
@@ -103,7 +103,7 @@ jobs:
         with:
           sarif: true
           file: .
-      
+
       - name: Upload Snyk Results
         if: always()
         uses: github/codeql-action/upload-sarif@v3
@@ -113,20 +113,20 @@ jobs:
   compliance-check:
     name: Compliance and Best Practices
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Install Cloud Custodian
         run: |
           pip install c7n c7n-gcp
-      
+
       - name: Run Compliance Checks
         run: |
           # Create a basic policy file for GCP compliance
@@ -144,23 +144,23 @@ jobs:
                   priority_header: '2'
                   subject: "GCP Project Missing Required Labels"
           EOF
-          
+
           # Validate but don't enforce (dry-run)
           custodian validate custodian-policy.yml || true
-      
+
       - name: Open Policy Agent (OPA) Check
         run: |
           # Download OPA
           curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static
           chmod +x opa
-          
+
           # Create a basic Terraform policy
           cat > terraform.rego <<EOF
           package terraform.analysis
-          
+
           import future.keywords.if
           import future.keywords.in
-          
+
           # Deny resources without required tags
           deny[msg] {
               resource := input.resource_changes[_]
@@ -168,7 +168,7 @@ jobs:
               not resource.change.after.labels.environment
               msg := sprintf("Storage bucket '%s' missing required 'environment' label", [resource.address])
           }
-          
+
           # Deny public access to storage buckets
           deny[msg] {
               resource := input.resource_changes[_]
@@ -177,7 +177,7 @@ jobs:
               msg := sprintf("Storage bucket IAM binding '%s' allows public access", [resource.address])
           }
           EOF
-          
+
           # Note: This would normally run against terraform plan output
           echo "OPA policies created for terraform plan validation"
 
@@ -185,26 +185,26 @@ jobs:
     name: OpenSSF Scorecard
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     permissions:
       security-events: write
       id-token: write
       contents: read
       actions: read
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      
+
       - name: Run Scorecard Analysis
         uses: ossf/scorecard-action@v2.3.1
         with:
           results_file: scorecard-results.sarif
           results_format: sarif
           publish_results: true
-      
+
       - name: Upload Scorecard Results
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -215,7 +215,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [tfsec, terrascan, secrets-scan, compliance-check]
     if: always()
-    
+
     steps:
       - name: Create Security Summary
         run: |

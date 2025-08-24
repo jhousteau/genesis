@@ -368,9 +368,9 @@ class SlackIntegration:
         }
 
         if error_budget_remaining is not None:
-            additional_context[
-                "Error Budget Remaining"
-            ] = f"{error_budget_remaining:.2f}%"
+            additional_context["Error Budget Remaining"] = (
+                f"{error_budget_remaining:.2f}%"
+            )
 
         alert = AlertMessage(
             title=title,

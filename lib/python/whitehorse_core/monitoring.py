@@ -25,8 +25,7 @@ except ImportError:
     HAS_GCP_MONITORING = False
 
 try:
-    from prometheus_client import (Counter, Gauge, Histogram, Summary,
-                                   start_http_server)
+    from prometheus_client import Counter, Gauge, Histogram, Summary, start_http_server
     from prometheus_client.core import CollectorRegistry
 
     HAS_PROMETHEUS = True
@@ -769,8 +768,7 @@ class MonitoringClient:
         end_time = end_time or datetime.utcnow()
 
         try:
-            from google.cloud.monitoring_v3 import (ListTimeSeriesRequest,
-                                                    TimeInterval)
+            from google.cloud.monitoring_v3 import ListTimeSeriesRequest, TimeInterval
             from google.protobuf.timestamp_pb2 import Timestamp
 
             # Create time interval

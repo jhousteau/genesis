@@ -111,7 +111,9 @@ class Tool:
             return self._available
 
         try:
-            subprocess.run(self.check_command, capture_output=True, timeout=5, check=False)  # noqa: S603  # Subprocess secured: shell=False, validated inputs
+            subprocess.run(
+                self.check_command, capture_output=True, timeout=5, check=False
+            )  # noqa: S603  # Subprocess secured: shell=False, validated inputs
             self._available = True
         except (subprocess.TimeoutExpired, FileNotFoundError):
             self._available = False
@@ -155,21 +157,23 @@ class Tool:
                 if result.stdout and result.stdout.strip():
                     error_parts.append(f"STDOUT:\n{result.stdout.strip()}")
                 if not error_parts:
-                    error_parts.append(f"Command failed with exit code {result.returncode}")
+                    error_parts.append(
+                        f"Command failed with exit code {result.returncode}"
+                    )
                     error_parts.append(f"Command: {' '.join(self.command)}")
                 error_msg = "\n".join(error_parts)
 
             return ToolResult(
                 tool_name=self.name,
-                status=(ToolStatus.SUCCESS if result.returncode == 0 else ToolStatus.FAILURE),
+                status=(
+                    ToolStatus.SUCCESS if result.returncode == 0 else ToolStatus.FAILURE
+                ),
                 modified_files=modified_files,
                 error_message=error_msg,
                 execution_time=time.time() - start_time,
             )
         except subprocess.TimeoutExpired as e:
-            error_msg = (
-                f"Tool execution timeout after 60 seconds\nCommand: {' '.join(self.command)}"
-            )
+            error_msg = f"Tool execution timeout after 60 seconds\nCommand: {' '.join(self.command)}"
             if e.stdout:
                 error_msg += f"\nPartial stdout: {e.stdout[:500]}"
             if e.stderr:
@@ -181,9 +185,7 @@ class Tool:
                 execution_time=time.time() - start_time,
             )
         except Exception as e:
-            error_msg = (
-                f"Exception: {type(e).__name__}: {str(e)}\nCommand: {' '.join(self.command)}"
-            )
+            error_msg = f"Exception: {type(e).__name__}: {str(e)}\nCommand: {' '.join(self.command)}"
             return ToolResult(
                 tool_name=self.name,
                 status=ToolStatus.FAILURE,
@@ -209,7 +211,10 @@ class Tool:
         """Find files that were modified."""
         modified = set()
         for path, after_state in after.items():
-            if path not in before or before[path].content_hash != after_state.content_hash:
+            if (
+                path not in before
+                or before[path].content_hash != after_state.content_hash
+            ):
                 modified.add(path)
         return modified
 
@@ -339,7 +344,9 @@ class StabilityEngine:
 
         return state
 
-    def _is_stable(self, before: dict[Path, FileState], after: dict[Path, FileState]) -> bool:
+    def _is_stable(
+        self, before: dict[Path, FileState], after: dict[Path, FileState]
+    ) -> bool:
         """Check if state is stable (no changes)."""
         if set(before.keys()) != set(after.keys()):
             return False

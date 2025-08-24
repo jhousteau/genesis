@@ -17,9 +17,11 @@ logger = logging.getLogger(__name__)
 
 try:
     from google.cloud import (  # type: ignore[attr-defined,import-untyped]
-        firestore, pubsub_v1, run_v2)
-    from google.cloud.exceptions import \
-        NotFound  # type: ignore[import-untyped]
+        firestore,
+        pubsub_v1,
+        run_v2,
+    )
+    from google.cloud.exceptions import NotFound  # type: ignore[import-untyped]
     from google.oauth2 import service_account  # type: ignore[import-untyped]
 
     GOOGLE_CLOUD_AVAILABLE = True

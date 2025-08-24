@@ -26,14 +26,25 @@ import logging
 from pathlib import Path
 from typing import Any, Dict
 
-from solve.gcp_lesson_integration import (GCPConfig, GCPTemplateRegistry,
-                                          deploy_gcp_infrastructure)
-from solve.improvement_metrics import (ImprovementMetricsCalculator,
-                                       MetricsReporter,
-                                       generate_improvement_report)
-from solve.lesson_capture_system import (Category, EnhancedLesson, ImpactLevel,
-                                         LessonCaptureSystem, LessonSource,
-                                         LessonStore, Priority)
+from solve.gcp_lesson_integration import (
+    GCPConfig,
+    GCPTemplateRegistry,
+    deploy_gcp_infrastructure,
+)
+from solve.improvement_metrics import (
+    ImprovementMetricsCalculator,
+    MetricsReporter,
+    generate_improvement_report,
+)
+from solve.lesson_capture_system import (
+    Category,
+    EnhancedLesson,
+    ImpactLevel,
+    LessonCaptureSystem,
+    LessonSource,
+    LessonStore,
+    Priority,
+)
 from solve.template_evolution import TemplateEvolution, TemplateRegistry
 
 logger = logging.getLogger(__name__)

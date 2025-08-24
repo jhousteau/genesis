@@ -207,7 +207,7 @@ resource "google_compute_region_instance_group_manager" "agent_pools" {
     max_surge_fixed       = lookup(each.value, "max_surge", 1)
     max_unavailable_fixed = lookup(each.value, "max_unavailable", 0)
     # min_ready_sec deprecated - use instance health checks instead
-    replacement_method    = "SUBSTITUTE"
+    replacement_method = "SUBSTITUTE"
   }
 
   # Health check integration

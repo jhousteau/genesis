@@ -6,7 +6,7 @@ system:
   debug: false
   log_level: "WARN"
   base_url: "https://api.bootstrapper.dev"
-  
+
   features:
     # More conservative feature flags for production
     automated_optimization: false  # Require manual approval
@@ -19,36 +19,36 @@ intelligence:
     auto_execute: false  # Always require approval in production
     timeout: 600  # Longer timeout for production
     concurrent_fixes: 1  # Conservative concurrency
-    
+
     # More restrictive categories
     categories:
       security: false  # Require manual security fixes
       dependencies: false  # Manual dependency updates
       configuration: true
       infrastructure: false
-    
+
     notifications:
       on_execution: true
       on_completion: true
       on_failure: true
-  
+
   optimization:
     analysis_interval: 7200  # Every 2 hours
     cost_threshold: 500  # Higher threshold for production
     auto_apply_threshold: 0  # No auto-apply in production
-  
+
   predictions:
     confidence_threshold: 0.8  # Higher confidence required
-    
+
     alerts:
       high_confidence: 0.90
       critical_prediction: 0.95
-  
+
   self_healing:
     monitoring_interval: 30  # More frequent monitoring
     auto_heal_enabled: true
     max_healing_attempts: 2  # Conservative healing attempts
-    
+
     # Restricted healing actions
     actions:
       restart_services: true
@@ -66,7 +66,7 @@ coordination:
 
 deployment:
   default_strategy: "blue_green"  # Safest strategy for production
-  
+
   strategies:
     blue_green:
       timeout: 3600  # 1 hour for production deployments
@@ -78,12 +78,12 @@ deployment:
     rolling:
       max_unavailable: 0  # Zero downtime requirement
       timeout: 3600
-  
+
   validation:
     pre_deploy_checks: true
     post_deploy_validation: true
     rollback_on_failure: true
-    
+
   approvals:
     production_required: true
     staging_required: true
@@ -94,12 +94,12 @@ governance:
   policy_enforcement: "strict"
   audit_logging: true
   cost_monitoring: true
-  
+
   frameworks:
     soc2: true
     gdpr: true
     iso27001: true
-  
+
   cost_control:
     budget_alerts: true
     spend_limits: true
@@ -111,12 +111,12 @@ security:
   encryption_at_rest: true
   encryption_in_transit: true
   vulnerability_scanning: true
-  
+
   sessions:
     timeout: 1800  # 30 minutes for production
     refresh_enabled: true
     secure_cookies: true
-  
+
   api:
     rate_limiting: true
     cors_enabled: false  # Restrictive CORS
@@ -124,21 +124,21 @@ security:
 
 monitoring:
   retention_days: 90  # Longer retention for production
-  
+
   metrics:
     collection_interval: 30  # More frequent collection
     batch_size: 200
     compression_enabled: true
-  
+
   logging:
     level: "WARN"  # Less verbose logging
     structured: true
     format: "json"
-  
+
   tracing:
     sampling_rate: 0.05  # 5% sampling to reduce overhead
     max_span_duration: 7200
-  
+
   alerting:
     error_rate_threshold: 0.01  # 1% - stricter in production
     latency_threshold: 500  # 500ms - tighter SLA
@@ -149,12 +149,12 @@ performance:
     default_ttl: 7200  # 2 hours
     max_size: "10GB"  # Larger cache for production
     compression: true
-  
+
   database:
     connection_pool_size: 50  # Larger pool for production
     query_timeout: 10  # Stricter timeout
     slow_query_threshold: 500  # More aggressive slow query detection
-  
+
   network:
     keepalive_enabled: true
     compression_enabled: true
@@ -163,13 +163,13 @@ performance:
 integrations:
   github:
     enabled: true
-  
+
   slack:
     enabled: true
-  
+
   pagerduty:
     enabled: true
-  
+
   gcp:
     enabled: true
 
@@ -178,7 +178,7 @@ development:
   hot_reload: false
   mock_external_services: false
   test_data_enabled: false
-  
+
   testing:
     integration_tests: false
     performance_tests: false

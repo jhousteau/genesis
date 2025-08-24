@@ -51,7 +51,7 @@ show_supported_platforms() {
     echo -e "${WHITE}Supported CI/CD Platforms:${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "• GitHub Actions     - OIDC token authentication"
-    echo "• GitLab CI/CD      - JWT token authentication" 
+    echo "• GitLab CI/CD      - JWT token authentication"
     echo "• Azure DevOps      - Service connection authentication"
     echo "• Bitbucket Pipelines - OIDC token authentication"
     echo "• Jenkins           - Custom OIDC provider"
@@ -63,12 +63,12 @@ show_supported_platforms() {
 # Validate platform-specific parameters
 validate_platform_parameters() {
     local platform="$1"
-    
+
     case "$platform" in
         "github")
             : "${GITHUB_REPO:?GITHUB_REPO is required (format: owner/repo)}"
             : "${GITHUB_ACTOR:=$GITHUB_REPO}"
-            
+
             if [[ ! "$GITHUB_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
                 log_error "Invalid GITHUB_REPO format. Expected: owner/repo"
                 return 1
@@ -77,7 +77,7 @@ validate_platform_parameters() {
         "gitlab")
             : "${GITLAB_PROJECT_PATH:?GITLAB_PROJECT_PATH is required (format: group/project)}"
             : "${GITLAB_INSTANCE:=https://gitlab.com}"
-            
+
             if [[ ! "$GITLAB_PROJECT_PATH" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
                 log_error "Invalid GITLAB_PROJECT_PATH format. Expected: group/project"
                 return 1
@@ -111,7 +111,7 @@ validate_platform_parameters() {
 # Get platform-specific OIDC issuer
 get_oidc_issuer() {
     local platform="$1"
-    
+
     case "$platform" in
         "github")
             echo "https://token.actions.githubusercontent.com"
@@ -141,7 +141,7 @@ get_oidc_issuer() {
 # Get platform-specific attribute mapping
 get_attribute_mapping() {
     local platform="$1"
-    
+
     case "$platform" in
         "github")
             echo 'google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner,attribute.ref=assertion.ref'
@@ -171,7 +171,7 @@ get_attribute_mapping() {
 # Get platform-specific attribute condition
 get_attribute_condition() {
     local platform="$1"
-    
+
     case "$platform" in
         "github")
             echo "assertion.repository_owner == '$(echo "$GITHUB_REPO" | cut -d'/' -f1)'"
@@ -201,65 +201,65 @@ get_attribute_condition() {
 # Setup WIF for specific platform
 setup_platform_wif() {
     local platform="$1"
-    
+
     log_step "Setting up Workload Identity Federation for: $platform"
-    
+
     # Validate parameters
     validate_platform_parameters "$platform"
-    
+
     # Common parameters
     local project_id="${PROJECT_ID:?PROJECT_ID is required}"
     local service_account_name="${SERVICE_ACCOUNT_NAME:?SERVICE_ACCOUNT_NAME is required}"
     local pool_id="${POOL_ID:-${platform}-wif-pool}"
     local provider_id="${PROVIDER_ID:-${platform}-provider}"
     local location="${LOCATION:-global}"
-    
+
     # Platform-specific parameters
     local oidc_issuer attribute_mapping attribute_condition
     oidc_issuer=$(get_oidc_issuer "$platform")
     attribute_mapping=$(get_attribute_mapping "$platform")
     attribute_condition=$(get_attribute_condition "$platform")
-    
+
     log_info "Platform: $platform"
     log_info "OIDC Issuer: $oidc_issuer"
     log_info "Pool ID: $pool_id"
     log_info "Provider ID: $provider_id"
-    
+
     # Enable required APIs
     enable_required_apis
-    
+
     # Create service account
     local sa_email
     sa_email=$(create_service_account "$service_account_name" "$platform")
-    
+
     # Create workload identity pool
     create_workload_identity_pool "$pool_id" "$platform"
-    
+
     # Create OIDC provider
     create_oidc_provider "$pool_id" "$provider_id" "$oidc_issuer" "$attribute_mapping" "$attribute_condition" "$platform"
-    
+
     # Configure IAM bindings
     configure_platform_iam_bindings "$sa_email" "$pool_id" "$platform"
-    
+
     # Generate platform-specific configuration
     generate_platform_config "$platform" "$sa_email" "$pool_id" "$provider_id"
-    
+
     # Test configuration
     test_wif_setup "$platform" "$sa_email" "$pool_id" "$provider_id"
-    
+
     log_success "Workload Identity Federation setup complete for $platform"
 }
 
 # Enable required APIs
 enable_required_apis() {
     log_step "Enabling required APIs..."
-    
+
     local apis=(
         "iamcredentials.googleapis.com"
         "cloudresourcemanager.googleapis.com"
         "sts.googleapis.com"
     )
-    
+
     for api in "${apis[@]}"; do
         if gcloud services enable "$api" --project="$PROJECT_ID"; then
             log_success "Enabled $api"
@@ -274,9 +274,9 @@ enable_required_apis() {
 create_service_account() {
     local sa_name="$1"
     local platform="$2"
-    
+
     local sa_email="${sa_name}@${PROJECT_ID}.iam.gserviceaccount.com"
-    
+
     if gcloud iam service-accounts describe "$sa_email" \
         --project="$PROJECT_ID" >/dev/null 2>&1; then
         log_warning "Service account already exists: $sa_email"
@@ -291,7 +291,7 @@ create_service_account() {
             return 1
         fi
     fi
-    
+
     echo "$sa_email"
 }
 
@@ -299,7 +299,7 @@ create_service_account() {
 create_workload_identity_pool() {
     local pool_id="$1"
     local platform="$2"
-    
+
     if gcloud iam workload-identity-pools describe "$pool_id" \
         --location="$LOCATION" \
         --project="$PROJECT_ID" >/dev/null 2>&1; then
@@ -326,7 +326,7 @@ create_oidc_provider() {
     local attribute_mapping="$4"
     local attribute_condition="$5"
     local platform="$6"
-    
+
     if gcloud iam workload-identity-pools providers describe "$provider_id" \
         --workload-identity-pool="$pool_id" \
         --location="$LOCATION" \
@@ -353,12 +353,12 @@ configure_platform_iam_bindings() {
     local sa_email="$1"
     local pool_id="$2"
     local platform="$3"
-    
+
     log_step "Configuring IAM bindings for $platform..."
-    
+
     local project_number
     project_number=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
-    
+
     local principal
     case "$platform" in
         "github")
@@ -384,7 +384,7 @@ configure_platform_iam_bindings() {
             return 1
             ;;
     esac
-    
+
     if gcloud iam service-accounts add-iam-policy-binding "$sa_email" \
         --role="roles/iam.workloadIdentityUser" \
         --member="$principal" \
@@ -402,13 +402,13 @@ generate_platform_config() {
     local sa_email="$2"
     local pool_id="$3"
     local provider_id="$4"
-    
+
     log_step "Generating $platform configuration..."
-    
+
     local project_number
     project_number=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
     local wif_provider="projects/$project_number/locations/$LOCATION/workloadIdentityPools/$pool_id/providers/$provider_id"
-    
+
     case "$platform" in
         "github")
             generate_github_config "$sa_email" "$wif_provider"
@@ -435,7 +435,7 @@ generate_platform_config() {
 generate_github_config() {
     local sa_email="$1"
     local wif_provider="$2"
-    
+
     cat > "github-actions-wif.yml" <<EOF
 # GitHub Actions Workload Identity Federation
 # Add this to your .github/workflows/ directory
@@ -475,7 +475,7 @@ jobs:
       run: |
         echo "Add your deployment commands here"
 EOF
-    
+
     log_success "Generated: github-actions-wif.yml"
 }
 
@@ -483,7 +483,7 @@ EOF
 generate_gitlab_config() {
     local sa_email="$1"
     local wif_provider="$2"
-    
+
     cat > ".gitlab-ci-wif.yml" <<EOF
 # GitLab CI/CD Workload Identity Federation
 # Add this to your .gitlab-ci.yml
@@ -510,7 +510,7 @@ deploy:
   only:
     - main
 EOF
-    
+
     log_success "Generated: .gitlab-ci-wif.yml"
 }
 
@@ -518,7 +518,7 @@ EOF
 generate_azure_config() {
     local sa_email="$1"
     local wif_provider="$2"
-    
+
     cat > "azure-pipelines-wif.yml" <<EOF
 # Azure DevOps Workload Identity Federation
 # Add this to your azure-pipelines.yml
@@ -549,7 +549,7 @@ steps:
     echo "Add your deployment commands here"
   displayName: 'Deploy application'
 EOF
-    
+
     log_success "Generated: azure-pipelines-wif.yml"
 }
 
@@ -557,7 +557,7 @@ EOF
 generate_bitbucket_config() {
     local sa_email="$1"
     local wif_provider="$2"
-    
+
     cat > "bitbucket-pipelines-wif.yml" <<EOF
 # Bitbucket Pipelines Workload Identity Federation
 # Add this to your bitbucket-pipelines.yml
@@ -578,7 +578,7 @@ pipelines:
           - gcloud auth list
           - echo "Add your deployment commands here"
 EOF
-    
+
     log_success "Generated: bitbucket-pipelines-wif.yml"
 }
 
@@ -586,20 +586,20 @@ EOF
 generate_jenkins_config() {
     local sa_email="$1"
     local wif_provider="$2"
-    
+
     cat > "Jenkinsfile-wif" <<EOF
 // Jenkins Workload Identity Federation
 // Add this to your Jenkinsfile
 
 pipeline {
     agent any
-    
+
     environment {
         GOOGLE_WORKLOAD_IDENTITY_PROVIDER = '$wif_provider'
         GOOGLE_SERVICE_ACCOUNT = '$sa_email'
         PROJECT_ID = '$PROJECT_ID'
     }
-    
+
     stages {
         stage('Authenticate') {
             steps {
@@ -612,7 +612,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy') {
             steps {
                 sh 'echo "Add your deployment commands here"'
@@ -621,7 +621,7 @@ pipeline {
     }
 }
 EOF
-    
+
     log_success "Generated: Jenkinsfile-wif"
 }
 
@@ -629,7 +629,7 @@ EOF
 generate_circleci_config() {
     local sa_email="$1"
     local wif_provider="$2"
-    
+
     mkdir -p .circleci
     cat > ".circleci/config-wif.yml" <<EOF
 # CircleCI Workload Identity Federation
@@ -666,7 +666,7 @@ workflows:
             branches:
               only: main
 EOF
-    
+
     log_success "Generated: .circleci/config-wif.yml"
 }
 
@@ -676,9 +676,9 @@ test_wif_setup() {
     local sa_email="$2"
     local pool_id="$3"
     local provider_id="$4"
-    
+
     log_step "Testing Workload Identity Federation setup..."
-    
+
     # Basic validation - check if resources exist
     if gcloud iam workload-identity-pools describe "$pool_id" \
         --location="$LOCATION" \
@@ -688,7 +688,7 @@ test_wif_setup() {
         log_error "Cannot access Workload Identity Pool"
         return 1
     fi
-    
+
     if gcloud iam workload-identity-pools providers describe "$provider_id" \
         --workload-identity-pool="$pool_id" \
         --location="$LOCATION" \
@@ -698,7 +698,7 @@ test_wif_setup() {
         log_error "Cannot access OIDC Provider"
         return 1
     fi
-    
+
     if gcloud iam service-accounts describe "$sa_email" \
         --project="$PROJECT_ID" >/dev/null 2>&1; then
         log_success "Service account accessible"
@@ -706,18 +706,18 @@ test_wif_setup() {
         log_error "Cannot access service account"
         return 1
     fi
-    
+
     log_success "Workload Identity Federation test completed"
 }
 
 # Show setup instructions
 show_setup_instructions() {
     local platform="$1"
-    
+
     echo ""
     echo -e "${CYAN}═══ SETUP INSTRUCTIONS FOR $platform ═══${NC}"
     echo ""
-    
+
     case "$platform" in
         "github")
             echo "1. Copy the generated github-actions-wif.yml to .github/workflows/"
@@ -750,7 +750,7 @@ show_setup_instructions() {
             echo "3. Push to trigger the workflow"
             ;;
     esac
-    
+
     echo ""
     echo -e "${YELLOW}Important Notes:${NC}"
     echo "• Test the authentication in a safe environment first"
@@ -762,7 +762,7 @@ show_setup_instructions() {
 # Main function
 main() {
     local command="${1:-help}"
-    
+
     case "$command" in
         "setup")
             local platform="${2:-}"
@@ -772,7 +772,7 @@ main() {
                 echo "Supported platforms: ${!PLATFORM_CONFIGS[*]}"
                 exit 1
             fi
-            
+
             print_banner
             show_supported_platforms
             setup_platform_wif "$platform"

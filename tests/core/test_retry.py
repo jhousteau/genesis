@@ -19,8 +19,13 @@ from unittest.mock import Mock, patch
 import pytest
 
 from core.errors.handler import ErrorCategory, GenesisError
-from core.retry.retry import (BackoffStrategy, RetryExecutor, RetryPolicy,
-                              retry, retry_async)
+from core.retry.retry import (
+    BackoffStrategy,
+    RetryExecutor,
+    RetryPolicy,
+    retry,
+    retry_async,
+)
 
 
 class TestRetryPolicy:

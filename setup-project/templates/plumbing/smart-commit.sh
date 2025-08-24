@@ -210,7 +210,7 @@ if [[ $(git rev-list --count HEAD@{upstream}..HEAD 2>/dev/null || echo "0") -gt 
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         git push
         log_success "Changes pushed!"
-        
+
         # Offer to create PR
         if command -v gh &> /dev/null; then
             echo ""

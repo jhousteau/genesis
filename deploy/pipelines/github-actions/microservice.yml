@@ -39,7 +39,7 @@ on:
 env:
   PROJECT_NAME: ${{ vars.PROJECT_NAME }}
   REGISTRY_REGION: ${{ vars.REGISTRY_REGION || 'us-central1' }}
-  
+
 permissions:
   contents: read
   id-token: write
@@ -84,7 +84,7 @@ jobs:
             echo "skip_validation=false" >> $GITHUB_OUTPUT
             echo "should_deploy=false" >> $GITHUB_OUTPUT
           fi
-          
+
           # Set GCP project based on environment
           ENV=$(echo "${{ steps.env.outputs.environment }}" | sed 's/=.*//')
           case "$ENV" in
@@ -239,9 +239,9 @@ jobs:
         run: |
           IMAGE_TAG="${{ github.sha }}-$(date +%Y%m%d%H%M%S)"
           IMAGE_URL="${{ env.REGISTRY_REGION }}-docker.pkg.dev/${{ needs.setup.outputs.gcp_project }}/containers/${{ env.PROJECT_NAME }}"
-          
+
           echo "Building multi-arch image: ${IMAGE_URL}:${IMAGE_TAG}"
-          
+
           # Build with buildx for multi-arch support
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
@@ -258,10 +258,10 @@ jobs:
             --label "org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --push \
             .
-            
+
           # Get image digest for security verification
           IMAGE_DIGEST=$(docker buildx imagetools inspect "${IMAGE_URL}:${IMAGE_TAG}" --format '{{.Manifest.Digest}}')
-          
+
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "image_url=${IMAGE_URL}" >> $GITHUB_OUTPUT
           echo "image_digest=${IMAGE_DIGEST}" >> $GITHUB_OUTPUT
@@ -286,7 +286,7 @@ jobs:
           curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o cosign
           chmod +x cosign
           sudo mv cosign /usr/local/bin/
-          
+
           # Sign image using keyless signing
           cosign sign --yes ${{ steps.build.outputs.image_url }}@${{ steps.build.outputs.image_digest }}
 
@@ -321,11 +321,11 @@ jobs:
             curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
             sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
             sudo apt-get update && sudo apt-get install terraform
-            
+
             terraform init -backend=false
             terraform validate
             terraform fmt -check
-            
+
             # Run tfsec for security scanning
             curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
             tfsec . --format sarif --out tfsec-results.sarif || true
@@ -335,13 +335,13 @@ jobs:
         if: matrix.validation == 'security'
         run: |
           echo "Running security validation for ${{ needs.setup.outputs.environment }}"
-          
+
           # Policy validation with OPA
           if [[ -f ".policy/policy.rego" ]]; then
             docker run --rm -v "$PWD:/workspace" openpolicyagent/opa:latest-envoy \
               test /workspace/.policy/ -v
           fi
-          
+
           # Runtime security scan
           echo "Running runtime security checks..."
 
@@ -349,13 +349,13 @@ jobs:
         if: matrix.validation == 'performance'
         run: |
           echo "Running performance validation..."
-          
+
           # Load testing with k6
           if [[ -f "scripts/load-test.js" ]]; then
             docker run --rm -v "$PWD:/workspace" grafana/k6:latest \
               run /workspace/scripts/load-test.js
           fi
-          
+
           # Resource limit validation
           echo "Validating resource requirements..."
 
@@ -363,13 +363,13 @@ jobs:
         if: matrix.validation == 'compliance'
         run: |
           echo "Running compliance validation for ${{ needs.setup.outputs.environment }}"
-          
+
           # GDPR compliance check
           if [[ "${{ needs.setup.outputs.environment }}" == "prod" ]]; then
             echo "Validating GDPR compliance..."
             # Add GDPR validation logic
           fi
-          
+
           # SOC2 compliance
           echo "Validating SOC2 compliance..."
 
@@ -377,10 +377,10 @@ jobs:
         if: matrix.validation == 'cost'
         run: |
           echo "Analyzing cost impact for ${{ needs.setup.outputs.environment }}"
-          
+
           # Install Infracost
           curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
-          
+
           if [[ -f "main.tf" ]]; then
             infracost breakdown --path . \
               --terraform-var="project_id=${{ needs.setup.outputs.gcp_project }}" \
@@ -393,7 +393,7 @@ jobs:
     needs: [setup, build, validate]
     if: needs.setup.outputs.should_deploy == 'true'
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: ${{ needs.setup.outputs.environment }}
       url: ${{ steps.deploy.outputs.service_url }}
     outputs:
@@ -431,14 +431,14 @@ jobs:
         run: |
           DEPLOYMENT_ID="${{ needs.setup.outputs.environment }}-$(date +%Y%m%d-%H%M%S)-${{ github.sha:0:7 }}"
           IMAGE_URL="${{ needs.build.outputs.image_url }}:${{ needs.build.outputs.image_tag }}"
-          
+
           echo "Deploying ${{ env.PROJECT_NAME }} to ${{ needs.setup.outputs.environment }}"
           echo "Strategy: ${{ needs.setup.outputs.deployment_strategy }}"
           echo "Image: ${IMAGE_URL}"
-          
+
           # Execute deployment using strategy-specific script
           chmod +x deploy/strategies/deploy-runner.sh
-          
+
           export PROJECT_NAME="${{ env.PROJECT_NAME }}"
           export ENVIRONMENT="${{ needs.setup.outputs.environment }}"
           export GCP_PROJECT="${{ needs.setup.outputs.gcp_project }}"
@@ -447,16 +447,16 @@ jobs:
           export IMAGE_URL="${{ needs.build.outputs.image_url }}"
           export DEPLOYMENT_ID="${DEPLOYMENT_ID}"
           export DEPLOYMENT_STRATEGY="${{ needs.setup.outputs.deployment_strategy }}"
-          
+
           # Run deployment
           ./deploy/strategies/deploy-runner.sh
-          
+
           # Get service URL
           SERVICE_URL=$(gcloud run services describe "${{ env.PROJECT_NAME }}" \
             --region="${{ env.REGISTRY_REGION }}" \
             --project="${{ needs.setup.outputs.gcp_project }}" \
             --format="value(status.url)")
-          
+
           echo "service_url=${SERVICE_URL}" >> $GITHUB_OUTPUT
           echo "deployment_id=${DEPLOYMENT_ID}" >> $GITHUB_OUTPUT
 
@@ -474,25 +474,25 @@ jobs:
         run: |
           echo "Performing health checks..."
           SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
-          
+
           # Comprehensive health validation
           for i in {1..60}; do
             if curl -f "${SERVICE_URL}/health" --max-time 10 --silent; then
               echo "✅ Health check passed"
-              
+
               # Check readiness
               if curl -f "${SERVICE_URL}/ready" --max-time 5 --silent; then
                 echo "✅ Readiness check passed"
               fi
-              
+
               break
             fi
-            
+
             if [[ $i -eq 60 ]]; then
               echo "❌ Health check failed after 60 attempts"
               exit 1
             fi
-            
+
             echo "⏳ Waiting for service to be ready (attempt $i/60)"
             sleep 5
           done
@@ -502,11 +502,11 @@ jobs:
         run: |
           echo "Running performance validation..."
           SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
-          
+
           # Response time check
           RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "${SERVICE_URL}/health")
           echo "Response time: ${RESPONSE_TIME}s"
-          
+
           # SLA validation based on environment
           case "${{ needs.setup.outputs.environment }}" in
             prod)
@@ -519,12 +519,12 @@ jobs:
               THRESHOLD=5.0
               ;;
           esac
-          
+
           if (( $(echo "${RESPONSE_TIME} > ${THRESHOLD}" | bc -l) )); then
             echo "❌ Performance validation failed: Response time ${RESPONSE_TIME}s exceeds ${THRESHOLD}s threshold"
             exit 1
           fi
-          
+
           echo "✅ Performance validation passed"
 
       - name: Security validation
@@ -532,12 +532,12 @@ jobs:
         run: |
           echo "Running security validation..."
           SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
-          
+
           # Security headers check
           curl -I "${SERVICE_URL}" | grep -i "x-frame-options\|x-content-type-options\|strict-transport-security" || {
             echo "⚠️ Missing security headers"
           }
-          
+
           # HTTPS enforcement
           if [[ "${SERVICE_URL}" == https://* ]]; then
             echo "✅ HTTPS enabled"
@@ -550,11 +550,11 @@ jobs:
         run: |
           echo "Running smoke tests..."
           SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
-          
+
           # API endpoint tests
           curl -f "${SERVICE_URL}/version" --max-time 5 --silent || echo "⚠️ Version endpoint not available"
           curl -f "${SERVICE_URL}/metrics" --max-time 5 --silent || echo "⚠️ Metrics endpoint not available"
-          
+
           # Custom smoke tests
           if [[ -f "scripts/smoke-tests.sh" ]]; then
             chmod +x scripts/smoke-tests.sh
@@ -570,7 +570,7 @@ jobs:
       - name: Setup deployment monitoring
         run: |
           echo "Setting up monitoring for deployment ${{ needs.deploy.outputs.deployment_id }}"
-          
+
           # Create deployment marker
           cat > deployment-marker.json << EOF
           {
@@ -588,7 +588,7 @@ jobs:
   promote:
     needs: [setup, deploy, validate-deployment]
     if: |
-      needs.setup.outputs.environment == 'dev' && 
+      needs.setup.outputs.environment == 'dev' &&
       needs.validate-deployment.result == 'success' &&
       github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
@@ -597,6 +597,6 @@ jobs:
         run: |
           echo "🚀 Ready to promote to test environment"
           echo "Deployment validated successfully"
-          
+
           # In a real scenario, this would trigger the next environment deployment
           echo "Would trigger: gh workflow run deploy.yml -f environment=test"

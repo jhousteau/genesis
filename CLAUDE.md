@@ -74,7 +74,7 @@ For independent workstreams:
 ```
 project-manager-agent coordinates:
 ├── backend-developer-agent (API development)
-├── frontend-developer-agent (UI development)  
+├── frontend-developer-agent (UI development)
 ├── platform-engineer-agent (infrastructure)
 └── security-agent (security validation)
 ```
@@ -124,7 +124,7 @@ project-manager-agent coordinates:
 
 ### Agent Selection Guidelines
 - **Planning & Coordination**: project-manager-agent
-- **System Design**: architect-agent  
+- **System Design**: architect-agent
 - **Code Quality**: tech-lead-agent
 - **Infrastructure**: platform-engineer-agent
 - **Backend Development**: backend-developer-agent
@@ -190,7 +190,7 @@ Genesis includes sophisticated intelligence systems:
 If something goes wrong:
 
 1. **System Issues**: Use sre-agent for incident response
-2. **Security Concerns**: Engage security-agent immediately  
+2. **Security Concerns**: Engage security-agent immediately
 3. **Code Quality Problems**: Use tech-lead-agent for resolution
 4. **Project Coordination**: Escalate to project-manager-agent
 5. **Check Intelligence Systems**: Validate smart-commit and solve systems

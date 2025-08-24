@@ -341,13 +341,13 @@ func (m *Middleware) WithMetrics(operation string, next func(context.Context) er
 func (m *Middleware) WithLogging(operation string, next func(context.Context) error) func(context.Context) error {
 	return func(ctx context.Context) error {
 		logger := m.client.logger.WithContext(ctx)
-		
+
 		logger.Info("Operation started", "operation", operation)
 		start := time.Now()
-		
+
 		err := next(ctx)
 		duration := time.Since(start)
-		
+
 		if err != nil {
 			logger.Error("Operation failed",
 				"operation", operation,
@@ -360,7 +360,7 @@ func (m *Middleware) WithLogging(operation string, next func(context.Context) er
 				"duration", duration,
 			)
 		}
-		
+
 		return err
 	}
 }
@@ -399,19 +399,19 @@ func (g *Graceful) Wait(ctx context.Context) error {
 // Run runs the graceful shutdown handler
 func (g *Graceful) Run(ctx context.Context) {
 	defer close(g.done)
-	
+
 	select {
 	case <-g.shutdown:
 		g.client.logger.Info("Graceful shutdown initiated")
-		
+
 		// Create shutdown context with timeout
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		
+
 		if err := g.client.Stop(shutdownCtx); err != nil {
 			g.client.logger.Error("Error during graceful shutdown", "error", err)
 		}
-		
+
 	case <-ctx.Done():
 		g.client.logger.Info("Context cancelled, stopping graceful handler")
 	}
