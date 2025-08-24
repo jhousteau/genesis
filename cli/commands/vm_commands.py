@@ -1,6 +1,6 @@
 """
 VM Management Commands - Issue #30
-CLI commands for agent VM lifecycle management following PIPES methodology
+CLI commands for agent VM lifecycle management following CRAFT methodology with service layer integration.
 """
 
 import json
@@ -8,16 +8,44 @@ import logging
 import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+import asyncio
+
+from ..services import (
+    ConfigService,
+    AuthService,
+    CacheService,
+    ErrorService,
+    GCPService,
+    PerformanceService,
+)
+from ..services.error_service import ErrorCategory, ErrorSeverity
 
 logger = logging.getLogger(__name__)
 
 
 class VMCommands:
-    """VM management commands implementation."""
+    """VM management commands implementation following CRAFT methodology."""
 
     def __init__(self, cli):
         self.cli = cli
         self.terraform_dir = Path(self.cli.genesis_root) / "environments"
+
+        # Initialize service layer
+        self.config_service = ConfigService(self.cli.genesis_root)
+        self.error_service = ErrorService(self.config_service)
+        self.cache_service = CacheService(self.config_service)
+        self.auth_service = AuthService(self.config_service)
+        self.gcp_service = GCPService(
+            self.config_service,
+            self.auth_service,
+            self.cache_service,
+            self.error_service,
+        )
+        self.performance_service = PerformanceService(self.config_service)
+
+        # Get agent configuration
+        self.agent_config = self.config_service.get_agent_config()
+        self.gcp_config = self.config_service.get_gcp_config()
 
     def execute(self, args, config: Dict[str, Any]) -> Any:
         """Execute VM command based on action."""

@@ -25,6 +25,17 @@ from .infrastructure_commands import InfrastructureCommands
 # Genesis CLI modules
 from .vm_commands import VMCommands
 
+# Genesis CLI UI modules
+from ..ui import (
+    TerminalAdapter,
+    ColorScheme,
+    OutputFormatter,
+    HelpSystem,
+    ProgressIndicator,
+    InteractivePrompt,
+)
+from ..services import PerformanceService
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -54,6 +65,26 @@ class GenesisCLI:
         self.config_path = self.genesis_root / "config"
         self.environment = os.getenv("ENVIRONMENT", "dev")
         self.project_id = os.getenv("PROJECT_ID")
+
+        # Initialize UI components - REACT methodology implementation
+        self.terminal_adapter = TerminalAdapter()
+        self.color_scheme = ColorScheme()
+        self.output_formatter = OutputFormatter(
+            self.terminal_adapter, self.color_scheme
+        )
+        self.help_system = HelpSystem(self.terminal_adapter, self.color_scheme)
+        self.progress_indicator = ProgressIndicator(
+            self.terminal_adapter, self.color_scheme
+        )
+        self.interactive_prompt = InteractivePrompt(
+            self.terminal_adapter, self.color_scheme
+        )
+
+        # Initialize performance service for efficient startup
+        self.performance_service = PerformanceService()
+
+        # Setup terminal signal handlers for responsive design
+        self.terminal_adapter.setup_signal_handlers()
 
         # Initialize command modules
         self.vm_commands = VMCommands(self)
@@ -128,6 +159,13 @@ For more information, see: https://github.com/genesis-platform/genesis
             choices=["json", "yaml", "table", "text"],
             default="text",
             help="Output format",
+        )
+
+        # Add help command
+        parser.add_argument(
+            "help_topic",
+            nargs="?",
+            help="Show help for specific topic (quickstart, troubleshooting, vm, container, infra, agent)",
         )
 
         # Create subparsers for main command categories
@@ -404,40 +442,8 @@ For more information, see: https://github.com/genesis-platform/genesis
         claude_subparsers.add_parser("logs", help="View claude-talk logs")
 
     def format_output(self, data: Any, format_type: str) -> str:
-        """Format output according to specified format."""
-        if format_type == "json":
-            return json.dumps(data, indent=2)
-        elif format_type == "yaml":
-            import yaml
-
-            return yaml.dump(data, default_flow_style=False)
-        elif format_type == "table":
-            # Simple table formatting
-            if isinstance(data, list) and data and isinstance(data[0], dict):
-                headers = list(data[0].keys())
-                rows = [headers]
-                rows.extend([list(item.values()) for item in data])
-
-                # Calculate column widths
-                col_widths = [
-                    max(len(str(row[i])) for row in rows) for i in range(len(headers))
-                ]
-
-                # Format table
-                result = []
-                for i, row in enumerate(rows):
-                    formatted_row = " | ".join(
-                        str(row[j]).ljust(col_widths[j]) for j in range(len(row))
-                    )
-                    result.append(formatted_row)
-                    if i == 0:  # Add separator after header
-                        result.append("-" * len(formatted_row))
-
-                return "\n".join(result)
-            else:
-                return str(data)
-        else:  # text format
-            return str(data)
+        """Format output using enhanced formatter with REACT methodology."""
+        return self.output_formatter.format_output(data, format_type)
 
     def run(self, args: Optional[List[str]] = None) -> int:
         """Run the CLI with given arguments."""
@@ -458,9 +464,16 @@ For more information, see: https://github.com/genesis-platform/genesis
             # Load configuration
             config = self.load_config()
 
+            # Handle special help commands
+            if hasattr(parsed_args, "help_topic") and parsed_args.help_topic:
+                help_output = self.help_system.get_topic_help(parsed_args.help_topic)
+                print(help_output)
+                return 0
+
             # Route to appropriate command handler
             if not parsed_args.command:
-                parser.print_help()
+                help_output = self.help_system.get_main_help()
+                print(help_output)
                 return 1
 
             # Execute command
@@ -474,14 +487,49 @@ For more information, see: https://github.com/genesis-platform/genesis
             return 0
 
         except GenesisCliError as e:
-            logger.error(f"Genesis CLI Error: {e}")
+            error_output = self.output_formatter.format_error_details(
+                str(e),
+                suggestions=[
+                    "Check your command syntax with 'g <command> --help'",
+                    "Verify your GCP authentication with 'gcloud auth list'",
+                    "See troubleshooting guide with 'g help troubleshooting'",
+                ],
+                context={
+                    "command": " ".join(parsed_args.__dict__.get("command", [])),
+                    "environment": self.environment,
+                    "project_id": self.project_id,
+                },
+            )
+            print(error_output)
             return 1
         except KeyboardInterrupt:
-            logger.info("Operation cancelled by user")
+            if self.color_scheme:
+                cancelled_msg = self.color_scheme.format_info(
+                    "Operation cancelled by user"
+                )
+                print(f"\n{cancelled_msg}")
+            else:
+                print("\nOperation cancelled by user")
             return 130
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            if parsed_args.verbose:
+            contextual_help = self.help_system.get_contextual_help(
+                str(e), getattr(parsed_args, "command", None)
+            )
+
+            error_output = self.output_formatter.format_error_details(
+                f"Unexpected error: {e}",
+                context={
+                    "command": getattr(parsed_args, "command", None),
+                    "environment": self.environment,
+                },
+            )
+            print(error_output)
+
+            if contextual_help:
+                print("\nSuggestions:")
+                print(contextual_help)
+
+            if getattr(parsed_args, "verbose", False):
                 raise
             return 1
 
