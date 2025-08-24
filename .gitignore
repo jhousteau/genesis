@@ -224,6 +224,13 @@ gcloud-config/
 monitoring-data/
 security-reports/
 
+# Auto-generated reports and assessments
+reports/
+assessments/
+*.report.md
+*-assessment.md
+*-validation.md
+
 # IDE specific
 *.code-workspace
 .history/
