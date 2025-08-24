@@ -1,0 +1,1157 @@
+# Genesis CLI Comprehensive Observability Stack
+# PIPES Evolution methodology implementation for monitoring and observability
+# Comprehensive coverage across metrics, logs, traces, and alerts
+
+# Observability Stack Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: observability-config
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: genesis-observability
+    app.kubernetes.io/component: configuration
+data:
+  observability.yaml: |
+    # PIPES Evolution - Performance and Monitoring Configuration
+    evolution:
+      performance_targets:
+        response_time: "2s"
+        availability: "99.9%"
+        error_rate: "0.1%"
+        throughput: "1000 requests/minute"
+
+      scaling_policies:
+        cpu_threshold: 70
+        memory_threshold: 80
+        custom_metrics_enabled: true
+        predictive_scaling: true
+
+      monitoring_coverage:
+        infrastructure: true
+        application: true
+        business_metrics: true
+        security_metrics: true
+        compliance_metrics: true
+
+---
+# Prometheus Operator for Metrics Collection
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-operator
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: prometheus-operator
+    app.kubernetes.io/component: metrics-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prometheus-operator
+        pipes-phase: evolution
+    spec:
+      serviceAccountName: prometheus-operator
+      containers:
+      - name: prometheus-operator
+        image: quay.io/prometheus-operator/prometheus-operator:v0.70.0
+        args:
+          - --kubelet-service=kube-system/kubelet
+          - --prometheus-config-reloader=quay.io/prometheus-operator/prometheus-config-reloader:v0.70.0
+          - --config-reloader-cpu-request=10m
+          - --config-reloader-memory-request=50Mi
+          - --config-reloader-cpu-limit=100m
+          - --config-reloader-memory-limit=100Mi
+        ports:
+        - name: http
+          containerPort: 8080
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          capabilities:
+            drop:
+            - ALL
+
+---
+# Prometheus Instance for Genesis CLI Monitoring
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: genesis-cli-prometheus
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: metrics-server
+spec:
+  version: v2.45.0
+  replicas: 2
+  retention: 30d
+  retentionSize: 50GB
+
+  # Resource configuration
+  resources:
+    requests:
+      memory: 2Gi
+      cpu: 500m
+    limits:
+      memory: 4Gi
+      cpu: 1000m
+
+  # Storage
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: fast-ssd
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Gi
+
+  # Service account
+  serviceAccountName: prometheus
+
+  # Service discovery
+  serviceMonitorSelector:
+    matchLabels:
+      team: genesis-platform
+
+  podMonitorSelector:
+    matchLabels:
+      team: genesis-platform
+
+  # Alerting
+  alerting:
+    alertmanagers:
+    - namespace: monitoring-system
+      name: alertmanager-main
+      port: web
+
+  # External labels
+  externalLabels:
+    cluster: genesis-${ENVIRONMENT}
+    environment: ${ENVIRONMENT}
+    pipes_phase: evolution
+
+  # Rule selector
+  ruleSelector:
+    matchLabels:
+      team: genesis-platform
+
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    fsGroup: 65534
+
+  # Additional scrape configs
+  additionalScrapeConfigs:
+    name: additional-scrape-configs
+    key: prometheus-additional.yaml
+
+---
+# ServiceMonitor for Genesis CLI
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: genesis-cli-metrics
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: genesis-cli
+    app.kubernetes.io/component: service-monitor
+    team: genesis-platform
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: genesis-cli
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+    honorLabels: true
+    metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: 'genesis_cli_.*'
+      targetLabel: __name__
+      replacement: '${1}'
+  - port: http
+    interval: 30s
+    path: /health/prometheus
+    honorLabels: true
+
+---
+# PrometheusRule for Genesis CLI Alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: genesis-cli-alerts
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: genesis-cli
+    app.kubernetes.io/component: alerting-rules
+    team: genesis-platform
+spec:
+  groups:
+  - name: genesis-cli.performance
+    interval: 30s
+    rules:
+    # PIPES Evolution - Performance SLA Monitoring
+    - alert: GenesisCLIHighResponseTime
+      expr: histogram_quantile(0.95, rate(genesis_cli_request_duration_seconds_bucket[5m])) > 2
+      for: 2m
+      labels:
+        severity: warning
+        pipes_phase: evolution
+        component: performance
+      annotations:
+        summary: "Genesis CLI response time exceeds SLA"
+        description: "95th percentile response time is {{ $value }}s, exceeding 2s SLA"
+
+    - alert: GenesisCLIHighErrorRate
+      expr: rate(genesis_cli_requests_total{status=~"5.."}[5m]) / rate(genesis_cli_requests_total[5m]) * 100 > 0.1
+      for: 1m
+      labels:
+        severity: critical
+        pipes_phase: evolution
+        component: reliability
+      annotations:
+        summary: "Genesis CLI error rate exceeds SLA"
+        description: "Error rate is {{ $value }}%, exceeding 0.1% SLA"
+
+    - alert: GenesisCLILowAvailability
+      expr: rate(genesis_cli_up[5m]) < 0.999
+      for: 1m
+      labels:
+        severity: critical
+        pipes_phase: evolution
+        component: availability
+      annotations:
+        summary: "Genesis CLI availability below SLA"
+        description: "Availability is {{ $value }}%, below 99.9% SLA"
+
+  - name: genesis-cli.infrastructure
+    interval: 30s
+    rules:
+    # VM Management Alerts
+    - alert: VMPoolScalingIssue
+      expr: increase(genesis_cli_vm_scaling_failures_total[10m]) > 0
+      for: 0m
+      labels:
+        severity: warning
+        pipes_phase: provision
+        component: vm-management
+      annotations:
+        summary: "VM pool scaling failures detected"
+        description: "{{ $value }} VM scaling failures in the last 10 minutes"
+
+    # Container Management Alerts
+    - alert: ContainerDeploymentFailure
+      expr: increase(genesis_cli_container_deployment_failures_total[5m]) > 0
+      for: 0m
+      labels:
+        severity: critical
+        pipes_phase: integration
+        component: container-management
+      annotations:
+        summary: "Container deployment failures detected"
+        description: "{{ $value }} container deployment failures in the last 5 minutes"
+
+    # Infrastructure Alerts
+    - alert: TerraformOperationFailure
+      expr: increase(genesis_cli_terraform_failures_total[5m]) > 0
+      for: 0m
+      labels:
+        severity: critical
+        pipes_phase: provision
+        component: infrastructure
+      annotations:
+        summary: "Terraform operation failures detected"
+        description: "{{ $value }} Terraform failures in the last 5 minutes"
+
+  - name: genesis-cli.security
+    interval: 30s
+    rules:
+    # Security Monitoring
+    - alert: UnauthorizedAccess
+      expr: increase(genesis_cli_auth_failures_total[5m]) > 10
+      for: 1m
+      labels:
+        severity: warning
+        pipes_phase: protection
+        component: security
+      annotations:
+        summary: "High number of authentication failures"
+        description: "{{ $value }} authentication failures in the last 5 minutes"
+
+    - alert: SuspiciousActivity
+      expr: increase(genesis_cli_suspicious_requests_total[5m]) > 0
+      for: 0m
+      labels:
+        severity: critical
+        pipes_phase: protection
+        component: security
+      annotations:
+        summary: "Suspicious activity detected"
+        description: "{{ $value }} suspicious requests in the last 5 minutes"
+
+  - name: genesis-cli.business
+    interval: 60s
+    rules:
+    # Business Metrics
+    - alert: LowAgentUtilization
+      expr: genesis_cli_agent_utilization_percent < 50
+      for: 5m
+      labels:
+        severity: info
+        pipes_phase: evolution
+        component: efficiency
+      annotations:
+        summary: "Low agent utilization detected"
+        description: "Agent utilization is {{ $value }}%, consider scaling down"
+
+    - alert: HighInfrastructureCost
+      expr: increase(genesis_cli_infrastructure_cost_dollars[1h]) > 100
+      for: 0m
+      labels:
+        severity: warning
+        pipes_phase: evolution
+        component: cost-optimization
+      annotations:
+        summary: "High infrastructure cost increase"
+        description: "Infrastructure cost increased by ${{ $value }} in the last hour"
+
+---
+# Grafana Deployment for Visualization
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: grafana
+        pipes-phase: evolution
+    spec:
+      serviceAccountName: grafana
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        fsGroup: 472
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.1.0
+        ports:
+        - name: http
+          containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: grafana-credentials
+              key: admin-password
+        - name: GF_INSTALL_PLUGINS
+          value: "grafana-piechart-panel,grafana-worldmap-panel,grafana-clock-panel"
+        - name: GF_FEATURE_TOGGLES_ENABLE
+          value: "publicDashboards"
+        volumeMounts:
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+        - name: grafana-config
+          mountPath: /etc/grafana/grafana.ini
+          subPath: grafana.ini
+        - name: dashboards-config
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: datasources-config
+          mountPath: /etc/grafana/provisioning/datasources
+        - name: genesis-dashboards
+          mountPath: /var/lib/grafana/dashboards/genesis
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 512Mi
+            cpu: 200m
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 472
+          capabilities:
+            drop:
+            - ALL
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: grafana-storage
+        persistentVolumeClaim:
+          claimName: grafana-pvc
+      - name: grafana-config
+        configMap:
+          name: grafana-config
+      - name: dashboards-config
+        configMap:
+          name: grafana-dashboards-config
+      - name: datasources-config
+        configMap:
+          name: grafana-datasources-config
+      - name: genesis-dashboards
+        configMap:
+          name: genesis-dashboards
+
+---
+# ConfigMap for Grafana Datasources
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources-config
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: datasources
+data:
+  prometheus.yml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus-operated:9090
+      isDefault: true
+      editable: false
+      jsonData:
+        timeInterval: 30s
+        queryTimeout: 60s
+        httpMethod: POST
+
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki:3100
+      editable: false
+      jsonData:
+        maxLines: 1000
+
+    - name: Tempo
+      type: tempo
+      access: proxy
+      url: http://tempo:3100
+      editable: false
+      jsonData:
+        tracesToLogs:
+          datasourceUid: 'loki'
+          tags: ['job', 'instance', 'pod', 'namespace']
+          mappedTags: [
+            { key: 'service.name', value: 'service' },
+            { key: 'service.namespace', value: 'namespace' }
+          ]
+          mapTagNamesEnabled: false
+          spanStartTimeShift: '1h'
+          spanEndTimeShift: '1h'
+          filterByTraceID: false
+          filterBySpanID: false
+        serviceMap:
+          datasourceUid: 'prometheus'
+        nodeGraph:
+          enabled: true
+
+---
+# ConfigMap for Genesis CLI Dashboards
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: genesis-dashboards
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: dashboards
+data:
+  genesis-overview.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "Genesis CLI - PIPES Overview",
+        "tags": ["genesis", "pipes", "overview"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "PIPES Methodology Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "genesis_cli_pipes_provision_success_rate",
+                "legendFormat": "Provision Success Rate"
+              },
+              {
+                "expr": "genesis_cli_pipes_integration_success_rate",
+                "legendFormat": "Integration Success Rate"
+              },
+              {
+                "expr": "genesis_cli_pipes_protection_coverage",
+                "legendFormat": "Protection Coverage"
+              },
+              {
+                "expr": "genesis_cli_pipes_evolution_efficiency",
+                "legendFormat": "Evolution Efficiency"
+              },
+              {
+                "expr": "genesis_cli_pipes_standardization_compliance",
+                "legendFormat": "Standardization Compliance"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "percent",
+                "min": 0,
+                "max": 100,
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "yellow", "value": 80},
+                    {"color": "green", "value": 95}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "Request Rate & Response Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(genesis_cli_requests_total[5m])",
+                "legendFormat": "Request Rate (req/s)"
+              },
+              {
+                "expr": "histogram_quantile(0.95, rate(genesis_cli_request_duration_seconds_bucket[5m]))",
+                "legendFormat": "95th Percentile Response Time"
+              }
+            ],
+            "yAxes": [
+              {"label": "Requests/sec", "min": 0},
+              {"label": "Seconds", "min": 0}
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 3,
+            "title": "Error Rate by Component",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(genesis_cli_errors_total{component='vm-management'}[5m])",
+                "legendFormat": "VM Management Errors"
+              },
+              {
+                "expr": "rate(genesis_cli_errors_total{component='container-management'}[5m])",
+                "legendFormat": "Container Management Errors"
+              },
+              {
+                "expr": "rate(genesis_cli_errors_total{component='infrastructure'}[5m])",
+                "legendFormat": "Infrastructure Errors"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+
+  genesis-infrastructure.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "Genesis CLI - Infrastructure Health",
+        "tags": ["genesis", "infrastructure", "pipes-provision"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 10,
+            "title": "VM Pool Status",
+            "type": "table",
+            "targets": [
+              {
+                "expr": "genesis_cli_vm_pool_instances{state='running'}",
+                "legendFormat": "Running",
+                "format": "table",
+                "instant": true
+              },
+              {
+                "expr": "genesis_cli_vm_pool_instances{state='pending'}",
+                "legendFormat": "Pending",
+                "format": "table",
+                "instant": true
+              },
+              {
+                "expr": "genesis_cli_vm_pool_instances{state='failed'}",
+                "legendFormat": "Failed",
+                "format": "table",
+                "instant": true
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+          },
+          {
+            "id": 11,
+            "title": "Container Deployment Status",
+            "type": "singlestat",
+            "targets": [
+              {
+                "expr": "genesis_cli_container_deployments_success_rate",
+                "legendFormat": "Success Rate"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+          },
+          {
+            "id": 12,
+            "title": "Terraform Operations",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(genesis_cli_terraform_operations_total{result='success'}[5m])",
+                "legendFormat": "Successful Operations"
+              },
+              {
+                "expr": "rate(genesis_cli_terraform_operations_total{result='failure'}[5m])",
+                "legendFormat": "Failed Operations"
+              }
+            ],
+            "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+          }
+        ]
+      }
+    }
+
+---
+# Loki for Log Aggregation
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: loki
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/component: log-aggregation
+spec:
+  serviceName: loki
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: loki
+        pipes-phase: evolution
+    spec:
+      serviceAccountName: loki
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+      - name: loki
+        image: grafana/loki:2.9.0
+        args:
+          - -config.file=/etc/loki/local-config.yaml
+        ports:
+        - name: http
+          containerPort: 3100
+        volumeMounts:
+        - name: loki-config
+          mountPath: /etc/loki
+        - name: loki-storage
+          mountPath: /loki
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 200m
+          limits:
+            memory: 1Gi
+            cpu: 500m
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          capabilities:
+            drop:
+            - ALL
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3100
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 3100
+          initialDelaySeconds: 30
+          periodSeconds: 15
+      volumes:
+      - name: loki-config
+        configMap:
+          name: loki-config
+  volumeClaimTemplates:
+  - metadata:
+      name: loki-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: fast-ssd
+      resources:
+        requests:
+          storage: 50Gi
+
+---
+# Tempo for Distributed Tracing
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempo
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/component: distributed-tracing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tempo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tempo
+        pipes-phase: evolution
+    spec:
+      serviceAccountName: tempo
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+      - name: tempo
+        image: grafana/tempo:2.2.0
+        args:
+          - -config.file=/etc/tempo/tempo.yaml
+        ports:
+        - name: http
+          containerPort: 3100
+        - name: jaeger-grpc
+          containerPort: 14250
+        - name: jaeger-thrift-http
+          containerPort: 14268
+        - name: otlp-grpc
+          containerPort: 4317
+        - name: otlp-http
+          containerPort: 4318
+        volumeMounts:
+        - name: tempo-config
+          mountPath: /etc/tempo
+        - name: tempo-storage
+          mountPath: /var/tempo
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 512Mi
+            cpu: 200m
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          capabilities:
+            drop:
+            - ALL
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3100
+          initialDelaySeconds: 15
+          periodSeconds: 5
+      volumes:
+      - name: tempo-config
+        configMap:
+          name: tempo-config
+      - name: tempo-storage
+        persistentVolumeClaim:
+          claimName: tempo-pvc
+
+---
+# AlertManager for Alert Routing
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: alertmanager
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/component: alerting
+spec:
+  serviceName: alertmanager
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alertmanager
+        pipes-phase: evolution
+    spec:
+      serviceAccountName: alertmanager
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+      containers:
+      - name: alertmanager
+        image: quay.io/prometheus/alertmanager:v0.26.0
+        args:
+          - --config.file=/etc/alertmanager/alertmanager.yml
+          - --storage.path=/alertmanager
+          - --data.retention=120h
+          - --cluster.listen-address=0.0.0.0:9094
+          - --cluster.peer=alertmanager-0.alertmanager:9094
+          - --cluster.peer=alertmanager-1.alertmanager:9094
+          - --web.external-url=http://alertmanager.monitoring-system.svc.cluster.local:9093
+        ports:
+        - name: web
+          containerPort: 9093
+        - name: mesh
+          containerPort: 9094
+        volumeMounts:
+        - name: config
+          mountPath: /etc/alertmanager
+        - name: alertmanager-db
+          mountPath: /alertmanager
+        resources:
+          requests:
+            memory: 100Mi
+            cpu: 50m
+          limits:
+            memory: 200Mi
+            cpu: 100m
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          capabilities:
+            drop:
+            - ALL
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9093
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9093
+          initialDelaySeconds: 30
+          periodSeconds: 15
+      volumes:
+      - name: config
+        configMap:
+          name: alertmanager-config
+  volumeClaimTemplates:
+  - metadata:
+      name: alertmanager-db
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: fast-ssd
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+# ConfigMap for AlertManager Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/component: configuration
+data:
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: 'genesis-alerts@company.com'
+      smtp_auth_username: 'genesis-alerts@company.com'
+      smtp_auth_password_file: /etc/secrets/smtp-password
+
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: 'web.hook'
+      routes:
+      # PIPES-specific routing
+      - match:
+          pipes_phase: 'provision'
+        receiver: 'infrastructure-team'
+        continue: true
+      - match:
+          pipes_phase: 'integration'
+        receiver: 'platform-team'
+        continue: true
+      - match:
+          pipes_phase: 'protection'
+        receiver: 'security-team'
+        continue: true
+      - match:
+          pipes_phase: 'evolution'
+        receiver: 'sre-team'
+        continue: true
+      - match:
+          pipes_phase: 'standardization'
+        receiver: 'governance-team'
+        continue: true
+      # Severity-based routing
+      - match:
+          severity: 'critical'
+        receiver: 'pagerduty-critical'
+      - match:
+          severity: 'warning'
+        receiver: 'slack-warnings'
+
+    receivers:
+    - name: 'web.hook'
+      webhook_configs:
+      - url: 'http://alertmanager-webhook:8080/webhook'
+
+    - name: 'infrastructure-team'
+      email_configs:
+      - to: 'infrastructure-team@company.com'
+        subject: '[PIPES-Provision] {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          PIPES Phase: {{ .Labels.pipes_phase }}
+          {{ end }}
+      slack_configs:
+      - api_url_file: /etc/secrets/slack-webhook-url
+        channel: '#infrastructure-alerts'
+        title: 'PIPES Provision Alert'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+    - name: 'security-team'
+      email_configs:
+      - to: 'security-team@company.com'
+        subject: '[PIPES-Protection] Security Alert'
+      pagerduty_configs:
+      - routing_key_file: /etc/secrets/pagerduty-security-key
+        description: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+    - name: 'sre-team'
+      email_configs:
+      - to: 'sre-team@company.com'
+        subject: '[PIPES-Evolution] Performance Alert'
+      slack_configs:
+      - api_url_file: /etc/secrets/slack-webhook-url
+        channel: '#sre-alerts'
+        title: 'Performance Alert'
+
+    - name: 'pagerduty-critical'
+      pagerduty_configs:
+      - routing_key_file: /etc/secrets/pagerduty-critical-key
+        description: 'Critical Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+    - name: 'slack-warnings'
+      slack_configs:
+      - api_url_file: /etc/secrets/slack-webhook-url
+        channel: '#genesis-warnings'
+        title: 'Genesis CLI Warning'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+
+---
+# Service for exposing observability stack
+apiVersion: v1
+kind: Service
+metadata:
+  name: observability-gateway
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: observability-gateway
+    app.kubernetes.io/component: gateway
+spec:
+  type: LoadBalancer
+  ports:
+  - name: grafana
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  - name: prometheus
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  - name: alertmanager
+    port: 9093
+    targetPort: 9093
+    protocol: TCP
+  selector:
+    app.kubernetes.io/component: visualization
+
+---
+# Configuration for comprehensive monitoring coverage
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-coverage-config
+  namespace: monitoring-system
+  labels:
+    pipes-phase: evolution
+    app.kubernetes.io/name: monitoring-coverage
+    app.kubernetes.io/component: configuration
+data:
+  coverage.yaml: |
+    # PIPES Evolution - Comprehensive Monitoring Coverage
+
+    # Infrastructure Monitoring
+    infrastructure:
+      compute_instances:
+        metrics:
+          - cpu_utilization
+          - memory_utilization
+          - disk_utilization
+          - network_throughput
+        alerts:
+          - high_cpu_usage
+          - high_memory_usage
+          - disk_space_low
+
+      kubernetes_clusters:
+        metrics:
+          - node_health
+          - pod_health
+          - service_health
+          - resource_quotas
+        alerts:
+          - node_not_ready
+          - pod_crash_loops
+          - service_down
+
+    # Application Monitoring
+    application:
+      genesis_cli:
+        metrics:
+          - request_rate
+          - response_time
+          - error_rate
+          - active_connections
+        alerts:
+          - response_time_high
+          - error_rate_high
+          - service_unavailable
+
+      agent_pools:
+        metrics:
+          - agent_utilization
+          - agent_health
+          - task_completion_rate
+          - queue_depth
+        alerts:
+          - agent_unhealthy
+          - high_queue_depth
+          - low_completion_rate
+
+    # Security Monitoring
+    security:
+      authentication:
+        metrics:
+          - login_attempts
+          - failed_logins
+          - token_usage
+        alerts:
+          - brute_force_attempt
+          - unusual_access_pattern
+
+      network:
+        metrics:
+          - connection_attempts
+          - blocked_requests
+          - firewall_hits
+        alerts:
+          - ddos_attempt
+          - port_scan_detected
+
+    # Business Monitoring
+    business:
+      cost_optimization:
+        metrics:
+          - infrastructure_cost
+          - cost_per_transaction
+          - resource_efficiency
+        alerts:
+          - cost_spike
+          - low_efficiency
+
+      performance:
+        metrics:
+          - sla_compliance
+          - user_satisfaction
+          - throughput
+        alerts:
+          - sla_breach
+          - performance_degradation

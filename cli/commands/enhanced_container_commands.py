@@ -1,7 +1,186 @@
 """
 Enhanced Container Orchestration Commands - Issue #31
-Advanced CLI commands for comprehensive container management following PIPES methodology
+GKE cluster and container management following CRAFT methodology with service layer integration.
 """
+
+import json
+import logging
+import subprocess
+import yaml
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+import asyncio
+
+from ..services import (
+    ConfigService,
+    AuthService,
+    CacheService,
+    ErrorService,
+    GCPService,
+    PerformanceService,
+)
+from ..services.error_service import ErrorCategory, ErrorSeverity
+
+logger = logging.getLogger(__name__)
+
+
+class EnhancedContainerCommands:
+    """Enhanced container orchestration commands implementation following CRAFT methodology."""
+
+    def __init__(self, cli):
+        self.cli = cli
+        self.manifests_dir = (
+            Path(self.cli.genesis_root) / "modules/container-orchestration/manifests"
+        )
+        self.templates_dir = (
+            Path(self.cli.genesis_root) / "modules/container-orchestration/templates"
+        )
+
+        # Initialize service layer
+        self.config_service = ConfigService(self.cli.genesis_root)
+        self.error_service = ErrorService(self.config_service)
+        self.cache_service = CacheService(self.config_service)
+        self.auth_service = AuthService(self.config_service)
+        self.gcp_service = GCPService(
+            self.config_service,
+            self.auth_service,
+            self.cache_service,
+            self.error_service,
+        )
+        self.performance_service = PerformanceService(self.config_service)
+
+        # Get container configuration
+        self.container_config = self.config_service.get_container_config()
+        self.gcp_config = self.config_service.get_gcp_config()
+
+    def execute(self, args, config: Dict[str, Any]) -> Any:
+        """Execute container command based on action with performance monitoring."""
+        action = args.container_action
+
+        # Update services with CLI configuration
+        self.config_service.update_environment(args.environment or self.cli.environment)
+        if args.project_id:
+            self.config_service.update_project_id(args.project_id)
+
+        with self.performance_service.time_operation(
+            f"container_{action}", {"action": action}
+        ):
+            try:
+                if action == "create-cluster":
+                    return self.create_cluster(args, config)
+                elif action == "list-clusters":
+                    return self.list_clusters(args, config)
+                elif action == "delete-cluster":
+                    return self.delete_cluster(args, config)
+                elif action == "deploy":
+                    return self.deploy_service(args, config)
+                elif action == "scale":
+                    return self.scale_deployment(args, config)
+                elif action == "list-deployments":
+                    return self.list_deployments(args, config)
+                elif action == "list-services":
+                    return self.list_services(args, config)
+                elif action == "list-pods":
+                    return self.list_pods(args, config)
+                elif action == "logs":
+                    return self.get_logs(args, config)
+                elif action == "registry":
+                    return self.registry_operations(args, config)
+                else:
+                    error = self.error_service.create_error(
+                        message=f"Unknown container action: {action}",
+                        category=ErrorCategory.USER,
+                        severity=ErrorSeverity.MEDIUM,
+                        code="INVALID_CONTAINER_ACTION",
+                        suggestions=[
+                            "Use 'g container --help' to see available actions"
+                        ],
+                    )
+                    raise ValueError(self.error_service.format_error_message(error))
+            except Exception as e:
+                error = self.error_service.handle_exception(
+                    e, {"action": action, "args": vars(args)}
+                )
+                if hasattr(args, "verbose") and args.verbose:
+                    logger.error(
+                        self.error_service.format_error_message(
+                            error, include_details=True
+                        )
+                    )
+                raise
+
+    def create_cluster(self, args, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Create GKE cluster using CRAFT methodology."""
+        cluster_name = args.cluster_name
+        logger.info(f"Creating GKE cluster: {cluster_name}")
+
+        if hasattr(args, "dry_run") and args.dry_run:
+            cluster_config = self._generate_cluster_config(args)
+            return {
+                "action": "create-cluster",
+                "cluster_name": cluster_name,
+                "configuration": cluster_config,
+                "status": "dry-run",
+            }
+
+        try:
+            # Generate cluster configuration
+            cluster_config = self._generate_cluster_config(args)
+
+            # Create the cluster using GCP service
+            result = self.gcp_service.create_cluster(cluster_name, cluster_config)
+
+            if not result["success"]:
+                raise Exception(f"Failed to create cluster: {result.get('error')}")
+
+            # Get cluster credentials
+            creds_result = self.gcp_service.get_cluster_credentials(
+                cluster_name, cluster_config.get("region")
+            )
+
+            if not creds_result["success"]:
+                logger.warning(
+                    f"Failed to get cluster credentials: {creds_result.get('error')}"
+                )
+
+            # Deploy base services if requested
+            if cluster_config.get("deploy_base_services", True):
+                base_services = self._deploy_base_services(cluster_name)
+            else:
+                base_services = {}
+
+            # Cache cluster information
+            cluster_info = {
+                "cluster_name": cluster_name,
+                "configuration": cluster_config,
+                "status": "ready",
+                "base_services": base_services,
+                "created_at": self.performance_service.start_timer(
+                    "cluster_creation"
+                ).start_time,
+            }
+
+            self.cache_service.set(
+                f"gke_cluster:{cluster_name}",
+                cluster_info,
+                ttl=3600,
+                tags=["gke_cluster", f"environment:{self.config_service.environment}"],
+            )
+
+            return {
+                "action": "create-cluster",
+                "cluster_name": cluster_name,
+                "configuration": cluster_config,
+                "base_services": base_services,
+                "status": "created",
+            }
+
+        except Exception as e:
+            error = self.error_service.handle_exception(
+                e, {"cluster_name": cluster_name, "operation": "create-cluster"}
+            )
+            raise Exception(self.error_service.format_error_message(error))
+
 
 import json
 import logging

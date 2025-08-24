@@ -1,0 +1,613 @@
+# Genesis CLI Defense-in-Depth Security Architecture
+# PIPES Protection methodology implementation
+# Multi-layered security controls for comprehensive threat mitigation
+
+# Phase 1: Identity and Access Management (IAM) Layer
+identity_security:
+  # Principle of least privilege implementation
+  service_accounts:
+    genesis_cli_sa:
+      name: "genesis-cli@${PROJECT_ID}.iam.gserviceaccount.com"
+      display_name: "Genesis CLI Service Account"
+      description: "Service account for Genesis CLI with minimal required permissions"
+      roles:
+        # Core GCP permissions
+        - "roles/container.developer"        # GKE cluster management
+        - "roles/compute.instanceAdmin.v1"   # VM management
+        - "roles/secretmanager.secretAccessor" # Secret access
+        - "roles/monitoring.metricWriter"    # Metrics publishing
+        - "roles/logging.logWriter"          # Log writing
+        # Custom role for specific Genesis operations
+        - "projects/${PROJECT_ID}/roles/genesis_cli_operator"
+
+    vm_agent_sa:
+      name: "vm-agent@${PROJECT_ID}.iam.gserviceaccount.com"
+      display_name: "VM Agent Service Account"
+      description: "Service account for VM-based agents"
+      roles:
+        - "roles/monitoring.metricWriter"
+        - "roles/logging.logWriter"
+        - "roles/secretmanager.secretAccessor"
+      conditions:
+        # Restrict access to specific resources
+        ip_restriction: "request.auth.access_levels.contains('projects/${PROJECT_ID}/accessLevels/internal_networks')"
+
+  # Custom IAM roles with specific permissions
+  custom_roles:
+    genesis_cli_operator:
+      role_id: "genesis_cli_operator"
+      title: "Genesis CLI Operator"
+      description: "Custom role for Genesis CLI operations"
+      permissions:
+        # VM Management permissions
+        - "compute.instances.create"
+        - "compute.instances.delete"
+        - "compute.instances.get"
+        - "compute.instances.list"
+        - "compute.instanceTemplates.create"
+        - "compute.instanceTemplates.delete"
+        - "compute.instanceGroups.create"
+        - "compute.instanceGroups.update"
+        - "compute.instanceGroups.delete"
+        # Container permissions
+        - "container.clusters.get"
+        - "container.clusters.create"
+        - "container.clusters.update"
+        - "container.pods.create"
+        - "container.pods.delete"
+        - "container.services.create"
+        - "container.services.update"
+        # Infrastructure permissions
+        - "compute.networks.use"
+        - "compute.subnetworks.use"
+        - "compute.addresses.use"
+        # Secret management
+        - "secretmanager.versions.access"
+      stage: "GA"
+
+  # Workload Identity configuration
+  workload_identity:
+    enabled: true
+    kubernetes_service_accounts:
+      - namespace: "genesis-system"
+        ksa_name: "genesis-cli"
+        gsa_email: "genesis-cli@${PROJECT_ID}.iam.gserviceaccount.com"
+
+# Phase 2: Network Security Layer
+network_security:
+  # VPC Security Controls
+  vpc_controls:
+    enabled: true
+    access_policy: "projects/${PROJECT_ID}/accessPolicies/${ACCESS_POLICY_ID}"
+
+    # Access levels for different user types
+    access_levels:
+      internal_networks:
+        name: "internal_networks"
+        title: "Internal Network Access"
+        basic_conditions:
+          - ip_subnetworks:
+              - "10.0.0.0/8"      # Internal GCP networks
+              - "172.16.0.0/12"   # Private networks
+              - "192.168.0.0/16"  # Local networks
+          - regions:
+              - "us-central1"
+              - "us-east1"
+              - "us-west1"
+
+      admin_access:
+        name: "admin_access"
+        title: "Administrative Access"
+        basic_conditions:
+          - members:
+              - "group:genesis-admins@company.com"
+          - device_policy:
+              require_screen_lock: true
+              require_admin_approval: true
+              require_corp_owned: true
+              allowed_encryption_statuses:
+                - "ENCRYPTED"
+
+    # Service perimeters
+    service_perimeters:
+      genesis_perimeter:
+        name: "genesis_perimeter"
+        title: "Genesis CLI Security Perimeter"
+        perimeter_type: "PERIMETER_TYPE_REGULAR"
+        resources:
+          - "projects/${PROJECT_ID}"
+        restricted_services:
+          - "container.googleapis.com"
+          - "compute.googleapis.com"
+          - "secretmanager.googleapis.com"
+          - "monitoring.googleapis.com"
+          - "logging.googleapis.com"
+        access_levels:
+          - "accessPolicies/${ACCESS_POLICY_ID}/accessLevels/internal_networks"
+
+        vpc_accessible_services:
+          enable_restriction: true
+          allowed_services:
+            - "container.googleapis.com"
+            - "compute.googleapis.com"
+            - "secretmanager.googleapis.com"
+            - "monitoring.googleapis.com"
+            - "logging.googleapis.com"
+
+  # Firewall Rules - Defense in Depth
+  firewall_rules:
+    # Deny all ingress by default (implicit)
+
+    # Allow internal communication
+    allow_internal:
+      name: "genesis-allow-internal"
+      direction: "INGRESS"
+      priority: 1000
+      source_ranges:
+        - "10.0.0.0/8"
+        - "172.16.0.0/12"
+        - "192.168.0.0/16"
+      allowed:
+        - protocol: "tcp"
+          ports: ["22", "80", "443", "8080", "9090"]
+        - protocol: "icmp"
+      target_tags: ["genesis-cli-managed"]
+
+    # Allow health checks
+    allow_health_checks:
+      name: "genesis-allow-health-checks"
+      direction: "INGRESS"
+      priority: 900
+      source_ranges:
+        - "35.191.0.0/16"    # Google Cloud health check ranges
+        - "130.211.0.0/22"   # Google Cloud health check ranges
+      allowed:
+        - protocol: "tcp"
+          ports: ["8080", "9090"]
+      target_tags: ["genesis-cli-managed"]
+
+    # Explicit deny for high-risk ports
+    deny_high_risk_ports:
+      name: "genesis-deny-high-risk"
+      direction: "INGRESS"
+      priority: 100
+      source_ranges: ["0.0.0.0/0"]
+      denied:
+        - protocol: "tcp"
+          ports: ["23", "135", "445", "1433", "3389", "5432", "5984", "6379", "9200", "11211", "27017"]
+      target_tags: ["genesis-cli-managed"]
+
+    # Allow egress to Google APIs
+    allow_google_apis:
+      name: "genesis-allow-google-apis"
+      direction: "EGRESS"
+      priority: 1000
+      destination_ranges:
+        - "199.36.153.8/30"   # googleapis.com
+        - "199.36.153.4/30"   # googleapis.com
+      allowed:
+        - protocol: "tcp"
+          ports: ["443"]
+      target_tags: ["genesis-cli-managed"]
+
+  # Cloud Armor Security Policies
+  cloud_armor:
+    security_policies:
+      genesis_cli_protection:
+        name: "genesis-cli-protection"
+        description: "Security policy for Genesis CLI services"
+        type: "CLOUD_ARMOR"
+
+        # Adaptive protection
+        adaptive_protection:
+          layer_7_ddos_defense:
+            enable: true
+            rule_visibility: "STANDARD"
+          auto_deploy:
+            load_threshold: 0.1
+            confidence_threshold: 0.5
+            impacted_baseline_threshold: 0.01
+            expiration_sec: 600
+
+        # Security rules
+        rules:
+          # Rate limiting
+          - action: "rate_based_ban"
+            priority: 1000
+            description: "Rate limit protection"
+            match:
+              versioned_expr: "SRC_IPS_V1"
+              config:
+                src_ip_ranges: ["*"]
+            rate_limit_options:
+              conform_action: "allow"
+              exceed_action: "deny(429)"
+              enforce_on_key: "IP"
+              rate_limit_threshold:
+                count: 100
+                interval_sec: 60
+              ban_threshold:
+                count: 1000
+                interval_sec: 600
+              ban_duration_sec: 3600
+
+          # Geographic restrictions
+          - action: "deny(403)"
+            priority: 2000
+            description: "Geographic restrictions"
+            match:
+              expr:
+                expression: "origin.region_code in ['CN', 'RU', 'KP', 'IR']"
+
+          # Known malicious IPs
+          - action: "deny(403)"
+            priority: 3000
+            description: "Block known malicious IPs"
+            match:
+              config:
+                src_ip_ranges:
+                  - "192.0.2.0/24"    # Test network - replace with actual threat intel
+
+          # SQL injection protection
+          - action: "deny(403)"
+            priority: 4000
+            description: "SQL injection protection"
+            match:
+              expr:
+                expression: "has(request.headers['user-agent']) && request.headers['user-agent'].contains('sqlmap')"
+
+          # Default allow rule
+          - action: "allow"
+            priority: 2147483647
+            description: "Default allow rule"
+            match:
+              versioned_expr: "SRC_IPS_V1"
+              config:
+                src_ip_ranges: ["*"]
+
+# Phase 3: Application Security Layer
+application_security:
+  # Binary Authorization (Container image security)
+  binary_authorization:
+    enabled: true
+    global_policy_evaluation_mode: "ENABLE"
+
+    default_admission_rule:
+      evaluation_mode: "REQUIRE_ATTESTATION"
+      enforcement_mode: "ENFORCED_BLOCK_AND_AUDIT_LOG"
+
+    # Attestors for image verification
+    attestors:
+      vulnerability_attestor:
+        name: "vulnerability-attestor"
+        description: "Attestor for vulnerability scans"
+        note_reference: "projects/${PROJECT_ID}/notes/vulnerability-note"
+
+      quality_attestor:
+        name: "quality-attestor"
+        description: "Attestor for quality gates"
+        note_reference: "projects/${PROJECT_ID}/notes/quality-note"
+
+    # Namespace-specific rules
+    kubernetes_namespace_admission_rules:
+      genesis_system:
+        namespace: "genesis-system"
+        evaluation_mode: "REQUIRE_ATTESTATION"
+        enforcement_mode: "ENFORCED_BLOCK_AND_AUDIT_LOG"
+        require_attestations_by:
+          - "projects/${PROJECT_ID}/attestors/vulnerability-attestor"
+          - "projects/${PROJECT_ID}/attestors/quality-attestor"
+
+    # Admission whitelist for trusted registries
+    admission_whitelist_patterns:
+      - "gcr.io/${PROJECT_ID}/*"
+      - "${REGION}-docker.pkg.dev/${PROJECT_ID}/*"
+
+  # Pod Security Standards
+  pod_security:
+    enabled: true
+    default_policy: "restricted"
+
+    policies:
+      restricted:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: "RuntimeDefault"
+        seLinuxOptions:
+          level: "s0:c123,c456"
+
+  # Network Policies (Kubernetes)
+  network_policies:
+    genesis_cli_policy:
+      namespace: "genesis-system"
+      pod_selector:
+        matchLabels:
+          app.kubernetes.io/name: "genesis-cli"
+      policy_types:
+        - "Ingress"
+        - "Egress"
+
+      ingress:
+        # Allow from monitoring systems
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  name: "monitoring-system"
+            - namespaceSelector:
+                matchLabels:
+                  name: "istio-system"
+          ports:
+            - protocol: "TCP"
+              port: 8080
+            - protocol: "TCP"
+              port: 9090
+
+      egress:
+        # Allow DNS
+        - to: []
+          ports:
+            - protocol: "UDP"
+              port: 53
+        # Allow HTTPS to external APIs
+        - to: []
+          ports:
+            - protocol: "TCP"
+              port: 443
+        # Allow Kubernetes API
+        - to: []
+          ports:
+            - protocol: "TCP"
+              port: 6443
+
+# Phase 4: Data Security Layer
+data_security:
+  # Secret Management
+  secret_manager:
+    secrets:
+      github_token:
+        secret_id: "github-token"
+        replication_policy: "auto"
+        encryption_key: "projects/${PROJECT_ID}/locations/global/keyRings/genesis-secrets/cryptoKeys/secrets-key"
+        rotation:
+          rotation_period: "2592000s"  # 30 days
+        labels:
+          environment: "${ENVIRONMENT}"
+          component: "ci-cd"
+
+      terraform_backend_key:
+        secret_id: "terraform-backend-key"
+        replication_policy: "auto"
+        encryption_key: "projects/${PROJECT_ID}/locations/global/keyRings/genesis-infrastructure/cryptoKeys/terraform-key"
+        rotation:
+          rotation_period: "7776000s"  # 90 days
+        labels:
+          environment: "${ENVIRONMENT}"
+          component: "infrastructure"
+
+  # Key Management Service (KMS)
+  kms:
+    key_rings:
+      genesis_secrets:
+        name: "genesis-secrets"
+        location: "global"
+        keys:
+          secrets_key:
+            name: "secrets-key"
+            purpose: "ENCRYPT_DECRYPT"
+            rotation_period: "7776000s"  # 90 days
+            version_template:
+              algorithm: "GOOGLE_SYMMETRIC_ENCRYPTION"
+              protection_level: "SOFTWARE"
+
+      genesis_infrastructure:
+        name: "genesis-infrastructure"
+        location: "global"
+        keys:
+          terraform_key:
+            name: "terraform-key"
+            purpose: "ENCRYPT_DECRYPT"
+            rotation_period: "7776000s"  # 90 days
+            version_template:
+              algorithm: "GOOGLE_SYMMETRIC_ENCRYPTION"
+              protection_level: "SOFTWARE"
+
+  # Data Loss Prevention (DLP)
+  dlp:
+    enabled: true
+    inspect_templates:
+      pii_detection:
+        display_name: "PII Detection Template"
+        description: "Detect common PII patterns"
+        inspect_config:
+          info_types:
+            - name: "EMAIL_ADDRESS"
+            - name: "PHONE_NUMBER"
+            - name: "CREDIT_CARD_NUMBER"
+            - name: "US_SOCIAL_SECURITY_NUMBER"
+          min_likelihood: "POSSIBLE"
+          limits:
+            max_findings_per_item: 100
+            max_findings_per_request: 1000
+          include_quote: false
+
+# Phase 5: Monitoring and Incident Response Layer
+security_monitoring:
+  # Security Command Center
+  security_center:
+    enabled: true
+    organization_id: "${ORGANIZATION_ID}"
+
+    sources:
+      genesis_security_source:
+        display_name: "Genesis CLI Security Source"
+        description: "Custom security findings for Genesis CLI"
+
+    notifications:
+      security_alerts:
+        config_id: "genesis-security-alerts"
+        description: "Security alerts for Genesis CLI"
+        pubsub_topic: "projects/${PROJECT_ID}/topics/security-alerts"
+        filter: 'category="MALWARE" OR category="VULNERABILITY" OR category="SUSPICIOUS_ACTIVITY"'
+
+  # Cloud Audit Logs
+  audit_logging:
+    admin_read: true
+    data_read: true
+    data_write: true
+    exempted_members: []  # No exemptions for security
+
+    # Custom audit log sinks
+    log_sinks:
+      security_sink:
+        name: "genesis-security-logs"
+        destination: "bigquery.googleapis.com/projects/${PROJECT_ID}/datasets/security_logs"
+        filter: |
+          protoPayload.serviceName="compute.googleapis.com" OR
+          protoPayload.serviceName="container.googleapis.com" OR
+          protoPayload.serviceName="secretmanager.googleapis.com" OR
+          severity >= "WARNING"
+
+  # Alerting Policies
+  alert_policies:
+    suspicious_vm_activity:
+      display_name: "Suspicious VM Activity"
+      conditions:
+        - display_name: "VM creation rate"
+          condition_threshold:
+            filter: 'resource.type="gce_instance"'
+            comparison: "COMPARISON_GT"
+            threshold_value: 10
+            duration: "300s"
+      notification_channels: ["projects/${PROJECT_ID}/notificationChannels/${NOTIFICATION_CHANNEL_ID}"]
+
+    failed_authentication:
+      display_name: "Failed Authentication Attempts"
+      conditions:
+        - display_name: "Auth failures"
+          condition_threshold:
+            filter: 'protoPayload.authenticationInfo.principalEmail="" AND severity="ERROR"'
+            comparison: "COMPARISON_GT"
+            threshold_value: 5
+            duration: "300s"
+
+# Phase 6: Compliance and Governance Layer
+compliance:
+  # Organization Policies
+  org_policies:
+    compute_disable_serial_port_access:
+      constraint: "constraints/compute.disableSerialPortAccess"
+      boolean_policy:
+        enforced: true
+
+    compute_require_shielded_vm:
+      constraint: "constraints/compute.requireShieldedVm"
+      boolean_policy:
+        enforced: true
+
+    iam_disable_service_account_key_creation:
+      constraint: "constraints/iam.disableServiceAccountKeyCreation"
+      boolean_policy:
+        enforced: false  # Allow for development environments
+
+    storage_uniform_bucket_level_access:
+      constraint: "constraints/storage.uniformBucketLevelAccess"
+      boolean_policy:
+        enforced: true
+
+  # Policy as Code validation
+  policy_validation:
+    enabled: true
+    frameworks:
+      - "CIS_GCP_FOUNDATION_1_2"
+      - "NIST_CSF_1_1"
+      - "ISO_27001"
+
+    custom_policies:
+      genesis_security_baseline:
+        name: "Genesis Security Baseline"
+        description: "Custom security policies for Genesis CLI"
+        rules:
+          - id: "genesis-001"
+            description: "All VMs must have secure boot enabled"
+            severity: "HIGH"
+            resource_type: "compute_instance"
+            condition: "resource.shielded_instance_config.enable_secure_boot == true"
+
+          - id: "genesis-002"
+            description: "All containers must run as non-root"
+            severity: "HIGH"
+            resource_type: "kubernetes_pod"
+            condition: "spec.security_context.run_as_non_root == true"
+
+          - id: "genesis-003"
+            description: "All secrets must be encrypted at rest"
+            severity: "CRITICAL"
+            resource_type: "secret_manager_secret"
+            condition: "replication.auto.customer_managed_encryption != null"
+
+# Phase 7: Incident Response and Recovery
+incident_response:
+  # Automated response workflows
+  response_workflows:
+    security_incident:
+      trigger: "security_finding_critical"
+      actions:
+        - type: "isolate_vm"
+          parameters:
+            vm_filter: "labels.environment=${ENVIRONMENT}"
+        - type: "revoke_credentials"
+          parameters:
+            service_account: "genesis-cli@${PROJECT_ID}.iam.gserviceaccount.com"
+        - type: "notify_team"
+          parameters:
+            channel: "security-alerts"
+            severity: "critical"
+
+    resource_exhaustion:
+      trigger: "compute_quota_exceeded"
+      actions:
+        - type: "scale_down"
+          parameters:
+            resource_type: "compute_instance"
+            reduction_percentage: 25
+        - type: "notify_team"
+          parameters:
+            channel: "operations-alerts"
+            severity: "high"
+
+  # Backup and Recovery
+  backup_strategy:
+    terraform_state:
+      enabled: true
+      frequency: "daily"
+      retention_days: 90
+      encryption: true
+
+    kubernetes_configs:
+      enabled: true
+      frequency: "hourly"
+      retention_days: 30
+      backup_location: "gs://${PROJECT_ID}-k8s-backups"
+
+    secrets_backup:
+      enabled: true
+      frequency: "daily"
+      retention_days: 90
+      encryption_key: "projects/${PROJECT_ID}/locations/global/keyRings/genesis-infrastructure/cryptoKeys/backup-key"
+
+# Configuration metadata
+metadata:
+  created_by: "platform-engineer-agent"
+  pipes_methodology: "protection-phase"
+  security_framework: "defense-in-depth"
+  compliance_frameworks:
+    - "NIST_CSF_1_1"
+    - "ISO_27001"
+    - "CIS_CONTROLS_V8"
+  last_updated: "2025-08-24"
+  version: "1.0.0"
