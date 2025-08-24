@@ -120,6 +120,17 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.npm
+.eslintcache
+.next/
+.nuxt
+.vuepress/dist
+.serverless/
 
 # Logs
 *.log
@@ -140,6 +151,10 @@ coverage*.json
 *-analysis.json
 demo-*.md
 *.backup
+*.report
+*-report.*
+analysis-*
+benchmark-*
 
 # Temp directory for all temporary files
 temp/
@@ -148,3 +163,85 @@ temp/
 htmlcov/
 .coverage*
 coverage*.xml
+.nyc_output
+test-results/
+.jest/
+coverage/
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+vendor/
+go.sum
+
+# Rust specific
+target/
+Cargo.lock
+
+# TypeScript specific
+*.tsbuildinfo
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Secrets and credentials
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+.secrets
+.secret
+secrets.yaml
+secrets.yml
+credentials.json
+service-account*.json
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+kubeconfig
+
+# Terraform additional
+.terraform.lock.hcl
+*.tfplan
+*.tfplan.*
+.terragrunt-cache/
+
+# GCP specific
+.gcloud/
+gcloud-config/
+.ci_gcloud/
+
+# Monitoring and logs
+monitoring-data/
+security-reports/
+
+# IDE specific
+*.code-workspace
+.history/
+
+# Development workspaces
+workspace/
+dev-workspace/
+test-workspace/
+
+# Backup files
+*.backup
+*-backup-*
+*.orig
+
+# Intelligence systems
+intelligence/smart-commit/htmlcov/
+intelligence/*/logs/
+intelligence/*/.pytest_cache/
+
+# Ruff cache
+.ruff_cache/

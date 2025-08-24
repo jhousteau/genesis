@@ -5,16 +5,18 @@
 - **Type**: Infrastructure Platform and Development Framework
 - **Architecture**: Cloud-native, serverless-first with GCP focus
 - **Languages**: Python (Poetry), Node.js/TypeScript, Go, Bash, Terraform
-- **Specialization**: Multi-agent coordination and intelligent automation
+- **Specialization**: Intelligent automation, multi-environment isolation, comprehensive testing
+- **Key Components**: CLI tooling, Intelligence systems (solve/autofix), Container orchestration, VM management
 
 ## Project Standards
 This project follows the Genesis Universal Project Platform standards:
 
 ### Development Workflow
-- **Smart Commits**: Always use `./scripts/smart-commit.sh` or intelligence layer
-- **Testing**: All code changes require comprehensive testing
+- **Smart Commits**: Always use `./smart-commit.sh` or intelligence/smart-commit system
+- **Testing**: All code changes require comprehensive testing (pytest, integration tests)
 - **Quality Gates**: Pre-commit hooks, linting, and automated validation
-- **Agent Coordination**: Leverage specialized agents for complex workflows
+- **CLI Operations**: Use `g` command for VM, container, infrastructure, and agent management
+- **Intelligence Systems**: Leverage solve, autofix, and optimization systems
 
 ### GCP Integration
 - **Isolation**: Each project has its own GCP project and gcloud config
@@ -28,193 +30,232 @@ This project follows the Genesis Universal Project Platform standards:
 - Regular security scanning and compliance validation
 - Follow principle of least privilege across all agents
 
-## Agent Delegation Framework
+## Genesis Platform Architecture
 
-Genesis uses a sophisticated multi-agent architecture with clear hierarchy and delegation patterns:
+Genesis provides a comprehensive infrastructure platform with integrated tooling:
 
-### Executive Level Agents
-- **project-manager-agent**: Overall coordination and resource allocation
-- **architect-agent**: System design and architectural decisions
-- **tech-lead-agent**: Development standards and code quality
+### Core Platform Components
+- **CLI Interface**: Comprehensive `g` command for all operations (VM, container, infrastructure, agent)
+- **Intelligence Systems**: solve, autofix, optimization, and prediction capabilities
+- **Multi-Environment Isolation**: GCP project separation with automated credential management
+- **Container Orchestration**: GKE-based platform with agent-cage and claude-talk integration
+- **VM Management**: Automated agent pools with autoscaling and health monitoring
 
-### Implementation Level Agents
-- **platform-engineer-agent**: Infrastructure implementation
-- **backend-developer-agent**: Server-side development
-- **frontend-developer-agent**: Client-side development
-- **data-engineer-agent**: Data pipelines and analytics
-- **integration-agent**: System integration and APIs
+### Infrastructure Management
+- **Terraform Modules**: Comprehensive infrastructure as code with validation
+- **Cost Control**: Advanced cost optimization and budget enforcement
+- **Security Controls**: Comprehensive governance and compliance automation
+- **Monitoring**: Cloud Operations integration with custom dashboards
 
-### Quality & Operations Level Agents
-- **qa-automation-agent**: Quality assurance and testing
-- **sre-agent**: Site reliability and incident response
-- **security-agent**: Security assessment and compliance
-- **devops-agent**: Deployment and CI/CD automation
+### Development Workflow Integration
+- **Quality Gates**: Smart-commit system with automated validation
+- **Testing Framework**: Comprehensive pytest-based testing with coverage
+- **CI/CD Pipelines**: Multi-platform deployment automation
+- **Secret Management**: Automated secret rotation and access control
 
-### How to Use Agents
+### How to Use Genesis Platform
 
-#### Direct Invocation
-Use explicit delegation for specific tasks:
-```
-"Use the architect-agent to design the microservices architecture"
-"Delegate to backend-developer-agent for API implementation"
-"Have the security-agent review this for vulnerabilities"
-```
+#### CLI Operations
+Use the Genesis CLI for all infrastructure operations:
+```bash
+# VM Management
+g vm create-pool --type backend-developer --size 3
+g vm health-check --pool backend-pool
 
-#### Automatic Delegation
-Agents will auto-select based on task triggers. All agent descriptions include "MUST BE USED when..." patterns for automatic matching.
+# Container Operations
+g container deploy --service agent-cage --environment dev
+g container logs --service claude-talk --follow
 
-#### Sequential Coordination
-For complex projects, use coordination patterns:
-```
-User Request → project-manager-agent → architect-agent → implementation agents → quality agents
-```
-
-#### Parallel Processing
-For independent workstreams:
-```
-project-manager-agent coordinates:
-├── backend-developer-agent (API development)
-├── frontend-developer-agent (UI development)
-├── platform-engineer-agent (infrastructure)
-└── security-agent (security validation)
+# Infrastructure Management
+g infra plan --module vm-management --environment dev
+g infra apply --module container-orchestration --environment prod
 ```
 
-### Agent Collaboration Best Practices
+#### Intelligence System Integration
+Leverage AI-driven development tools:
+```bash
+# Problem solving and code generation
+solve "implement user authentication with OAuth2"
+
+# Automated code repair
+autofix src/api/auth.py
+
+# Quality gates and commit orchestration
+./smart-commit.sh
+```
+
+### Genesis Platform Best Practices
 
 #### When Planning Complex Features:
-1. Start with **project-manager-agent** for breakdown and coordination
-2. Engage **architect-agent** for system design decisions
-3. Use specialized implementation agents for development
-4. Coordinate with **qa-automation-agent** for testing strategy
-5. Have **devops-agent** handle deployment automation
+1. Use **intelligence systems** for problem analysis and solution design
+2. Plan **infrastructure** with Terraform modules and cost analysis
+3. Implement with **comprehensive testing** and quality gates
+4. Deploy through **container orchestration** with health monitoring
+5. Monitor with **observability stack** and automated alerting
 
-#### When Debugging or Issues:
-1. Use **sre-agent** for incident response and system debugging
-2. Engage **security-agent** for security-related issues
-3. Use **tech-lead-agent** for code quality problems
-4. Escalate to **project-manager-agent** for coordination needs
+#### When Debugging Issues:
+1. Use **CLI diagnostics** for system health and log analysis
+2. Leverage **intelligence systems** for automated problem resolution
+3. Check **infrastructure status** and cost analysis
+4. Review **container health** and scaling metrics
+5. Validate **security controls** and compliance status
 
 #### When Implementing New Systems:
-1. **architect-agent** designs the system architecture
-2. **platform-engineer-agent** provisions infrastructure
-3. Development agents implement their respective components
-4. **integration-agent** handles service communication
-5. **security-agent** validates security measures
-6. **qa-automation-agent** ensures comprehensive testing
+1. **Design infrastructure** with Terraform modules and validation
+2. **Provision resources** through automated deployment pipelines
+3. **Implement components** with testing and quality gates
+4. **Deploy services** through container orchestration
+5. **Monitor operations** with comprehensive observability
+6. **Maintain compliance** with automated governance controls
 
-### Proactive Agent Usage
+### Proactive Platform Usage
 
 #### For Complex Tasks:
-"This is a complex multi-service implementation - I'll use the project-manager-agent to coordinate this properly"
+"This is a complex multi-service implementation - I'll use the solve system to break this down and plan the implementation"
 
-#### For Architecture Decisions:
-"This system design needs architectural review - I'll engage the architect-agent for SOLID-CLOUD principles"
+#### For Infrastructure Decisions:
+"This system design needs infrastructure planning - I'll use the Genesis CLI to plan and validate the Terraform modules"
 
 #### For Quality Concerns:
-"This code needs quality validation - I'll use the tech-lead-agent for MENTOR methodology guidance"
+"This code needs quality validation - I'll use the autofix system and smart-commit for comprehensive quality gates"
 
 ## AI Assistant Guidelines
 
 ### Always Do
-1. **Use Agent Delegation**: For complex tasks, delegate to appropriate specialized agents
-2. **Follow Smart Commit**: Use `./scripts/smart-commit.sh` for all changes
-3. **Respect Agent Hierarchy**: Follow delegation chains and authority structures
-4. **Check Project Health**: Run validation before making changes
-5. **Coordinate Multi-Agent Work**: Use project-manager-agent for complex coordination
+1. **Use Genesis CLI**: Use `g` command for infrastructure, VM, container, and agent operations
+2. **Follow Smart Commit**: Use `./smart-commit.sh` for all changes with quality gates
+3. **Run Tests**: Use `pytest` for Python components, ensure comprehensive test coverage
+4. **Check Project Health**: Run validation scripts before making changes
+5. **Use Intelligence Systems**: Leverage solve/autofix systems for complex problem resolution
 
-### Agent Selection Guidelines
-- **Planning & Coordination**: project-manager-agent
-- **System Design**: architect-agent
-- **Code Quality**: tech-lead-agent
-- **Infrastructure**: platform-engineer-agent
-- **Backend Development**: backend-developer-agent
-- **Frontend Development**: frontend-developer-agent
-- **Data Processing**: data-engineer-agent
-- **Service Integration**: integration-agent
-- **Quality Assurance**: qa-automation-agent
-- **Incident Response**: sre-agent
-- **Security**: security-agent
-- **Deployment**: devops-agent
+### Genesis CLI Command Guidelines
+- **VM Operations**: `g vm` - Create pools, scale, health checks, lifecycle management
+- **Container Management**: `g container` - GKE clusters, deployments, services, logs
+- **Infrastructure**: `g infra` - Terraform operations, cost analysis, validation
+- **Agent Operations**: `g agent` - Start/stop agents, migration, cage/claude-talk management
+- **Intelligence Systems**: Direct CLI access to solve, autofix, optimization tools
+- **Quality Gates**: Use `./smart-commit.sh` for all commits with automated validation
 
 ### Never Do
 1. **Don't bypass quality gates**: Always use smart-commit and proper workflows
-2. **Don't skip agent delegation**: Use specialized agents for their expertise areas
-3. **Don't break agent hierarchy**: Respect reporting structures and authority
-4. **Don't hardcode values**: Use environment variables and Secret Manager
-5. **Don't ignore agent recommendations**: Trust specialized agent expertise
+2. **Don't hardcode values**: Use environment variables and Secret Manager
+3. **Don't skip tests**: All changes must have corresponding tests
+4. **Don't bypass isolation**: Respect GCP project boundaries and environment separation
+5. **Don't ignore CLI patterns**: Use established `g` command patterns for operations
 
 ### Intelligence System Integration
 Genesis includes sophisticated intelligence systems:
-- **Smart-commit**: Automated quality gates and commit orchestration
-- **Solve system**: AI-driven problem resolution and code generation
-- **Auto-fix**: Intelligent code repair and optimization
-- **Agent coordination**: Multi-agent workflow orchestration
+- **Smart-commit**: Interactive commit system with quality gates (`./smart-commit.sh`)
+- **Solve system**: AI-driven problem resolution and build planning (`intelligence/solve/`)
+- **Auto-fix**: Intelligent code repair and optimization (`intelligence/autofix/`)
+- **CLI Integration**: Comprehensive command interface for all operations (`cli/`)
+- **Container Orchestration**: GKE cluster and deployment management
+- **VM Management**: Agent VM pools and lifecycle management
 
-### Common Agent Workflows
+### Common Workflows
 
 #### Feature Development:
 ```bash
-# 1. Plan with project management
-"Use the project-manager-agent to break down this feature into tasks"
+# 1. Plan infrastructure
+g infra plan --module <module> --environment <env>
 
-# 2. Design architecture
-"Delegate to architect-agent for system design"
+# 2. Create/update components
+# Use intelligence systems for complex implementations
+solve <problem-description>
 
-# 3. Implement components
-"Use backend-developer-agent for API implementation"
-"Use frontend-developer-agent for UI implementation"
+# 3. Test implementation
+pytest tests/
+g vm health-check --pool <pool>
 
-# 4. Ensure quality
-"Have qa-automation-agent create comprehensive tests"
+# 4. Quality gates
+./smart-commit.sh
 
 # 5. Deploy
-"Use devops-agent for deployment automation"
+g container deploy --service <service> --environment <env>
+g infra apply --module <module>
 ```
 
 #### Troubleshooting:
 ```bash
-# 1. Incident response
-"Use sre-agent to investigate this production issue"
+# 1. Check system health
+g vm health-check --pool <pool>
+g container logs --service <service> --follow
 
-# 2. Security assessment (if needed)
-"Have security-agent check for security implications"
+# 2. Infrastructure diagnostics
+g infra status --all
+g cost analyze
 
-# 3. Code quality review
-"Use tech-lead-agent to review code quality issues"
+# 3. Use intelligence systems
+solve "debug <issue-description>"
+autofix <file-path>
 
-# 4. Coordinate resolution
-"Use project-manager-agent to coordinate the fix across teams"
+# 4. Test and commit fixes
+pytest tests/
+./smart-commit.sh
 ```
 
 ### Emergency Procedures
 If something goes wrong:
 
-1. **System Issues**: Use sre-agent for incident response
-2. **Security Concerns**: Engage security-agent immediately
-3. **Code Quality Problems**: Use tech-lead-agent for resolution
-4. **Project Coordination**: Escalate to project-manager-agent
-5. **Check Intelligence Systems**: Validate smart-commit and solve systems
+1. **System Issues**: Use `g vm health-check` and `g container logs` for diagnostics
+2. **Infrastructure Problems**: Run `g infra status --all` and check cost analysis
+3. **Code Quality Issues**: Use `autofix` and `./smart-commit.sh` for quality gates
+4. **Container Issues**: Check `g container` commands for cluster and deployment status
+5. **Intelligence Systems**: Validate solve system and autofix capabilities
 
 ### Genesis-Specific Integration Points
-- **Bootstrap CLI**: Project setup and management
-- **Intelligence Layer**: AI-driven analysis and optimization
-- **Multi-environment**: Dev, staging, production isolation
-- **Monitoring**: Comprehensive observability stack
-- **Agent Registry**: Dynamic agent discovery and coordination
+- **Genesis CLI (`g`)**: Comprehensive project and infrastructure management
+- **Intelligence Layer**: solve, autofix, optimization, and prediction systems
+- **Multi-environment**: Dev, staging, production isolation with GCP project separation
+- **Monitoring**: Cloud Operations integration with custom dashboards and alerting
+- **Container Platform**: GKE-based orchestration with agent-cage and claude-talk support
+- **VM Management**: Automated agent VM pools with autoscaling and health monitoring
 
-## Agent Methodologies Reference
+## Key Directory Structure
 
-- **RAPID** (Project Manager): Requirements, Allocation, Planning, Implementation, Delivery
-- **SOLID-CLOUD** (Architect): Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion + Cloud-native, Lifecycle, Observability, User-centric, Data architecture
-- **MENTOR** (Tech Lead): Measure, Evaluate, Nurture, Transform, Optimize, Review
-- **PIPES** (Platform Engineer): Provision, Integration, Protection, Evolution, Standardization
-- **CRAFT** (Backend Developer): Create, Refactor, Authenticate, Function, Test
-- **REACT** (Frontend Developer): Responsive, Efficient, Accessible, Connected, Tested
-- **STREAM** (Data Engineer): Source, Transform, Route, Enrich, Analyze, Monitor
-- **CONNECT** (Integration): Compose, Orchestrate, Negotiate, Network, Error-handle, Test
-- **VERIFY** (QA Automation): Validate, Execute, Report, Integrate, Fix, Yield
-- **SPIDER** (SRE): Symptom identification, Problem isolation, Investigation, Diagnosis, Execution, Review
-- **SHIELD** (Security): Scan, Harden, Isolate, Encrypt, Log, Defend
-- **DEPLOY** (DevOps): Design, Environments, Pipelines, Launch, Orchestrate, Yield
+- **`/cli/`**: Genesis CLI implementation with comprehensive command structure
+- **`/intelligence/`**: AI-driven systems (solve, autofix, smart-commit, optimization)
+- **`/core/`**: Platform core components (context, health, lifecycle, security, secrets)
+- **`/modules/`**: Terraform modules for infrastructure provisioning
+- **`/templates/`**: Project templates and scaffolding
+- **`/monitoring/`**: Comprehensive observability and alerting systems
+- **`/tests/`**: Comprehensive test suite with integration and e2e testing
+- **`/governance/`**: Compliance, cost control, and policy management
+- **`/isolation/`**: Multi-cloud isolation and credential management
+- **`./smart-commit.sh`**: Interactive commit system with quality gates
 
-This Genesis-specific configuration leverages the full power of the multi-agent architecture while maintaining the platform's standards for quality, security, and operational excellence.
+## Testing and Quality Assurance
+
+### Testing Framework
+- **Unit Testing**: pytest-based testing framework with comprehensive coverage
+- **Integration Testing**: Cross-component testing with real GCP services
+- **End-to-End Testing**: Complete workflow validation with automated scenarios
+- **Performance Testing**: Load testing and cost optimization validation
+- **Security Testing**: Comprehensive security scanning and compliance validation
+
+### Quality Gates
+- **Smart Commit System**: Interactive commit process with automated quality validation
+- **Pre-commit Hooks**: Automated linting, formatting, and security scanning
+- **CI/CD Pipeline**: Automated testing, building, and deployment validation
+- **Infrastructure Validation**: Terraform plan validation and cost analysis
+- **Container Health Checks**: Automated health monitoring and rollback capabilities
+
+### Key Commands for Quality Assurance
+```bash
+# Run comprehensive test suite
+pytest tests/ --cov=. --cov-report=html
+
+# Infrastructure validation
+g infra validate --all-modules
+g cost estimate --environment prod
+
+# Security and compliance
+g security scan --comprehensive
+g compliance validate --framework iso27001
+
+# Quality gates
+./smart-commit.sh  # Interactive commit with quality validation
+pre-commit run --all-files  # Run all quality checks
+```
+
+This Genesis-specific configuration provides a comprehensive platform for infrastructure management, intelligent automation, and quality-assured development workflows while maintaining security, compliance, and operational excellence.
