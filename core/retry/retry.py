@@ -21,10 +21,10 @@ import random
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import (Any, Awaitable, Callable, Optional, Set, Type, TypeVar,
-                    Union)
+from typing import Any, Awaitable, Callable, Optional, Set, Type, TypeVar, Union
 
 from ..errors.handler import ErrorCategory, GenesisError
+
 # Import Genesis core components
 from ..logging.logger import GenesisLogger
 

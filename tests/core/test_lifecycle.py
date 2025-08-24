@@ -28,8 +28,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from core.lifecycle.manager import LifecycleManager  # Core classes
 from core.lifecycle.manager import (
-    LifecycleManager,  # Core classes
     LifecycleMetrics,
     ServiceState,
     configure_lifecycle_manager,

@@ -171,7 +171,7 @@ cmd_init() {
     local project_name=""
     local project_type=""
     local template_type=""
-    
+
     # Parse init arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -222,7 +222,7 @@ cmd_init() {
         echo "  7) ml-model     - Machine learning model"
         echo "  8) microservice - Microservice (GKE/Cloud Run)"
         read -p "Choose type (1-8): " type_choice
-        
+
         case $type_choice in
             1) project_type="web-app" ;;
             2) project_type="api" ;;
@@ -247,7 +247,7 @@ project:
   name: $project_name
   type: $project_type
   version: "1.0.0"
-  
+
 # Environment configuration
 environments:
   dev:
@@ -256,14 +256,14 @@ environments:
     auto_deploy: true
     validation_level: basic
     rollback_strategy: manual
-    
+
   test:
     gcp_project: ${project_name}-test
     region: us-central1
     auto_deploy: true
     validation_level: standard
     rollback_strategy: automatic
-    
+
   stage:
     gcp_project: ${project_name}-stage
     region: us-central1
@@ -271,7 +271,7 @@ environments:
     validation_level: comprehensive
     require_approval: true
     rollback_strategy: automatic
-    
+
   prod:
     gcp_project: ${project_name}-prod
     region: us-central1
@@ -367,7 +367,7 @@ security:
 EOF
 
     log_success "Configuration created: $DEPLOY_CONFIG_FILE"
-    
+
     # Create deployment directory
     mkdir -p "$DEPLOYMENT_RECORD_DIR"
     log_info "Created deployment record directory: $DEPLOYMENT_RECORD_DIR"
@@ -376,7 +376,7 @@ EOF
     if [[ -d ".git" ]]; then
         log_info "Setting up git hooks for deployment validation"
         mkdir -p ".git/hooks"
-        
+
         # Pre-commit hook
         cat > ".git/hooks/pre-commit" << 'EOF'
 #!/bin/bash
@@ -399,7 +399,7 @@ cmd_validate() {
     local env="${ENVIRONMENT:-dev}"
     local pre_commit="false"
     local skip_validations=()
-    
+
     # Parse validate arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -419,12 +419,12 @@ cmd_validate() {
     done
 
     validate_environment "$env"
-    
+
     log_info "Running deployment validation for $PROJECT_NAME ($env)"
-    
+
     # Run validators
     local validation_failed="false"
-    
+
     # Security validation
     if [[ ! " ${skip_validations[@]} " =~ " security " ]]; then
         log_info "Running security validation..."
@@ -432,7 +432,7 @@ cmd_validate() {
             validation_failed="true"
         fi
     fi
-    
+
     # Performance validation
     if [[ ! " ${skip_validations[@]} " =~ " performance " ]]; then
         log_info "Running performance validation..."
@@ -440,7 +440,7 @@ cmd_validate() {
             validation_failed="true"
         fi
     fi
-    
+
     # Infrastructure validation
     if [[ ! " ${skip_validations[@]} " =~ " infrastructure " ]]; then
         log_info "Running infrastructure validation..."
@@ -448,7 +448,7 @@ cmd_validate() {
             validation_failed="true"
         fi
     fi
-    
+
     # Cost validation
     if [[ ! " ${skip_validations[@]} " =~ " cost " ]]; then
         log_info "Running cost validation..."
@@ -456,12 +456,12 @@ cmd_validate() {
             validation_failed="true"
         fi
     fi
-    
+
     if [[ "$validation_failed" == "true" ]]; then
         log_error "Validation failed for $PROJECT_NAME ($env)"
         exit 1
     fi
-    
+
     log_success "All validations passed for $PROJECT_NAME ($env)"
 }
 
@@ -471,7 +471,7 @@ main() {
     PROJECT_NAME=""
     ENVIRONMENT="dev"
     DRY_RUN="false"
-    
+
     if [[ $# -eq 0 ]]; then
         show_help
         exit 0

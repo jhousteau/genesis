@@ -34,7 +34,7 @@ on:
 env:
   PROJECT_NAME: ${{ vars.PROJECT_NAME }}
   REGISTRY_REGION: ${{ vars.REGISTRY_REGION || 'us-central1' }}
-  
+
 permissions:
   contents: read
   id-token: write
@@ -72,7 +72,7 @@ jobs:
             echo "deployment_strategy=rolling" >> $GITHUB_OUTPUT
             echo "should_deploy=false" >> $GITHUB_OUTPUT
           fi
-          
+
           # Set GCP project based on environment
           case "${{ steps.env.outputs.environment }}" in
             dev) echo "gcp_project=${{ vars.PROJECT_NAME }}-dev" >> $GITHUB_OUTPUT ;;
@@ -186,9 +186,9 @@ jobs:
         run: |
           IMAGE_TAG="${{ github.sha }}-$(date +%Y%m%d%H%M%S)"
           IMAGE_URL="${{ env.REGISTRY_REGION }}-docker.pkg.dev/${{ needs.setup.outputs.gcp_project }}/containers/${{ env.PROJECT_NAME }}"
-          
+
           echo "Building image: ${IMAGE_URL}:${IMAGE_TAG}"
-          
+
           # Build with build args
           docker build \
             --tag "${IMAGE_URL}:${IMAGE_TAG}" \
@@ -199,7 +199,7 @@ jobs:
             --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
             --build-arg VCS_REF="${{ github.sha }}" \
             .
-            
+
           echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "image_url=${IMAGE_URL}" >> $GITHUB_OUTPUT
 
@@ -210,7 +210,7 @@ jobs:
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
           echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update && sudo apt-get install -y trivy
-          
+
           # Scan image
           trivy image --severity HIGH,CRITICAL --format sarif --output trivy-results.sarif "${{ steps.build.outputs.image_url }}:${{ steps.build.outputs.image_tag }}"
 
@@ -273,7 +273,7 @@ jobs:
     needs: [setup, build, validate]
     if: needs.setup.outputs.should_deploy == 'true'
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: ${{ needs.setup.outputs.environment }}
       url: ${{ steps.deploy.outputs.service_url }}
     outputs:
@@ -311,11 +311,11 @@ jobs:
         run: |
           DEPLOYMENT_ID="${{ needs.setup.outputs.environment }}-$(date +%Y%m%d-%H%M%S)-${{ github.sha:0:7 }}"
           IMAGE_URL="${{ needs.build.outputs.image_url }}:${{ needs.build.outputs.image_tag }}"
-          
+
           echo "Deploying ${{ env.PROJECT_NAME }} to ${{ needs.setup.outputs.environment }}"
           echo "Image: ${IMAGE_URL}"
           echo "Strategy: ${{ needs.setup.outputs.deployment_strategy }}"
-          
+
           case "${{ needs.setup.outputs.deployment_strategy }}" in
             canary)
               # Deploy canary version with no traffic
@@ -326,14 +326,14 @@ jobs:
                 --tag="canary-${DEPLOYMENT_ID}" \
                 --no-traffic \
                 --set-env-vars="ENV=${{ needs.setup.outputs.environment }},VERSION=${{ needs.build.outputs.image_tag }}"
-              
+
               # Gradually shift traffic to canary
               gcloud run services update-traffic "${{ env.PROJECT_NAME }}" \
                 --region="${{ env.REGISTRY_REGION }}" \
                 --project="${{ needs.setup.outputs.gcp_project }}" \
                 --to-tags="canary-${DEPLOYMENT_ID}=10"
               ;;
-              
+
             blue-green)
               # Deploy new version with tag
               gcloud run deploy "${{ env.PROJECT_NAME }}" \
@@ -343,17 +343,17 @@ jobs:
                 --tag="green-${DEPLOYMENT_ID}" \
                 --no-traffic \
                 --set-env-vars="ENV=${{ needs.setup.outputs.environment }},VERSION=${{ needs.build.outputs.image_tag }}"
-              
+
               # Health check before switching traffic
               sleep 30
-              
+
               # Switch all traffic to new version
               gcloud run services update-traffic "${{ env.PROJECT_NAME }}" \
                 --region="${{ env.REGISTRY_REGION }}" \
                 --project="${{ needs.setup.outputs.gcp_project }}" \
                 --to-tags="green-${DEPLOYMENT_ID}=100"
               ;;
-              
+
             *)
               # Rolling deployment (default)
               gcloud run deploy "${{ env.PROJECT_NAME }}" \
@@ -364,16 +364,16 @@ jobs:
                 --set-env-vars="ENV=${{ needs.setup.outputs.environment }},VERSION=${{ needs.build.outputs.image_tag }}"
               ;;
           esac
-          
+
           # Get service URL
           SERVICE_URL=$(gcloud run services describe "${{ env.PROJECT_NAME }}" \
             --region="${{ env.REGISTRY_REGION }}" \
             --project="${{ needs.setup.outputs.gcp_project }}" \
             --format="value(status.url)")
-          
+
           echo "service_url=${SERVICE_URL}" >> $GITHUB_OUTPUT
           echo "deployment_id=${DEPLOYMENT_ID}" >> $GITHUB_OUTPUT
-          
+
           echo "✅ Deployment successful!"
           echo "🔗 Service URL: ${SERVICE_URL}"
 
@@ -387,19 +387,19 @@ jobs:
         run: |
           echo "Performing health checks..."
           SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
-          
+
           # Wait for service to be ready
           for i in {1..30}; do
             if curl -f "${SERVICE_URL}/health" --max-time 10; then
               echo "✅ Health check passed"
               break
             fi
-            
+
             if [[ $i -eq 30 ]]; then
               echo "❌ Health check failed after 30 attempts"
               exit 1
             fi
-            
+
             echo "⏳ Waiting for service to be ready (attempt $i/30)"
             sleep 10
           done
@@ -408,24 +408,24 @@ jobs:
         run: |
           echo "Running performance validation..."
           SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
-          
+
           # Simple performance check
           RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "${SERVICE_URL}")
           echo "Response time: ${RESPONSE_TIME}s"
-          
+
           # Fail if response time > 5 seconds
           if (( $(echo "${RESPONSE_TIME} > 5.0" | bc -l) )); then
             echo "❌ Performance validation failed: Response time too high"
             exit 1
           fi
-          
+
           echo "✅ Performance validation passed"
 
       - name: Smoke tests
         run: |
           echo "Running smoke tests..."
           SERVICE_URL="${{ needs.deploy.outputs.service_url }}"
-          
+
           # Add your smoke tests here
           # Example: Test critical endpoints
           curl -f "${SERVICE_URL}/health"
@@ -458,7 +458,7 @@ jobs:
             "validation_passed": "${{ needs.validate-deployment.result == 'success' }}"
           }
           EOF
-          
+
           echo "📋 Deployment record created"
           cat deployment-record.json
 
@@ -476,7 +476,7 @@ jobs:
   promote:
     needs: [setup, deploy, validate-deployment]
     if: |
-      needs.setup.outputs.environment == 'dev' && 
+      needs.setup.outputs.environment == 'dev' &&
       needs.validate-deployment.result == 'success' &&
       github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest

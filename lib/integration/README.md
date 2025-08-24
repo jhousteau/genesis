@@ -353,17 +353,17 @@ integration:
     enabled: true
     auto_discovery: true
     health_check_interval: 30
-  
+
   event_bus:
     enabled: true
     max_queue_size: 10000
     delivery_timeout: 5
-  
+
   config_manager:
     enabled: true
     hot_reload: true
     validation_enabled: true
-  
+
   health_aggregator:
     enabled: true
     aggregation_strategy: "weighted"

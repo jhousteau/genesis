@@ -72,11 +72,11 @@ modules/
 ```hcl
 module "basic_monitoring" {
   source = "./modules/gcp-monitoring"
-  
+
   project_id = var.project_id
   environment = var.environment
   services = var.monitored_services
-  
+
   notification_channels = {
     email = ["team@company.com"]
     slack = ["https://hooks.slack.com/..."]
@@ -88,11 +88,11 @@ module "basic_monitoring" {
 ```hcl
 module "observability" {
   source = "./modules/complete-stack"
-  
+
   project_id = var.project_id
   environment = var.environment
   cluster_name = var.gke_cluster_name
-  
+
   enable_prometheus = true
   enable_jaeger = true
   enable_log_aggregation = true
@@ -104,15 +104,15 @@ module "observability" {
 ```hcl
 module "production_monitoring" {
   source = "./modules/production-stack"
-  
+
   project_id = var.project_id
   environment = "production"
   region = var.region
-  
+
   high_availability = true
   backup_enabled = true
   retention_days = 90
-  
+
   alert_severity_routing = {
     critical = "pagerduty"
     warning = "slack"

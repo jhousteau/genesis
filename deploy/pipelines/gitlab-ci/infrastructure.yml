@@ -6,10 +6,10 @@ variables:
   TF_VERSION: "1.6.0"
   TF_ROOT: "${CI_PROJECT_DIR}"
   TF_ADDRESS: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state"
-  
+
   # GCP configuration
   GCLOUD_VERSION: "latest"
-  
+
   # Security tools
   TFSEC_VERSION: "latest"
   CHECKOV_VERSION: "latest"
@@ -60,7 +60,7 @@ setup:
   script:
     - |
       echo "🔧 Setting up deployment environment..."
-      
+
       # Determine target environment based on branch
       if [[ "$CI_COMMIT_REF_NAME" == "main" ]]; then
         echo "ENVIRONMENT=prod" >> deploy.env
@@ -83,7 +83,7 @@ setup:
         echo "GCP_PROJECT_ID=${CI_PROJECT_NAME}-dev" >> deploy.env
         echo "AUTO_APPROVE=true" >> deploy.env
       fi
-      
+
       # Determine working directory
       if [[ -d "environments/${ENVIRONMENT}" ]]; then
         echo "WORKING_DIR=environments/${ENVIRONMENT}" >> deploy.env
@@ -94,9 +94,9 @@ setup:
       else
         echo "WORKING_DIR=." >> deploy.env
       fi
-      
+
       echo "DEPLOYMENT_ID=${CI_COMMIT_SHA:0:8}-$(date +%Y%m%d%H%M%S)" >> deploy.env
-      
+
       echo "📋 Environment configuration:"
       cat deploy.env
   artifacts:
@@ -111,7 +111,7 @@ validate:
   script:
     - |
       echo "📋 Validating Terraform configuration..."
-      
+
       # Format check
       echo "Checking Terraform formatting..."
       terraform fmt -check -recursive -diff
@@ -120,7 +120,7 @@ validate:
         echo "Run 'terraform fmt -recursive' to fix formatting issues"
         exit 1
       fi
-      
+
       # Initialize and validate each environment
       for env_dir in environments/*/; do
         if [[ -f "$env_dir/main.tf" ]]; then
@@ -131,7 +131,7 @@ validate:
           cd "${TF_ROOT}"
         fi
       done
-      
+
       # Validate modules
       for module_dir in modules/*/; do
         if [[ -f "$module_dir/main.tf" ]]; then
@@ -142,7 +142,7 @@ validate:
           cd "${TF_ROOT}"
         fi
       done
-      
+
       echo "✅ Terraform validation completed"
   only:
     changes:
@@ -167,7 +167,7 @@ docs_check:
   script:
     - |
       echo "📚 Checking Terraform documentation..."
-      
+
       # Check each module has up-to-date documentation
       for module_dir in modules/*/; do
         if [[ -f "$module_dir/main.tf" ]]; then
@@ -181,7 +181,7 @@ docs_check:
           cd "${TF_ROOT}"
         fi
       done
-      
+
       echo "✅ All documentation is up to date"
   only:
     changes:
@@ -201,21 +201,21 @@ security_tfsec:
   script:
     - |
       echo "🔒 Running tfsec security scan..."
-      
+
       # Run tfsec with JSON output
       tfsec . --format json --out tfsec-results.json || true
-      
+
       # Parse results and show summary
       if [[ -f "tfsec-results.json" ]]; then
         HIGH_ISSUES=$(cat tfsec-results.json | jq '.results[] | select(.severity=="HIGH") | .rule_id' | wc -l)
         MEDIUM_ISSUES=$(cat tfsec-results.json | jq '.results[] | select(.severity=="MEDIUM") | .rule_id' | wc -l)
         LOW_ISSUES=$(cat tfsec-results.json | jq '.results[] | select(.severity=="LOW") | .rule_id' | wc -l)
-        
+
         echo "📊 Security scan results:"
         echo "  High:   $HIGH_ISSUES"
         echo "  Medium: $MEDIUM_ISSUES"
         echo "  Low:    $LOW_ISSUES"
-        
+
         if [[ $HIGH_ISSUES -gt 0 ]]; then
           echo "❌ High severity security issues found"
           cat tfsec-results.json | jq '.results[] | select(.severity=="HIGH")'
@@ -249,13 +249,13 @@ security_checkov:
   script:
     - |
       echo "🔒 Running Checkov security scan..."
-      
+
       # Run Checkov with JUnit output
       checkov -d . --framework terraform \
         --output cli --output junitxml \
         --output-file-path console,checkov-results.xml \
         --soft-fail || true
-      
+
       echo "✅ Checkov scan completed"
   artifacts:
     paths:
@@ -281,22 +281,22 @@ cost_estimation:
   script:
     - |
       echo "💰 Running infrastructure cost estimation..."
-      
+
       if [[ -n "${INFRACOST_API_KEY}" ]]; then
         # Generate cost estimate
         infracost breakdown --path . \
           --format json \
           --out-file infracost-base.json
-        
+
         # Generate HTML report
         infracost output --path infracost-base.json \
           --format html \
           --out-file infracost-report.html
-        
+
         # Show cost summary
         infracost output --path infracost-base.json \
           --format table
-        
+
         echo "✅ Cost estimation completed"
       else
         echo "⚠️ INFRACOST_API_KEY not set, skipping cost estimation"
@@ -327,26 +327,26 @@ plan:
       echo "Workspace: ${WORKSPACE}"
       echo "Working directory: ${WORKING_DIR}"
       echo "Project: ${GCP_PROJECT_ID}"
-      
+
       cd "${WORKING_DIR}"
-      
+
       # Configure GCP project
       gcloud config set project ${GCP_PROJECT_ID}
-      
+
       # Initialize Terraform
       terraform init \
         -backend-config="bucket=${CI_PROJECT_NAME}-tfstate-${ENVIRONMENT}" \
         -backend-config="prefix=terraform/state"
-      
+
       # Select or create workspace
       terraform workspace select ${WORKSPACE} || terraform workspace new ${WORKSPACE}
-      
+
       # Create terraform.tfvars if it doesn't exist
       if [[ ! -f "terraform.tfvars" ]] && [[ -f "terraform.tfvars.example" ]]; then
         cp terraform.tfvars.example terraform.tfvars
         sed -i "s/PROJECT_ID_PLACEHOLDER/${GCP_PROJECT_ID}/g" terraform.tfvars
       fi
-      
+
       # Run terraform plan
       terraform plan \
         -detailed-exitcode \
@@ -354,21 +354,21 @@ plan:
         -var="project_id=${GCP_PROJECT_ID}" \
         -var="environment=${ENVIRONMENT}" \
         -var="deployment_id=${DEPLOYMENT_ID}"
-      
+
       PLAN_EXIT_CODE=$?
-      
+
       # Save plan output for review
       terraform show -no-color "tfplan-${DEPLOYMENT_ID}" > plan-output.txt
-      
+
       if [[ $PLAN_EXIT_CODE -eq 2 ]]; then
         echo "✅ Terraform plan completed with changes"
         echo "HAS_CHANGES=true" >> ../plan-status.env
-        
+
         # Generate plan summary
         CHANGES=$(terraform show -json "tfplan-${DEPLOYMENT_ID}" | jq -r '.resource_changes[] | "\(.change.actions[0]) \(.type) \(.name)"' | sort)
         echo "📋 Planned changes:"
         echo "$CHANGES"
-        
+
       elif [[ $PLAN_EXIT_CODE -eq 0 ]]; then
         echo "ℹ️ Terraform plan completed with no changes"
         echo "HAS_CHANGES=false" >> ../plan-status.env
@@ -408,26 +408,26 @@ apply_dev:
   script:
     - |
       echo "🚀 Applying Terraform changes to ${ENVIRONMENT}..."
-      
+
       cd "${WORKING_DIR}"
-      
+
       # Configure GCP project
       gcloud config set project ${GCP_PROJECT_ID}
-      
+
       # Initialize Terraform
       terraform init \
         -backend-config="bucket=${CI_PROJECT_NAME}-tfstate-${ENVIRONMENT}" \
         -backend-config="prefix=terraform/state"
-      
+
       # Select workspace
       terraform workspace select ${WORKSPACE}
-      
+
       # Apply the plan
       terraform apply -auto-approve "tfplan-${DEPLOYMENT_ID}"
-      
+
       # Save outputs
       terraform output -json > terraform-outputs.json
-      
+
       echo "✅ Terraform apply completed successfully"
   artifacts:
     paths:
@@ -454,26 +454,26 @@ apply_prod:
     - |
       echo "🚀 Applying Terraform changes to ${ENVIRONMENT}..."
       echo "⚠️ This is a PRODUCTION deployment"
-      
+
       cd "${WORKING_DIR}"
-      
+
       # Configure GCP project
       gcloud config set project ${GCP_PROJECT_ID}
-      
+
       # Initialize Terraform
       terraform init \
         -backend-config="bucket=${CI_PROJECT_NAME}-tfstate-${ENVIRONMENT}" \
         -backend-config="prefix=terraform/state"
-      
+
       # Select workspace
       terraform workspace select ${WORKSPACE}
-      
+
       # Apply the plan
       terraform apply -auto-approve "tfplan-${DEPLOYMENT_ID}"
-      
+
       # Save outputs
       terraform output -json > terraform-outputs.json
-      
+
       # Create deployment record
       cat > deployment-record.json << EOF
       {
@@ -487,7 +487,7 @@ apply_prod:
         "status": "success"
       }
       EOF
-      
+
       echo "✅ Production deployment completed successfully"
   artifacts:
     paths:
@@ -509,10 +509,10 @@ verify_infrastructure:
   script:
     - |
       echo "🔍 Verifying infrastructure deployment..."
-      
+
       # Configure GCP project
       gcloud config set project ${GCP_PROJECT_ID}
-      
+
       # Check project status
       PROJECT_STATE=$(gcloud projects describe ${GCP_PROJECT_ID} --format="value(lifecycleState)")
       if [[ "$PROJECT_STATE" == "ACTIVE" ]]; then
@@ -521,7 +521,7 @@ verify_infrastructure:
         echo "❌ Project ${GCP_PROJECT_ID} is not active: $PROJECT_STATE"
         exit 1
       fi
-      
+
       # Check essential APIs
       echo "🔍 Checking enabled APIs..."
       REQUIRED_APIS=(
@@ -530,7 +530,7 @@ verify_infrastructure:
         "cloudbuild.googleapis.com"
         "storage.googleapis.com"
       )
-      
+
       for api in "${REQUIRED_APIS[@]}"; do
         if gcloud services list --enabled --filter="name:$api" --format="value(name)" | grep -q "$api"; then
           echo "✅ API $api is enabled"
@@ -538,16 +538,16 @@ verify_infrastructure:
           echo "⚠️ API $api is not enabled"
         fi
       done
-      
+
       # Check resource quotas
       echo "📊 Checking resource quotas..."
       gcloud compute project-info describe --format="table(quotas.metric,quotas.limit,quotas.usage)" \
         --filter="quotas.metric:CPUS OR quotas.metric:DISKS_TOTAL_GB" || true
-      
+
       # Check IAM policies
       echo "🔐 Checking IAM security..."
       gcloud projects get-iam-policy ${GCP_PROJECT_ID} --format="table(bindings.role,bindings.members.flatten())" | head -20
-      
+
       # Health check summary
       echo "✅ Infrastructure verification completed"
   only:
@@ -566,15 +566,15 @@ compliance_check:
   script:
     - |
       echo "📋 Running compliance checks..."
-      
+
       # Configure GCP project
       gcloud config set project ${GCP_PROJECT_ID}
-      
+
       # Check organization policies
       echo "🏛️ Organization policies:"
       gcloud resource-manager org-policies list --project=${GCP_PROJECT_ID} \
         --format="table(constraint,listPolicy.allValues)" || echo "No organization policies found"
-      
+
       # Check security recommendations
       echo "🔐 Security recommendations:"
       gcloud recommender recommendations list \
@@ -583,21 +583,21 @@ compliance_check:
         --location="global" \
         --format="table(name,description)" \
         --limit=10 || echo "No security recommendations available"
-      
+
       # Check for exposed resources
       echo "🌐 Checking for public resources..."
-      
+
       # Check for public storage buckets
       gsutil ls -b gs://* 2>/dev/null | while read bucket; do
         if gsutil iam get "$bucket" | grep -q "allUsers"; then
           echo "⚠️ Public bucket found: $bucket"
         fi
       done || true
-      
+
       # Check for public IP addresses
       gcloud compute instances list --format="table(name,zone,status,networkInterfaces[0].accessConfigs[0].natIP)" \
         --filter="status:RUNNING" || true
-      
+
       echo "✅ Compliance check completed"
 
 # Drift detection (scheduled or manual)
@@ -612,40 +612,40 @@ drift_detection:
   script:
     - |
       echo "🔍 Checking for infrastructure drift..."
-      
+
       cd "${WORKING_DIR}"
-      
+
       # Configure GCP project
       gcloud config set project ${GCP_PROJECT_ID}
-      
+
       # Initialize Terraform
       terraform init \
         -backend-config="bucket=${CI_PROJECT_NAME}-tfstate-${ENVIRONMENT}" \
         -backend-config="prefix=terraform/state"
-      
+
       # Select workspace
       terraform workspace select ${WORKSPACE}
-      
+
       # Create terraform.tfvars if needed
       if [[ ! -f "terraform.tfvars" ]] && [[ -f "terraform.tfvars.example" ]]; then
         cp terraform.tfvars.example terraform.tfvars
         sed -i "s/PROJECT_ID_PLACEHOLDER/${GCP_PROJECT_ID}/g" terraform.tfvars
       fi
-      
+
       # Run plan to detect drift
       terraform plan \
         -detailed-exitcode \
         -var="project_id=${GCP_PROJECT_ID}" \
         -var="environment=${ENVIRONMENT}" \
         > drift-report.txt
-      
+
       DRIFT_EXIT_CODE=$?
-      
+
       if [[ $DRIFT_EXIT_CODE -eq 2 ]]; then
         echo "⚠️ Configuration drift detected!"
         echo "Drift report:"
         cat drift-report.txt
-        
+
         # Create drift alert (in real implementation, you'd send to monitoring system)
         cat > drift-alert.json << EOF
       {
@@ -657,7 +657,7 @@ drift_detection:
         "details": "Configuration drift detected in ${ENVIRONMENT} environment"
       }
       EOF
-        
+
         exit 1
       elif [[ $DRIFT_EXIT_CODE -eq 0 ]]; then
         echo "✅ No configuration drift detected"

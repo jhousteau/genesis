@@ -16,17 +16,7 @@ High-level platform understanding and architectural decisions.
 ### 🚀 Getting Started (`01-getting-started/`)
 Quick setup and initial deployment guides.
 
-- [**Quickstart Guide**](01-getting-started/quickstart.md) - 5-minute setup and deployment
-
-### 🏗️ Architecture (`02-architecture/`)
-Deep technical documentation for system design and implementation patterns.
-
-*Note: Architecture documentation is in development.*
-
-### 📖 API Reference (`03-api-reference/`)
-Complete API documentation and reference materials.
-
-*Note: API documentation is in development.*
+- [**Quickstart Guide**](01-getting-started/quickstart.md) - Platform setup and usage
 
 ### 🛠️ Guides (`04-guides/`)
 Practical guides for specific features and operational procedures.
@@ -35,18 +25,9 @@ Practical guides for specific features and operational procedures.
 - [**GCP Environment Isolation**](04-guides/gcp-isolation.md) - Multi-environment setup and isolation
 - [**GCP Isolation Setup**](04-guides/gcp-isolation-setup.md) - Step-by-step isolation configuration
 
-### ⚙️ Operations (`05-operations/`)
-Operational guides, runbooks, and troubleshooting procedures.
-
-*Note: Operations documentation is in development.*
-
-### 📋 Reference (`06-reference/`)
-Reference materials, specifications, and detailed technical information.
-
-*Note: Reference documentation is in development.*
 
 ### 📦 Archive (`archive/`)
-Historical documentation and deprecated guides maintained for reference.
+Historical project reports and completed initiative documentation.
 
 ## 🎯 Quick Navigation
 
@@ -54,25 +35,24 @@ Historical documentation and deprecated guides maintained for reference.
 1. Start with [Platform Overview](00-overview/README.md)
 2. Follow the [Quickstart Guide](01-getting-started/quickstart.md)
 3. Set up [GCP Environment Isolation](04-guides/gcp-isolation.md)
-4. Configure [Git Branch Protection](04-guides/git-branch-protection.md)
 
 ### For Developers
 1. Review [Grand Design](00-overview/GRAND_DESIGN.md) for architectural understanding
 2. Check [Feature Matrix](00-overview/FEATURE_MATRIX.md) for capabilities
 3. Explore component documentation:
-   - [Genesis Core](../core/README.md) - Production plumbing
-   - [Intelligence System](../intelligence/README.md) - AI automation
+   - [Genesis Core](../core/README.md) - Production libraries
+   - [Intelligence System](../intelligence/README.md) - Smart-commit and SOLVE
    - [Terraform Modules](../modules/README.md) - Infrastructure components
 
 ### For Operations Teams
 1. Study [Architecture Plan](00-overview/ARCHITECTURE_PLAN.md)
-2. Review [Progress Dashboard](00-overview/PROGRESS_DASHBOARD.md)
-3. Implement operational procedures from `05-operations/`
+2. Implement [VM Management](04-guides/vm-management-deployment.md)
+3. Set up [Secret Management](security/SECRET_MANAGEMENT_GUIDE.md)
 
 ### For Architects
 1. Deep dive into [Grand Design](00-overview/GRAND_DESIGN.md)
 2. Review [Architecture Plan](00-overview/ARCHITECTURE_PLAN.md)
-3. Understand component interactions in `02-architecture/`
+3. Understand [MCP Integration](mcp-integration-guide.md)
 
 ## 🏗️ Component Documentation
 
@@ -90,23 +70,15 @@ Historical documentation and deprecated guides maintained for reference.
 ## 📖 Documentation Standards
 
 ### Writing Guidelines
-- **Clear and Concise**: Use simple language and clear explanations
-- **Example-Driven**: Include practical examples and code snippets
-- **Comprehensive**: Cover all aspects from basics to advanced usage
-- **Maintained**: Keep documentation current with code changes
-
-### Structure Standards
-- **README.md**: Overview and quick start for each component
-- **Examples**: Practical usage examples in `examples/` directories
-- **API Docs**: Generated from code comments where applicable
-- **Guides**: Step-by-step procedures for common tasks
+- **Concise and Practical** - Focus on actionable information
+- **Current and Tested** - All examples work with current implementation
+- **Example-Driven** - Show real usage patterns
 
 ### Contribution Guidelines
-1. Follow existing documentation patterns
-2. Include examples and code snippets
-3. Test all procedures and examples
-4. Update related documentation when making changes
-5. Use consistent formatting and style
+1. Test all procedures before documenting
+2. Use actual CLI commands and file paths
+3. Update related documentation when making changes
+4. Keep examples current with codebase
 
 ## 🔍 Finding What You Need
 
@@ -121,12 +93,10 @@ Historical documentation and deprecated guides maintained for reference.
 docs/
 ├── 00-overview/        # Platform understanding
 ├── 01-getting-started/ # Quick setup
-├── 02-architecture/    # Technical design
-├── 03-api-reference/   # API documentation
-├── 04-guides/          # How-to guides
-├── 05-operations/      # Operational procedures
-├── 06-reference/       # Detailed reference
-└── archive/           # Historical documentation
+├── 04-guides/          # Practical guides
+├── archive/            # Historical reports and documentation
+├── security/           # Security documentation
+└── mcp-integration-guide.md # MCP integration documentation
 ```
 
 ## 🤝 Contributing to Documentation
@@ -160,4 +130,4 @@ docs/
 
 **Genesis Documentation** - Your complete guide to the Universal Project Platform
 
-*Last Updated: August 22, 2025*
+*Last Updated: August 24, 2025*

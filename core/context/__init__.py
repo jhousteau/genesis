@@ -10,9 +10,18 @@ Provides context management for distributed applications with:
 - Context propagation patterns
 """
 
-from .context import (Context, ContextManager, RequestContext, TraceContext,
-                      UserContext, clear_context, context_span,
-                      current_context, get_context, set_context)
+from .context import (
+    Context,
+    ContextManager,
+    RequestContext,
+    TraceContext,
+    UserContext,
+    clear_context,
+    context_span,
+    current_context,
+    get_context,
+    set_context,
+)
 
 __all__ = [
     # Core context classes

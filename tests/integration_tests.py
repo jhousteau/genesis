@@ -17,8 +17,10 @@ import pytest
 # Add the lib directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lib", "python"))
 
-from whitehorse_core.intelligence import (IntelligenceCoordinator,
-                                          SystemIntegrationStatus)
+from whitehorse_core.intelligence import (
+    IntelligenceCoordinator,
+    SystemIntegrationStatus,
+)
 
 # Test configuration
 BOOTSTRAPPER_ROOT = Path(__file__).parent.parent

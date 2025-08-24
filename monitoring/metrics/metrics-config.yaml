@@ -4,7 +4,7 @@ metrics:
   collection:
     interval: 60s
     retention: 30d
-    
+
   custom_metrics:
     - name: business_transactions
       displayName: "Business Transactions"
@@ -19,7 +19,7 @@ metrics:
         - key: status
           valueType: STRING
           description: "Transaction status (success/failure)"
-    
+
     - name: api_request_duration
       displayName: "API Request Duration"
       metricKind: GAUGE
@@ -33,7 +33,7 @@ metrics:
         - key: method
           valueType: STRING
           description: "HTTP method"
-    
+
     - name: cache_hit_ratio
       displayName: "Cache Hit Ratio"
       metricKind: GAUGE
@@ -44,7 +44,7 @@ metrics:
         - key: cache_name
           valueType: STRING
           description: "Name of the cache"
-    
+
     - name: queue_depth
       displayName: "Message Queue Depth"
       metricKind: GAUGE
@@ -55,7 +55,7 @@ metrics:
         - key: queue_name
           valueType: STRING
           description: "Name of the message queue"
-    
+
     - name: deployment_frequency
       displayName: "Deployment Frequency"
       metricKind: CUMULATIVE
@@ -74,11 +74,11 @@ metrics:
     - type: stackdriver
       enabled: true
       project_id: "${GCP_PROJECT}"
-      
+
     - type: prometheus
       enabled: false
       endpoint: "http://prometheus:9090"
-      
+
     - type: datadog
       enabled: false
       api_key: "${DATADOG_API_KEY}"
@@ -92,13 +92,13 @@ metrics:
         - mean
         - max
       window: 5m
-      
+
     - metric: business_transactions
       operations:
         - sum
         - rate
       window: 1m
-      
+
     - metric: cache_hit_ratio
       operations:
         - mean
@@ -108,11 +108,11 @@ metrics:
     - name: availability
       target: 99.9
       window: 30d
-      
+
     - name: latency_p95
       target: 500  # ms
       window: 7d
-      
+
     - name: error_rate
       target: 0.1  # percentage
       window: 7d

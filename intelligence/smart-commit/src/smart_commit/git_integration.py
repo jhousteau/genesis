@@ -124,7 +124,9 @@ class GitIntegration:
     def stage_all(self) -> bool:
         """Stage all changes."""
         try:
-            subprocess.run(["git", "add", "-A"], cwd=self.project_root, check=True, timeout=10)  # noqa: S603  # Subprocess secured: shell=False, validated inputs
+            subprocess.run(
+                ["git", "add", "-A"], cwd=self.project_root, check=True, timeout=10
+            )  # noqa: S603  # Subprocess secured: shell=False, validated inputs
             return True
         except Exception:
             return False
@@ -132,7 +134,9 @@ class GitIntegration:
     def stage_files(self, files: list[str]) -> bool:
         """Stage specific files."""
         try:
-            subprocess.run(["git", "add"] + files, cwd=self.project_root, check=True, timeout=10)  # noqa: S603  # Subprocess secured: shell=False, validated inputs
+            subprocess.run(
+                ["git", "add"] + files, cwd=self.project_root, check=True, timeout=10
+            )  # noqa: S603  # Subprocess secured: shell=False, validated inputs
             return True
         except Exception:
             return False
@@ -234,7 +238,9 @@ class GitIntegration:
         total_additions = sum(c.additions for c in changes)
         total_deletions = sum(c.deletions for c in changes)
         if total_additions > 50 or total_deletions > 50:
-            details.append(f"- {total_additions} additions, {total_deletions} deletions")
+            details.append(
+                f"- {total_additions} additions, {total_deletions} deletions"
+            )
 
         if details:
             message += "\n\n" + "\n".join(details)

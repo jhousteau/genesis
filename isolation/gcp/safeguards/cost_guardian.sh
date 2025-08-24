@@ -64,10 +64,10 @@ create_cost_config() {
     local emergency_threshold="${4:-100}"
     local alert_email="${5:-}"
     local slack_webhook="${6:-}"
-    
+
     mkdir -p "$(dirname "$COST_CONFIG_FILE")"
     mkdir -p "$(dirname "$COST_ALERT_FILE")"
-    
+
     cat > "$COST_CONFIG_FILE" <<EOF
 {
     "threshold_usd": $threshold_usd,
@@ -83,7 +83,7 @@ create_cost_config() {
     "version": "$COST_GUARDIAN_VERSION"
 }
 EOF
-    
+
     log_success "Cost configuration created: $COST_CONFIG_FILE"
 }
 
@@ -93,30 +93,30 @@ get_current_billing() {
     if [[ -z "$project_id" ]]; then
         project_id=$(gcloud config get-value core/project 2>/dev/null || echo "")
     fi
-    
+
     if [[ -z "$project_id" ]]; then
         log_error "No project ID available for billing check"
         return 1
     fi
-    
+
     # Get billing account
     local billing_account
     billing_account=$(gcloud billing projects describe "$project_id" --format="value(billingAccountName)" 2>/dev/null || echo "")
-    
+
     if [[ -z "$billing_account" ]]; then
         log_warning "No billing account associated with project $project_id"
         return 1
     fi
-    
+
     # Extract billing account ID
     local billing_account_id
     billing_account_id=$(echo "$billing_account" | sed 's|billingAccounts/||')
-    
+
     # Get current month's usage (approximation using Cloud Resource Manager API)
     # Note: This is a simplified approach. For production, use Cloud Billing API with proper setup
     log_info "Checking billing for project: $project_id"
     log_info "Billing account: $billing_account_id"
-    
+
     # For now, return mock data structure. In production, implement actual billing API calls
     cat <<EOF
 {
@@ -135,7 +135,7 @@ EOF
 calculate_cost_percentage() {
     local current_cost="$1"
     local threshold="$2"
-    
+
     # Use bc for floating point arithmetic if available, otherwise use awk
     if command -v bc >/dev/null 2>&1; then
         echo "scale=2; ($current_cost / $threshold) * 100" | bc
@@ -147,27 +147,27 @@ calculate_cost_percentage() {
 # Check cost thresholds
 check_cost_thresholds() {
     log_step "Checking cost thresholds..."
-    
+
     local billing_info
     billing_info=$(get_current_billing)
-    
+
     if [[ $? -ne 0 ]]; then
         log_warning "Unable to retrieve billing information"
         return 1
     fi
-    
+
     local current_cost
     current_cost=$(echo "$billing_info" | jq -r '.current_month_cost // 0')
-    
+
     local percentage
     percentage=$(calculate_cost_percentage "$current_cost" "$THRESHOLD_USD")
-    
+
     log_info "Current cost: \$${current_cost} USD (${percentage}% of \$${THRESHOLD_USD} threshold)"
-    
+
     # Determine alert level
     local alert_level="OK"
     local alert_color="$GREEN"
-    
+
     if (( $(echo "$percentage >= $EMERGENCY_THRESHOLD" | bc -l 2>/dev/null || awk "BEGIN {print ($percentage >= $EMERGENCY_THRESHOLD)}") )); then
         alert_level="EMERGENCY"
         alert_color="$RED"
@@ -186,10 +186,10 @@ check_cost_thresholds() {
     else
         log_success "Cost levels normal"
     fi
-    
+
     # Log the check
     log_cost_check "$alert_level" "$current_cost" "$percentage"
-    
+
     # Return appropriate exit code
     case "$alert_level" in
         "EMERGENCY") return 3 ;;
@@ -204,9 +204,9 @@ log_cost_check() {
     local alert_level="$1"
     local current_cost="$2"
     local percentage="$3"
-    
+
     mkdir -p "$(dirname "$COST_LOG_FILE")"
-    
+
     local log_entry
     log_entry=$(cat <<EOF
 {
@@ -222,7 +222,7 @@ log_cost_check() {
 }
 EOF
 )
-    
+
     echo "$log_entry" >> "$COST_LOG_FILE"
 }
 
@@ -231,7 +231,7 @@ send_cost_alert() {
     local level="$1"
     local current_cost="$2"
     local percentage="$3"
-    
+
     local alert_data
     alert_data=$(cat <<EOF
 {
@@ -247,16 +247,16 @@ send_cost_alert() {
 }
 EOF
 )
-    
+
     # Save alert
     mkdir -p "$(dirname "$COST_ALERT_FILE")"
     echo "$alert_data" >> "$COST_ALERT_FILE"
-    
+
     # Send Slack notification if configured
     if [[ -n "$SLACK_WEBHOOK" ]]; then
         send_slack_alert "$level" "$current_cost" "$percentage"
     fi
-    
+
     # Send email if configured
     if [[ -n "$ALERT_EMAIL" ]]; then
         send_email_alert "$level" "$current_cost" "$percentage"
@@ -268,16 +268,16 @@ send_slack_alert() {
     local level="$1"
     local current_cost="$2"
     local percentage="$3"
-    
+
     local color="warning"
     local emoji="⚠️"
-    
+
     case "$level" in
         "EMERGENCY") color="danger"; emoji="🚨" ;;
         "CRITICAL") color="danger"; emoji="❌" ;;
         "WARNING") color="warning"; emoji="⚠️" ;;
     esac
-    
+
     local payload
     payload=$(cat <<EOF
 {
@@ -292,7 +292,7 @@ send_slack_alert() {
                     "short": true
                 },
                 {
-                    "title": "Environment", 
+                    "title": "Environment",
                     "value": "${ENVIRONMENT:-N/A}",
                     "short": true
                 },
@@ -314,7 +314,7 @@ send_slack_alert() {
 }
 EOF
 )
-    
+
     if curl -X POST -H 'Content-type: application/json' \
         --data "$payload" \
         "$SLACK_WEBHOOK" >/dev/null 2>&1; then
@@ -329,12 +329,12 @@ send_email_alert() {
     local level="$1"
     local current_cost="$2"
     local percentage="$3"
-    
+
     if ! command -v mail >/dev/null 2>&1; then
         log_warning "Mail command not available for email alerts"
         return 1
     fi
-    
+
     local subject="Cost $level Alert - ${PROJECT_ID:-Unknown Project}"
     local body
     body=$(cat <<EOF
@@ -353,7 +353,7 @@ Guardian Version: $COST_GUARDIAN_VERSION
 This is an automated alert from the Universal Project Platform Cost Guardian.
 EOF
 )
-    
+
     if echo "$body" | mail -s "$subject" "$ALERT_EMAIL" >/dev/null 2>&1; then
         log_success "Email alert sent to $ALERT_EMAIL"
     else
@@ -365,13 +365,13 @@ EOF
 trigger_emergency_procedures() {
     local current_cost="$1"
     local percentage="$2"
-    
+
     log_error "EMERGENCY PROCEDURES TRIGGERED"
     log_error "Cost has exceeded emergency threshold!"
-    
+
     # Send emergency alert
     send_cost_alert "EMERGENCY" "$current_cost" "$percentage"
-    
+
     # Suggest immediate actions
     echo ""
     echo -e "${RED}IMMEDIATE ACTIONS REQUIRED:${NC}"
@@ -380,10 +380,10 @@ trigger_emergency_procedures() {
     echo "3. Contact billing administrator"
     echo "4. Review budget settings"
     echo ""
-    
+
     # Create emergency flag
     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "${REPO_GCLOUD_HOME:-$HOME/.gcloud}/.emergency_cost_flag"
-    
+
     # If in automated mode, suggest shutdown commands
     if [[ "${EMERGENCY_AUTO_SUGGEST:-false}" == "true" ]]; then
         echo -e "${YELLOW}Suggested emergency commands:${NC}"
@@ -402,12 +402,12 @@ trigger_emergency_procedures() {
 # List recent cost checks
 list_recent_checks() {
     local limit="${1:-10}"
-    
+
     if [[ -f "$COST_LOG_FILE" ]]; then
         log_info "Recent cost checks (last $limit):"
         echo ""
         tail -n "$limit" "$COST_LOG_FILE" | jq -r '
-            [.timestamp, .alert_level, .current_cost, .percentage] | 
+            [.timestamp, .alert_level, .current_cost, .percentage] |
             @tsv' | \
         while IFS=$'\t' read -r timestamp level cost percentage; do
             case "$level" in
@@ -427,31 +427,31 @@ list_recent_checks() {
 show_cost_dashboard() {
     echo -e "${CYAN}═══ COST GUARDIAN DASHBOARD ═══${NC}"
     echo ""
-    
+
     load_cost_config
-    
+
     echo -e "${WHITE}Configuration:${NC}"
     echo "Threshold: \$${THRESHOLD_USD} USD"
     echo "Warning: ${WARNING_THRESHOLD}%"
     echo "Critical: ${CRITICAL_THRESHOLD}%"
     echo "Emergency: ${EMERGENCY_THRESHOLD}%"
     echo ""
-    
+
     if [[ -f "${REPO_GCLOUD_HOME:-$HOME/.gcloud}/.emergency_cost_flag" ]]; then
         echo -e "${RED}🚨 EMERGENCY COST FLAG ACTIVE${NC}"
         echo ""
     fi
-    
+
     check_cost_thresholds
     echo ""
-    
+
     list_recent_checks 5
 }
 
 # Main function
 main() {
     local command="${1:-check}"
-    
+
     case "$command" in
         "check"|"c")
             load_cost_config

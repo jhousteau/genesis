@@ -380,9 +380,11 @@ class SecurityAutomationOrchestrator:
                         "severity": finding.severity.value,
                         "description": finding.description,
                         "resource": finding.resource_name,
-                        "timestamp": finding.create_time.isoformat()
-                        if finding.create_time
-                        else None,
+                        "timestamp": (
+                            finding.create_time.isoformat()
+                            if finding.create_time
+                            else None
+                        ),
                     }
                 )
 
@@ -568,9 +570,11 @@ class SecurityAutomationOrchestrator:
                         source_id="orchestrator",
                         category="COORDINATED_RESPONSE",
                         description=f"Orchestrated response for event: {threat_event.event_id}",
-                        resource_name=threat_event.affected_resources[0]
-                        if threat_event.affected_resources
-                        else "unknown",
+                        resource_name=(
+                            threat_event.affected_resources[0]
+                            if threat_event.affected_resources
+                            else "unknown"
+                        ),
                         severity=threat_event.severity,
                         properties=threat_event.details,
                     )
@@ -632,9 +636,11 @@ class SecurityAutomationOrchestrator:
                             incident_id=threat_event.event_id,
                             category=threat_event.details.get("category", "UNKNOWN"),
                             severity=threat_event.severity,
-                            resource_name=threat_event.affected_resources[0]
-                            if threat_event.affected_resources
-                            else "unknown",
+                            resource_name=(
+                                threat_event.affected_resources[0]
+                                if threat_event.affected_resources
+                                else "unknown"
+                            ),
                             additional_context=threat_event.details,
                         )
                     )

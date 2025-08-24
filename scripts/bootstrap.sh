@@ -69,9 +69,9 @@ log_message() {
 
 check_prerequisites() {
     print_header "Checking Prerequisites"
-    
+
     local missing_tools=()
-    
+
     # Check for required tools
     for tool in gcloud terraform jq; do
         if ! command -v "$tool" &> /dev/null; then
@@ -81,7 +81,7 @@ check_prerequisites() {
             print_success "$tool is installed ($(command -v "$tool"))"
         fi
     done
-    
+
     if [ ${#missing_tools[@]} -gt 0 ]; then
         echo ""
         print_error "Missing required tools: ${missing_tools[*]}"
@@ -92,7 +92,7 @@ check_prerequisites() {
         echo "  jq: https://stedolan.github.io/jq/download/"
         exit 1
     fi
-    
+
     # Check gcloud authentication
     if ! gcloud auth list --filter=status:ACTIVE --format="value(account)" &> /dev/null; then
         print_error "Not authenticated with gcloud"
@@ -102,18 +102,18 @@ check_prerequisites() {
         local account=$(gcloud auth list --filter=status:ACTIVE --format="value(account)")
         print_success "Authenticated as: $account"
     fi
-    
+
     echo ""
 }
 
 select_or_create_project() {
     print_header "Project Configuration"
-    
+
     echo "Choose an option:"
     echo "1) Use existing project"
     echo "2) Create new project"
     read -p "Enter choice (1 or 2): " choice
-    
+
     case $choice in
         1)
             # List existing projects
@@ -122,7 +122,7 @@ select_or_create_project() {
             gcloud projects list --format="table(projectId,name,projectNumber)"
             echo ""
             read -p "Enter project ID: " PROJECT_ID
-            
+
             # Verify project exists
             if ! gcloud projects describe "$PROJECT_ID" &> /dev/null; then
                 print_error "Project $PROJECT_ID not found"
@@ -133,11 +133,11 @@ select_or_create_project() {
             read -p "Enter new project ID (lowercase, numbers, hyphens only): " PROJECT_ID
             read -p "Enter project name: " PROJECT_NAME
             read -p "Enter billing account ID (or press Enter to set later): " BILLING_ACCOUNT
-            
+
             print_info "Creating project $PROJECT_ID..."
             if gcloud projects create "$PROJECT_ID" --name="$PROJECT_NAME"; then
                 print_success "Project created successfully"
-                
+
                 if [ -n "$BILLING_ACCOUNT" ]; then
                     print_info "Linking billing account..."
                     gcloud billing projects link "$PROJECT_ID" --billing-account="$BILLING_ACCOUNT"
@@ -155,35 +155,35 @@ select_or_create_project() {
             exit 1
             ;;
     esac
-    
+
     # Set the project
     gcloud config set project "$PROJECT_ID"
     print_success "Project set to: $PROJECT_ID"
-    
+
     echo ""
 }
 
 setup_project_defaults() {
     print_header "Setting Project Defaults"
-    
+
     read -p "Enter default region (default: $DEFAULT_REGION): " REGION
     REGION=${REGION:-$DEFAULT_REGION}
-    
+
     read -p "Enter default zone (default: $DEFAULT_ZONE): " ZONE
     ZONE=${ZONE:-$DEFAULT_ZONE}
-    
+
     gcloud config set compute/region "$REGION"
     gcloud config set compute/zone "$ZONE"
-    
+
     print_success "Default region set to: $REGION"
     print_success "Default zone set to: $ZONE"
-    
+
     echo ""
 }
 
 enable_apis() {
     print_header "Enabling Required APIs"
-    
+
     for api in "${REQUIRED_APIS[@]}"; do
         print_info "Enabling $api..."
         if gcloud services enable "$api" --project="$PROJECT_ID" 2>&1 | tee -a "$LOG_FILE"; then
@@ -192,25 +192,25 @@ enable_apis() {
             print_warning "Failed to enable $api (may already be enabled)"
         fi
     done
-    
+
     echo ""
 }
 
 create_terraform_backend() {
     print_header "Creating Terraform Backend"
-    
+
     local bucket_name="terraform-state-${PROJECT_ID}"
-    
+
     print_info "Creating GCS bucket: $bucket_name"
-    
+
     if gsutil ls -b "gs://$bucket_name" &> /dev/null; then
         print_warning "Bucket already exists: $bucket_name"
     else
         gsutil mb -p "$PROJECT_ID" -l "$REGION" -b on "gs://$bucket_name"
-        
+
         # Enable versioning
         gsutil versioning set on "gs://$bucket_name"
-        
+
         # Set lifecycle policy
         cat > /tmp/lifecycle.json <<EOF
 {
@@ -229,60 +229,60 @@ create_terraform_backend() {
 EOF
         gsutil lifecycle set /tmp/lifecycle.json "gs://$bucket_name"
         rm /tmp/lifecycle.json
-        
+
         print_success "Terraform backend bucket created and configured"
     fi
-    
+
     echo ""
 }
 
 setup_workload_identity_federation() {
     print_header "Setting up Workload Identity Federation"
-    
+
     echo "Select CI/CD platform:"
     echo "1) GitHub Actions"
     echo "2) GitLab CI"
     echo "3) Both"
     echo "4) Skip"
     read -p "Enter choice (1-4): " wif_choice
-    
+
     case $wif_choice in
         1|3)
             setup_github_wif
             ;;
     esac
-    
+
     case $wif_choice in
         2|3)
             setup_gitlab_wif
             ;;
     esac
-    
+
     if [ "$wif_choice" != "4" ]; then
         print_success "Workload Identity Federation configured"
     fi
-    
+
     echo ""
 }
 
 setup_github_wif() {
     print_info "Configuring GitHub Workload Identity Federation"
-    
+
     read -p "Enter GitHub organization/username: " GITHUB_ORG
     read -p "Enter GitHub repository name: " GITHUB_REPO
-    
+
     local pool_id="github-pool"
     local provider_id="github-provider"
     local sa_name="github-actions-sa"
     local sa_email="${sa_name}@${PROJECT_ID}.iam.gserviceaccount.com"
-    
+
     # Create workload identity pool
     print_info "Creating workload identity pool..."
     gcloud iam workload-identity-pools create "$pool_id" \
         --location="global" \
         --display-name="GitHub Actions Pool" \
         --description="Workload Identity Pool for GitHub Actions"
-    
+
     # Create workload identity provider
     print_info "Creating workload identity provider..."
     gcloud iam workload-identity-pools providers create-oidc "$provider_id" \
@@ -292,13 +292,13 @@ setup_github_wif() {
         --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
         --attribute-condition="assertion.repository_owner == '${GITHUB_ORG}'" \
         --issuer-uri="https://token.actions.githubusercontent.com"
-    
+
     # Create service account
     print_info "Creating service account..."
     gcloud iam service-accounts create "$sa_name" \
         --display-name="GitHub Actions Service Account" \
         --description="Service account for GitHub Actions CI/CD"
-    
+
     # Grant permissions
     print_info "Granting permissions..."
     for role in "roles/editor" "roles/storage.admin" "roles/resourcemanager.projectIamAdmin"; do
@@ -306,12 +306,12 @@ setup_github_wif() {
             --member="serviceAccount:${sa_email}" \
             --role="$role"
     done
-    
+
     # Allow impersonation
     gcloud iam service-accounts add-iam-policy-binding "$sa_email" \
         --role="roles/iam.workloadIdentityUser" \
         --member="principalSet://iam.googleapis.com/projects/$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')/locations/global/workloadIdentityPools/${pool_id}/attribute.repository/${GITHUB_ORG}/${GITHUB_REPO}"
-    
+
     # Output configuration
     echo ""
     print_success "GitHub WIF Configuration:"
@@ -322,23 +322,23 @@ setup_github_wif() {
 
 setup_gitlab_wif() {
     print_info "Configuring GitLab Workload Identity Federation"
-    
+
     read -p "Enter GitLab instance URL (default: https://gitlab.com): " GITLAB_URL
     GITLAB_URL=${GITLAB_URL:-"https://gitlab.com"}
     read -p "Enter GitLab project path (e.g., group/project): " GITLAB_PROJECT
-    
+
     local pool_id="gitlab-pool"
     local provider_id="gitlab-provider"
     local sa_name="gitlab-ci-sa"
     local sa_email="${sa_name}@${PROJECT_ID}.iam.gserviceaccount.com"
-    
+
     # Create workload identity pool
     print_info "Creating workload identity pool..."
     gcloud iam workload-identity-pools create "$pool_id" \
         --location="global" \
         --display-name="GitLab CI Pool" \
         --description="Workload Identity Pool for GitLab CI"
-    
+
     # Create workload identity provider
     print_info "Creating workload identity provider..."
     gcloud iam workload-identity-pools providers create-oidc "$provider_id" \
@@ -348,13 +348,13 @@ setup_gitlab_wif() {
         --attribute-mapping="google.subject=assertion.sub,attribute.project_path=assertion.project_path,attribute.ref=assertion.ref,attribute.ref_type=assertion.ref_type" \
         --attribute-condition="assertion.project_path == '${GITLAB_PROJECT}'" \
         --issuer-uri="$GITLAB_URL"
-    
+
     # Create service account
     print_info "Creating service account..."
     gcloud iam service-accounts create "$sa_name" \
         --display-name="GitLab CI Service Account" \
         --description="Service account for GitLab CI/CD"
-    
+
     # Grant permissions
     print_info "Granting permissions..."
     for role in "roles/editor" "roles/storage.admin" "roles/resourcemanager.projectIamAdmin"; do
@@ -362,12 +362,12 @@ setup_gitlab_wif() {
             --member="serviceAccount:${sa_email}" \
             --role="$role"
     done
-    
+
     # Allow impersonation
     gcloud iam service-accounts add-iam-policy-binding "$sa_email" \
         --role="roles/iam.workloadIdentityUser" \
         --member="principalSet://iam.googleapis.com/projects/$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')/locations/global/workloadIdentityPools/${pool_id}/attribute.project_path/${GITLAB_PROJECT}"
-    
+
     # Output configuration
     echo ""
     print_success "GitLab WIF Configuration:"
@@ -378,9 +378,9 @@ setup_gitlab_wif() {
 
 initialize_terraform() {
     print_header "Initializing Terraform"
-    
+
     cd "$PROJECT_ROOT"
-    
+
     print_info "Running terraform init..."
     if terraform init \
         -backend-config="bucket=terraform-state-${PROJECT_ID}" \
@@ -390,15 +390,15 @@ initialize_terraform() {
         print_error "Terraform initialization failed"
         exit 1
     fi
-    
+
     echo ""
 }
 
 create_example_tfvars() {
     print_header "Creating Example Configuration Files"
-    
+
     mkdir -p "${PROJECT_ROOT}/environments"
-    
+
     for env in dev staging prod; do
         cat > "${PROJECT_ROOT}/environments/${env}.tfvars.example" <<EOF
 # ${env} environment configuration
@@ -423,13 +423,13 @@ subnet_cidr  = "10.${env == 'dev' ? '0' : env == 'staging' ? '1' : '2'}.0.0/16"
 EOF
         print_success "Created environments/${env}.tfvars.example"
     done
-    
+
     echo ""
 }
 
 generate_summary() {
     print_header "Bootstrap Summary"
-    
+
     cat > "${PROJECT_ROOT}/bootstrap-summary.md" <<EOF
 # GCP Bootstrap Deployer - Setup Summary
 
@@ -470,7 +470,7 @@ terraform apply -var-file="environments/dev.tfvars"
 ## Logs
 Bootstrap log: logs/bootstrap-${TIMESTAMP}.log
 EOF
-    
+
     print_success "Summary saved to bootstrap-summary.md"
     echo ""
     cat "${PROJECT_ROOT}/bootstrap-summary.md"
@@ -480,9 +480,9 @@ EOF
 main() {
     print_header "GCP Bootstrap Deployer - Initial Setup"
     echo ""
-    
+
     log_message "Starting bootstrap process"
-    
+
     check_prerequisites
     select_or_create_project
     setup_project_defaults
@@ -492,9 +492,9 @@ main() {
     initialize_terraform
     create_example_tfvars
     generate_summary
-    
+
     log_message "Bootstrap process completed successfully"
-    
+
     print_header "Setup Complete!"
     print_success "Your GCP bootstrap environment is ready."
     print_info "Review bootstrap-summary.md for next steps."

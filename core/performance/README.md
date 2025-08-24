@@ -83,14 +83,14 @@ async def main():
     optimizer = PerformanceOptimizer()
     cost_monitor = CostOptimizationMonitor()
     secret_manager = OptimizedSecretManager()
-    
+
     # Profile application performance
     profile_id = profiler.start_profiling()
-    
+
     # Your application code here
     with profiler.profile_context("database_operation"):
         result = await your_database_operation()
-    
+
     # Get performance results
     report = profiler.stop_profiling(profile_id)
     print(f"Performance: {report.avg_cpu_percent:.1f}% CPU, {report.avg_duration_ms:.2f}ms avg")
@@ -102,7 +102,7 @@ asyncio.run(main())
 
 ```python
 from core.performance import (
-    ProfilerConfig, BenchmarkConfig, 
+    ProfilerConfig, BenchmarkConfig,
     OptimizationRecommendation, CacheStrategy
 )
 
@@ -154,7 +154,7 @@ monitor = PerformanceMonitor(
 
 # Record custom metrics
 monitor.record_performance_metric(
-    "response_time", 
+    "response_time",
     150.0,  # ms
     labels={
         "service": "api",
@@ -291,7 +291,7 @@ response_alert = monitor.create_response_time_alert(
 )
 
 error_alert = monitor.create_error_rate_alert(
-    service_name="my-service", 
+    service_name="my-service",
     threshold_percent=2.0,
     environment="production"
 )
@@ -314,7 +314,7 @@ class PerformanceMiddleware(BaseMiddleware):
     def __init__(self, get_response):
         self.get_response = get_response
         self.profiler = PerformanceProfiler()
-    
+
     def __call__(self, request):
         with self.profiler.profile_context(f"{request.method}_{request.path}"):
             response = self.get_response(request)
@@ -334,10 +334,10 @@ profiler = PerformanceProfiler()
 @app.middleware("http")
 async def performance_middleware(request: Request, call_next):
     start_time = time.time()
-    
+
     with profiler.profile_context(f"{request.method}_{request.url.path}"):
         response = await call_next(request)
-    
+
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(process_time)
     return response
@@ -461,7 +461,7 @@ secret_manager:
    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
        --member="serviceAccount:YOUR_SERVICE_ACCOUNT" \
        --role="roles/monitoring.metricWriter"
-   
+
    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
        --member="serviceAccount:YOUR_SERVICE_ACCOUNT" \
        --role="roles/secretmanager.secretAccessor"

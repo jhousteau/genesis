@@ -62,7 +62,9 @@ class ExecutionResult:
     commit_sha: Optional[str] = None
     error_message: Optional[str] = None
     execution_time: float = 0.0
-    failed_tools: dict[str, str] = field(default_factory=dict)  # tool_name -> error message
+    failed_tools: dict[str, str] = field(
+        default_factory=dict
+    )  # tool_name -> error message
 
 
 class SmartCommitOrchestrator:
@@ -72,7 +74,9 @@ class SmartCommitOrchestrator:
         """Initialize orchestrator."""
         self.config = config or SmartCommitConfig()
         self.detector = ProjectDetector(self.config.project_root)
-        self.stability = StabilityEngine(self.config.project_root, self.config.max_iterations)
+        self.stability = StabilityEngine(
+            self.config.project_root, self.config.max_iterations
+        )
         self.git = GitIntegration(self.config.project_root)
         self.quality_runner = QualityGateRunner(self.config.project_root)
 
@@ -306,7 +310,11 @@ class SmartCommitOrchestrator:
                     for i, line in enumerate(error_lines[:max_lines]):
                         if line.strip():
                             # Prefix important lines
-                            if "STDERR:" in line or "STDOUT:" in line or "Command:" in line:
+                            if (
+                                "STDERR:" in line
+                                or "STDOUT:" in line
+                                or "Command:" in line
+                            ):
                                 cli_print(f"    {line}")
                             else:
                                 # Truncate very long lines in non-verbose mode
@@ -361,7 +369,9 @@ class SmartCommitOrchestrator:
 
         # Generate commit message if not provided
         if not self.config.commit_message:
-            self.config.commit_message = self.git.generate_commit_message(self.config.commit_type)
+            self.config.commit_message = self.git.generate_commit_message(
+                self.config.commit_type
+            )
 
         # Stage all changes
         self.git.stage_all()
@@ -398,7 +408,10 @@ class SmartCommitOrchestrator:
                     available[category_name] = []
 
                 for tool in tools:
-                    if tool.is_available() and tool.name not in available[category_name]:
+                    if (
+                        tool.is_available()
+                        and tool.name not in available[category_name]
+                    ):
                         available[category_name].append(tool.name)
 
         return available

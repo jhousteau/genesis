@@ -273,7 +273,7 @@ scrape_configs:
       - targets: ['elasticsearch:9200']
 
 ---
-# Example alertmanager.yml configuration  
+# Example alertmanager.yml configuration
 # Save as: alertmanager/alertmanager.yml
 global:
   smtp_smarthost: 'localhost:587'

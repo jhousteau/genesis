@@ -59,8 +59,14 @@ from .analyzer import AnalysisReport
 from .backup import BackupManager
 from .eval_adapter import AutofixEvalAdapter
 from .metrics import MetricsCollector
-from .models import (AutofixConfig, Error, ErrorPriority, FixResult, FixType,
-                     ValidationResult)
+from .models import (
+    AutofixConfig,
+    Error,
+    ErrorPriority,
+    FixResult,
+    FixType,
+    ValidationResult,
+)
 from .prompt_loader import PromptLoader
 
 logger = logging.getLogger(__name__)

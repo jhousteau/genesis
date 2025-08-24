@@ -234,7 +234,9 @@ class QualityGateRunner:
                     check_name=f"env_{var}",
                     passed=value is not None,
                     message=f"Environment variable {var} is set",
-                    details={"value": value[:50] if value else None},  # Truncate for security
+                    details={
+                        "value": value[:50] if value else None
+                    },  # Truncate for security
                 ),
             )
 
@@ -300,7 +302,9 @@ class QualityGateRunner:
     def _check_command_available(self, command: list[str]) -> bool:
         """Check if a command is available."""
         try:
-            subprocess.run(command, capture_output=True, timeout=5, check=False)  # noqa: S603  # Subprocess secured: shell=False, validated inputs
+            subprocess.run(
+                command, capture_output=True, timeout=5, check=False
+            )  # noqa: S603  # Subprocess secured: shell=False, validated inputs
             return True
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return False

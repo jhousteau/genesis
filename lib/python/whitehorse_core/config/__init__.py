@@ -32,13 +32,17 @@ except ImportError:
 
         def validator(*args, **kwargs):
             """Fallback validator decorator"""
+
             def decorator(func):
                 return func
+
             return decorator
 
         class BaseSettings:
             """Fallback BaseSettings class"""
+
             pass
+
 
 try:
     from google.cloud import secretmanager

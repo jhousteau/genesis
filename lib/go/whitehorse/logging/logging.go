@@ -525,14 +525,14 @@ func (l *Logger) LogAuthEvent(action, userID, ipAddress string, success bool, de
 func maskSensitiveData(data string) string {
 	// Simple masking for common sensitive patterns
 	patterns := []string{"password", "token", "secret", "key"}
-	
+
 	for _, pattern := range patterns {
 		if strings.Contains(strings.ToLower(data), pattern) {
 			// This is a simple implementation - in production, use more sophisticated masking
 			return "[MASKED]"
 		}
 	}
-	
+
 	return data
 }
 
@@ -544,7 +544,7 @@ func getCaller() (string, string, int) {
 	}
 
 	function := runtime.FuncForPC(pc).Name()
-	
+
 	// Extract just the filename
 	if idx := strings.LastIndex(file, "/"); idx >= 0 {
 		file = file[idx+1:]

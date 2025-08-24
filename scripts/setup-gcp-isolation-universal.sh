@@ -2,7 +2,7 @@
 
 # 🔒 GCP Per-Repo Isolation Setup Script
 # Agent-ready template that makes each repo its own isolated gcloud universe
-# 
+#
 # Based on: https://github.com/anthropics/claude-code/issues/agent-isolation
 # Goal: Zero cross-contamination between projects, idempotent setup
 
@@ -297,9 +297,9 @@ fi
 if [[ -n "${DEPLOY_SA:-}" ]]; then
     SA_NAME="deploy-${ENVIRONMENT}"
     SA_EMAIL="${DEPLOY_SA}"
-    
+
     echo "🔧 Checking service account: ${SA_EMAIL}"
-    
+
     # Check if service account exists
     if ! gcloud iam service-accounts describe "${SA_EMAIL}" --project="${PROJECT_ID}" >/dev/null 2>&1; then
         echo "🔧 Creating service account: ${SA_NAME}"
@@ -307,15 +307,15 @@ if [[ -n "${DEPLOY_SA:-}" ]]; then
             --project="${PROJECT_ID}" \
             --display-name="Deploy Service Account for ${ENVIRONMENT}" \
             --description="Automated deployment service account for ${ENVIRONMENT} environment"
-        
+
         echo "✅ Service account created: ${SA_EMAIL}"
     else
         echo "✅ Service account already exists: ${SA_EMAIL}"
     fi
-    
+
     # Grant necessary IAM roles to the service account
     echo "🔧 Configuring IAM roles for service account..."
-    
+
     # Core deployment roles
     ROLES=(
         "roles/run.developer"              # Cloud Run deployment
@@ -326,7 +326,7 @@ if [[ -n "${DEPLOY_SA:-}" ]]; then
         "roles/monitoring.metricWriter"    # Monitoring
         "roles/logging.logWriter"          # Logging
     )
-    
+
     for role in "${ROLES[@]}"; do
         echo "  → Granting ${role}"
         gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
@@ -335,7 +335,7 @@ if [[ -n "${DEPLOY_SA:-}" ]]; then
             --condition=None \
             --quiet 2>/dev/null || true
     done
-    
+
     # Allow current user to impersonate the service account
     echo "🔧 Allowing ${CURRENT_USER} to impersonate ${SA_EMAIL}"
     gcloud iam service-accounts add-iam-policy-binding "${SA_EMAIL}" \
@@ -343,11 +343,11 @@ if [[ -n "${DEPLOY_SA:-}" ]]; then
         --role="roles/iam.serviceAccountTokenCreator" \
         --project="${PROJECT_ID}" \
         --quiet 2>/dev/null || true
-    
+
     # Configure gcloud to use impersonation
     echo "🔧 Setting impersonation: ${SA_EMAIL}"
     gcloud config set auth/impersonate_service_account "${SA_EMAIL}" --configuration=default
-    
+
     echo "✅ Service account configuration complete"
 fi
 
@@ -579,10 +579,10 @@ jobs:
     permissions:
       contents: read
       id-token: write  # for workload identity federation
-    
+
     # Set environment based on branch or manual input
     environment: \${{ inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'dev') }}
-    
+
     env:
       PROJECT_ID: \${{ vars.PROJECT_ID }}              # Set in repository/environment variables
       REGION: \${{ vars.REGION || '${REGION}' }}
@@ -590,7 +590,7 @@ jobs:
       CLOUDSDK_CONFIG: ./.ci_gcloud                    # Ephemeral per-run config dir
       GCLOUD_IMPERSONATE_SA: \${{ vars.DEPLOY_SA }}
       ENVIRONMENT: \${{ inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'dev') }}
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -739,7 +739,7 @@ echo "📋 Created files:"
 echo "   .envrc                          # Environment configuration"
 echo "   scripts/bootstrap_gcloud.sh     # Idempotent gcloud setup with automatic SA creation"
 echo "   scripts/gcloud_guard.sh         # Safe gcloud wrapper"
-echo "   scripts/self_check.sh           # Verification script"  
+echo "   scripts/self_check.sh           # Verification script"
 echo "   Makefile                        # Standard targets"
 echo "   .github/workflows/deploy.yaml   # CI/CD template"
 echo "   README_GCP_ISOLATION.md         # Documentation"

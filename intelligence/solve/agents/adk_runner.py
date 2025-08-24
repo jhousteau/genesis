@@ -28,8 +28,13 @@ from typing import Any
 # Use centralized ADK imports with proper fallbacks
 from solve_core.adk_imports import Content
 from solve_core.adk_imports import EventClass as Event
-from solve_core.adk_imports import (InMemoryRunner, Part, RunConfig, Session,
-                                    is_adk_available)
+from solve_core.adk_imports import (
+    InMemoryRunner,
+    Part,
+    RunConfig,
+    Session,
+    is_adk_available,
+)
 
 # Handle google.genai import for Content/Part types
 try:
@@ -46,9 +51,14 @@ ADK_AVAILABLE = is_adk_available()
 
 # Local imports
 from solve.adk_monitoring import (  # noqa: E402  # Must import after ADK availability check
-    ADKMonitoringSystem, get_monitoring_system)
+    ADKMonitoringSystem,
+    get_monitoring_system,
+)
 from solve.models import (  # noqa: E402  # Must import after ADK availability check
-    AgentTask, Result, TaskStatus)
+    AgentTask,
+    Result,
+    TaskStatus,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -130,7 +130,7 @@ pytest test_terraform_integration.py::TestTerraformModules::test_all_modules_exi
   run: |
     cd tests
     ./run_tests.py --ci --coverage
-    
+
 - name: Upload Coverage
   uses: codecov/codecov-action@v3
   with:
@@ -197,7 +197,7 @@ Create `tests/pytest.ini`:
 ```ini
 [tool:pytest]
 minversion = 6.0
-addopts = 
+addopts =
     -ra
     --strict-markers
     --strict-config

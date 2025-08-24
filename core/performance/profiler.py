@@ -581,16 +581,17 @@ class ResourceMonitor:
         return {
             "avg_cpu_percent": sum(cpu_values) / len(cpu_values) if cpu_values else 0,
             "max_cpu_percent": max(cpu_values) if cpu_values else 0,
-            "avg_memory_mb": sum(memory_values) / len(memory_values)
-            if memory_values
-            else 0,
+            "avg_memory_mb": (
+                sum(memory_values) / len(memory_values) if memory_values else 0
+            ),
             "max_memory_mb": max(memory_values) if memory_values else 0,
-            "avg_memory_percent": sum(memory_percent_values)
-            / len(memory_percent_values)
-            if memory_percent_values
-            else 0,
-            "max_memory_percent": max(memory_percent_values)
-            if memory_percent_values
-            else 0,
+            "avg_memory_percent": (
+                sum(memory_percent_values) / len(memory_percent_values)
+                if memory_percent_values
+                else 0
+            ),
+            "max_memory_percent": (
+                max(memory_percent_values) if memory_percent_values else 0
+            ),
             "sample_count": len(samples),
         }

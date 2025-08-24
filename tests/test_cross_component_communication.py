@@ -107,9 +107,7 @@ class TestSystemCoordination:
                 "type": (
                     "directory"
                     if component_path.is_dir()
-                    else "file"
-                    if component_path.exists()
-                    else "missing"
+                    else "file" if component_path.exists() else "missing"
                 ),
             }
 

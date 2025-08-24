@@ -10,10 +10,18 @@ from typing import Any
 
 from solve.knowledge_loader import KnowledgeLoader
 from solve.models import Goal, Result
+
 # Use centralized ADK imports with proper fallbacks
-from solve_core.adk_imports import (BaseTool, Event, InMemorySessionService,
-                                    LlmAgent, RunConfig, Runner,
-                                    SequentialAgent, is_adk_available)
+from solve_core.adk_imports import (
+    BaseTool,
+    Event,
+    InMemorySessionService,
+    LlmAgent,
+    RunConfig,
+    Runner,
+    SequentialAgent,
+    is_adk_available,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -202,7 +202,7 @@ class ProjectRegistry:
             updates = {"path": project_path}
             self.update_project(project_name, updates)
             return
-        
+
         # Create basic config from project path
         config = {
             "path": project_path,
@@ -214,26 +214,26 @@ class ProjectRegistry:
             "environments": {
                 "dev": {
                     "gcp_project": f"{project_name}-dev",
-                    "gcloud_home": f"~/.gcloud/{project_name}-dev"
+                    "gcloud_home": f"~/.gcloud/{project_name}-dev",
                 },
                 "test": {
-                    "gcp_project": f"{project_name}-test", 
-                    "gcloud_home": f"~/.gcloud/{project_name}-test"
+                    "gcp_project": f"{project_name}-test",
+                    "gcloud_home": f"~/.gcloud/{project_name}-test",
                 },
                 "prod": {
                     "gcp_project": f"{project_name}-prod",
                     "gcloud_home": f"~/.gcloud/{project_name}-prod",
-                    "approval_required": True
-                }
+                    "approval_required": True,
+                },
             },
             "intelligence": {
                 "auto_fix_enabled": True,
                 "optimization_enabled": True,
                 "predictions_enabled": True,
-                "recommendations_enabled": True
-            }
+                "recommendations_enabled": True,
+            },
         }
-        
+
         return self.add_project(project_name, config)
 
     def _update_metrics(self, registry: Dict[str, Any]):

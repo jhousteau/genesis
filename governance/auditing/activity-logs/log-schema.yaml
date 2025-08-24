@@ -5,7 +5,7 @@ audit_log_schema:
   version: "1.0.0"
   format: "JSON"
   encoding: "UTF-8"
-  
+
   # Common Event Structure
   common_fields:
     required:
@@ -14,23 +14,23 @@ audit_log_schema:
         format: "ISO8601"
         description: "Event occurrence time in UTC"
         example: "2024-08-20T14:30:45.123Z"
-        
+
       - name: "event_id"
         type: "string"
         format: "UUID"
         description: "Unique event identifier"
         example: "550e8400-e29b-41d4-a716-446655440000"
-        
+
       - name: "event_type"
         type: "string"
         enum: ["authentication", "authorization", "data_access", "data_modification", "system_admin", "infrastructure", "security", "compliance"]
         description: "High-level event category"
-        
+
       - name: "event_action"
         type: "string"
         description: "Specific action performed"
         example: "user_login_success"
-        
+
       - name: "actor"
         type: "object"
         description: "Entity that performed the action"
@@ -49,7 +49,7 @@ audit_log_schema:
           session_id:
             type: "string"
             description: "Session identifier"
-            
+
       - name: "resource"
         type: "object"
         description: "Resource being acted upon"
@@ -63,7 +63,7 @@ audit_log_schema:
           resource_name:
             type: "string"
             description: "Human-readable resource name"
-            
+
       - name: "source"
         type: "object"
         description: "Source of the event"
@@ -82,44 +82,44 @@ audit_log_schema:
             type: "string"
             enum: ["dev", "test", "staging", "prod"]
             description: "Environment where event occurred"
-            
+
       - name: "outcome"
         type: "string"
         enum: ["success", "failure", "partial", "unknown"]
         description: "Event outcome"
-        
+
       - name: "severity"
         type: "string"
         enum: ["critical", "high", "medium", "low", "info"]
         description: "Event severity level"
-        
+
     optional:
       - name: "correlation_id"
         type: "string"
         description: "ID to correlate related events"
-        
+
       - name: "parent_event_id"
         type: "string"
         description: "Parent event ID for nested events"
-        
+
       - name: "error_code"
         type: "string"
         description: "Error code if applicable"
-        
+
       - name: "error_message"
         type: "string"
         description: "Error message if applicable"
-        
+
       - name: "additional_data"
         type: "object"
         description: "Event-specific additional data"
-        
+
       - name: "tags"
         type: "array"
         items:
           type: "string"
         description: "Event tags for classification"
-        
+
       - name: "compliance_flags"
         type: "array"
         items:
@@ -129,7 +129,7 @@ audit_log_schema:
 
   # Event-Specific Schemas
   event_schemas:
-    
+
     # Authentication Events
     authentication_events:
       user_login:
@@ -162,8 +162,8 @@ audit_log_schema:
             authentication_method: "saml"
             mfa_used: true
             device_fingerprint: "fp_xyz789"
-            
-    # Authorization Events  
+
+    # Authorization Events
     authorization_events:
       role_assignment:
         required_fields:
@@ -195,7 +195,7 @@ audit_log_schema:
             assignment_type: "permanent"
             approval_ticket: "TICK-123456"
             justification: "New team member onboarding"
-            
+
     # Data Access Events
     data_access_events:
       sensitive_data_access:
@@ -229,7 +229,7 @@ audit_log_schema:
             record_count: 150
             purpose: "customer_support"
             legal_basis: "legitimate_interest"
-            
+
     # Infrastructure Events
     infrastructure_events:
       resource_creation:
@@ -262,7 +262,7 @@ audit_log_schema:
             terraform_plan: "plan_abc123"
             cost_estimate: "$150/month"
             approval_workflow: "auto_approved"
-            
+
     # Security Events
     security_events:
       intrusion_attempt:
@@ -291,7 +291,7 @@ audit_log_schema:
             affected_systems: ["web-app-01", "db-primary"]
             attack_signature: "sig_12345"
             mitigation_actions: ["blocked_ip", "waf_rule_applied"]
-            
+
     # Compliance Events
     compliance_events:
       audit_evidence_collection:
@@ -327,19 +327,19 @@ audit_log_schema:
       - name: "public"
         description: "Information that can be freely shared"
         retention_default: "365 days"
-        
+
       - name: "internal"
         description: "Information for internal use only"
         retention_default: "1095 days"
-        
+
       - name: "confidential"
         description: "Sensitive business information"
         retention_default: "2555 days"
-        
+
       - name: "restricted"
         description: "Highly sensitive information requiring special handling"
         retention_default: "2555 days"
-        
+
     personal_data_categories:
       - "basic_identity"        # Name, email, phone
       - "sensitive_identity"    # SSN, passport, driver's license
@@ -356,36 +356,36 @@ audit_log_schema:
       - "All required fields must be present"
       - "Field types must match schema definitions"
       - "Enum values must be from allowed lists"
-      
+
     data_format_validation:
       - "Timestamps must be valid ISO8601 format"
       - "UUIDs must be valid RFC 4122 format"
       - "IP addresses must be valid IPv4 or IPv6"
       - "Email addresses must be valid RFC 5322 format"
-      
+
     business_rule_validation:
       - "Event timestamps cannot be in the future"
       - "Correlation IDs must reference existing events"
       - "Resource IDs must exist in resource registry"
       - "User IDs must exist in identity system"
-      
+
   # Enrichment and Processing
   enrichment_pipeline:
     geo_enrichment:
       - "IP address geolocation lookup"
       - "Country and region identification"
       - "ISP and organization detection"
-      
+
     threat_intelligence:
       - "Malicious IP identification"
       - "Known attack pattern matching"
       - "Reputation scoring"
-      
+
     user_context:
       - "User profile information"
       - "Role and permission context"
       - "Historical behavior patterns"
-      
+
     resource_context:
       - "Resource metadata lookup"
       - "Ownership and classification"
@@ -397,7 +397,7 @@ audit_log_schema:
       content_type: "application/json"
       encoding: "UTF-8"
       compression: "gzip"
-      
+
     syslog:
       rfc: "RFC 5424"
       facility: "LOG_USER"
@@ -407,7 +407,7 @@ audit_log_schema:
         medium: "LOG_WARNING"
         low: "LOG_NOTICE"
         info: "LOG_INFO"
-        
+
     cef:
       version: "CEF:0"
       device_vendor: "Whitehorse"

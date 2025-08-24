@@ -6,41 +6,41 @@ variable "projects" {
     # Required fields
     project_id      = string
     billing_account = string
-    
+
     # Optional fields
-    project_name                = optional(string)
-    org_id                     = optional(string)
-    folder_id                  = optional(string)
-    environment                = optional(string, "production")
-    labels                     = optional(map(string), {})
-    region                     = optional(string)
-    
+    project_name = optional(string)
+    org_id       = optional(string)
+    folder_id    = optional(string)
+    environment  = optional(string, "production")
+    labels       = optional(map(string), {})
+    region       = optional(string)
+
     # API configuration
-    activate_apis              = optional(list(string))
+    activate_apis               = optional(list(string))
     disable_services_on_destroy = optional(bool, false)
-    
+
     # Service account configuration
-    create_terraform_sa        = optional(bool, true)
-    terraform_sa_name          = optional(string)
-    terraform_sa_roles         = optional(list(string))
-    
+    create_terraform_sa = optional(bool, true)
+    terraform_sa_name   = optional(string)
+    terraform_sa_roles  = optional(list(string))
+
     # Budget configuration
-    budget_amount              = optional(number)
-    budget_alert_thresholds    = optional(list(number))
-    grant_billing_role         = optional(bool, false)
-    
+    budget_amount           = optional(number)
+    budget_alert_thresholds = optional(list(number))
+    grant_billing_role      = optional(bool, false)
+
     # State bucket configuration
-    state_bucket_name          = optional(string)
-    state_bucket_location      = optional(string)
-    storage_class             = optional(string, "STANDARD")
-    lifecycle_rules           = optional(list(object({
+    state_bucket_name     = optional(string)
+    state_bucket_location = optional(string)
+    storage_class         = optional(string, "STANDARD")
+    lifecycle_rules = optional(list(object({
       action    = map(string)
       condition = map(string)
     })))
-    force_destroy_state       = optional(bool, false)
-    
+    force_destroy_state = optional(bool, false)
+
     # Service accounts
-    custom_service_accounts   = optional(map(object({
+    custom_service_accounts = optional(map(object({
       account_id    = string
       display_name  = string
       description   = optional(string)
@@ -48,19 +48,19 @@ variable "projects" {
       org_roles     = optional(list(string), [])
       folder_roles  = optional(list(string), [])
     })), {})
-    cicd_roles               = optional(list(string))
-    app_roles                = optional(list(string))
-    
+    cicd_roles = optional(list(string))
+    app_roles  = optional(list(string))
+
     # Workload Identity Federation
-    pool_id                  = optional(string)
+    pool_id = optional(string)
     workload_identity_providers = optional(map(object({
       provider_id         = string
-      provider_type      = string
-      issuer_uri         = optional(string)
-      allowed_audiences  = optional(list(string))
-      attribute_mapping  = optional(map(string))
+      provider_type       = string
+      issuer_uri          = optional(string)
+      allowed_audiences   = optional(list(string))
+      attribute_mapping   = optional(map(string))
       attribute_condition = optional(string)
-      
+
       # Provider-specific configs
       github = optional(object({
         organization = string
@@ -86,25 +86,25 @@ variable "projects" {
         workspace_name  = optional(string)
       }))
     })))
-    wif_roles               = optional(list(string))
-    
+    wif_roles = optional(list(string))
+
     # Networking
-    create_network          = optional(bool, false)
-    network_name           = optional(string)
-    routing_mode           = optional(string, "REGIONAL")
-    enable_flow_logs       = optional(bool, false)
+    create_network   = optional(bool, false)
+    network_name     = optional(string)
+    routing_mode     = optional(string, "REGIONAL")
+    enable_flow_logs = optional(bool, false)
     subnets = optional(list(object({
       name   = string
       cidr   = string
       region = optional(string)
     })))
-    
+
     # Other settings
-    skip_delete            = optional(bool, false)
+    skip_delete = optional(bool, false)
   }))
-  
+
   validation {
-    condition = alltrue([for p in var.projects : can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", p.project_id))])
+    condition     = alltrue([for p in var.projects : can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", p.project_id))])
     error_message = "Project IDs must be between 6 and 30 characters, contain only lowercase letters, numbers, and hyphens."
   }
 }
@@ -257,12 +257,12 @@ variable "default_wif_providers" {
   description = "Default Workload Identity Federation providers"
   type = map(object({
     provider_id         = string
-    provider_type      = string
-    issuer_uri         = optional(string)
-    allowed_audiences  = optional(list(string))
-    attribute_mapping  = optional(map(string))
+    provider_type       = string
+    issuer_uri          = optional(string)
+    allowed_audiences   = optional(list(string))
+    attribute_mapping   = optional(map(string))
     attribute_condition = optional(string)
-    
+
     github = optional(object({
       organization = string
       repositories = optional(list(string))

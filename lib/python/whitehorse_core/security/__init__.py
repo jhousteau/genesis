@@ -38,8 +38,7 @@ try:
 except ImportError:
     HAS_GCP_AUTH = False
 
-from ..errors import (AuthenticationError, AuthorizationError,
-                      ConfigurationError)
+from ..errors import AuthenticationError, AuthorizationError, ConfigurationError
 from ..logging import get_logger
 
 logger = get_logger(__name__)

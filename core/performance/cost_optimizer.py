@@ -961,10 +961,11 @@ class CostOptimizationMonitor:
                     "status": alert.status,
                     "current_spend": alert.current_spend,
                     "budget": alert.monthly_budget,
-                    "utilization_percent": (alert.current_spend / alert.monthly_budget)
-                    * 100
-                    if alert.monthly_budget > 0
-                    else 0,
+                    "utilization_percent": (
+                        (alert.current_spend / alert.monthly_budget) * 100
+                        if alert.monthly_budget > 0
+                        else 0
+                    ),
                 }
                 for alert in self.cost_alerts
             ],

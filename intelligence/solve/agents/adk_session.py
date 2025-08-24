@@ -27,10 +27,16 @@ from typing import Any
 # Use centralized ADK imports with proper fallbacks
 from solve_core.adk_imports import Agent, Content, EventActions
 from solve_core.adk_imports import EventClass as Event
-from solve_core.adk_imports import (GetSessionConfig, InMemoryRunner,
-                                    InMemorySessionService,
-                                    ListSessionsResponse, Part, RunConfig,
-                                    Session, is_adk_available)
+from solve_core.adk_imports import (
+    GetSessionConfig,
+    InMemoryRunner,
+    InMemorySessionService,
+    ListSessionsResponse,
+    Part,
+    RunConfig,
+    Session,
+    is_adk_available,
+)
 
 # Handle google.genai import for Content/Part types
 try:
@@ -415,9 +421,9 @@ class MultiAgentSessionCoordinator:
             session_manager: Session manager instance
         """
         self.session_manager = session_manager
-        self._agent_sessions: dict[
-            str, dict[str, str]
-        ] = {}  # agent_name -> {user_id: session_id}
+        self._agent_sessions: dict[str, dict[str, str]] = (
+            {}
+        )  # agent_name -> {user_id: session_id}
 
         logger.info("MultiAgentSessionCoordinator initialized")
 

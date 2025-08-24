@@ -1,6 +1,6 @@
 /**
  * Configuration Module
- * 
+ *
  * Provides configuration management with environment variable support,
  * validation, and GCP Secret Manager integration.
  */
@@ -55,7 +55,7 @@ export class ConfigManager {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
-      
+
       this.secretManager = new SecretManagerServiceClient({
         projectId: this.options.gcpProjectId || process.env.GCP_PROJECT
       });
@@ -156,15 +156,15 @@ export class ConfigManager {
       LOG_LEVEL: 'logLevel',
       SERVICE_NAME: 'serviceName',
       SERVICE_VERSION: 'serviceVersion',
-      
+
       // GCP configuration
       GCP_PROJECT: 'gcpProject',
       GCP_REGION: 'gcpRegion',
-      
+
       // Server configuration
       PORT: 'port',
       HOST: 'host',
-      
+
       // Database configuration
       DATABASE_HOST: 'database.host',
       DATABASE_PORT: 'database.port',
@@ -172,13 +172,13 @@ export class ConfigManager {
       DATABASE_USER: 'database.username',
       DATABASE_PASSWORD: 'database.password',
       DATABASE_SSL: 'database.ssl',
-      
+
       // Redis configuration
       REDIS_HOST: 'redis.host',
       REDIS_PORT: 'redis.port',
       REDIS_PASSWORD: 'redis.password',
       REDIS_DATABASE: 'redis.database',
-      
+
       // Security configuration
       JWT_SECRET: 'security.jwtSecret',
       JWT_EXPIRATION: 'security.jwtExpiration',
@@ -236,7 +236,7 @@ export class ConfigManager {
     try {
       const projectId = this.options.gcpProjectId || process.env.GCP_PROJECT;
       const secretName = `projects/${projectId}/secrets/${name}/versions/${version}`;
-      
+
       const [response] = await this.secretManager.accessSecretVersion({
         name: secretName
       });
@@ -258,16 +258,16 @@ export class ConfigManager {
     // Boolean values
     if (value.toLowerCase() === 'true') return true;
     if (value.toLowerCase() === 'false') return false;
-    
+
     // Numbers
     if (/^\d+$/.test(value)) return parseInt(value, 10);
     if (/^\d*\.\d+$/.test(value)) return parseFloat(value);
-    
+
     // Arrays (comma-separated)
     if (value.includes(',')) {
       return value.split(',').map(v => v.trim());
     }
-    
+
     return value;
   }
 
@@ -277,7 +277,7 @@ export class ConfigManager {
   private setNestedValue(obj: Record<string, any>, path: string, value: any): void {
     const keys = path.split('.');
     let current = obj;
-    
+
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i];
       if (!(key in current) || typeof current[key] !== 'object') {
@@ -285,7 +285,7 @@ export class ConfigManager {
       }
       current = current[key];
     }
-    
+
     current[keys[keys.length - 1]] = value;
   }
 
@@ -308,11 +308,11 @@ export class ConfigManager {
       serviceVersion: Joi.string().default('1.0.0'),
       gcpProject: Joi.string().optional(),
       gcpRegion: Joi.string().default('us-central1'),
-      
+
       // Server configuration
       port: Joi.number().port().default(3000),
       host: Joi.string().default('0.0.0.0'),
-      
+
       // Database configuration
       database: Joi.object({
         host: Joi.string().required(),
@@ -322,7 +322,7 @@ export class ConfigManager {
         password: Joi.string().required(),
         ssl: Joi.boolean().default(false)
       }).optional(),
-      
+
       // Redis configuration
       redis: Joi.object({
         host: Joi.string().default('localhost'),
@@ -330,7 +330,7 @@ export class ConfigManager {
         password: Joi.string().optional(),
         database: Joi.number().default(0)
       }).optional(),
-      
+
       // Security configuration
       security: Joi.object({
         jwtSecret: Joi.string().required(),
@@ -340,11 +340,11 @@ export class ConfigManager {
     }).unknown(true);
 
     const { error, value } = baseSchema.validate(this.config);
-    
+
     if (error) {
       throw new Error(`Configuration validation failed: ${error.message}`);
     }
-    
+
     this.config = value;
   }
 
@@ -382,15 +382,15 @@ export class ConfigManager {
    */
   private getConfigSources(): string[] {
     const sources = ['environment'];
-    
+
     if (this.options.configFile || fs.existsSync('config.json') || fs.existsSync('config.yaml')) {
       sources.push('file');
     }
-    
+
     if (this.secretManager) {
       sources.push('secrets');
     }
-    
+
     return sources;
   }
 
@@ -464,7 +464,7 @@ export function getConfig(): ConfigManager {
 export function Config(path?: string) {
   return function (target: any, propertyKey: string) {
     const configPath = path || propertyKey;
-    
+
     Object.defineProperty(target, propertyKey, {
       get() {
         return getConfig().get(configPath);
@@ -480,7 +480,7 @@ export function Config(path?: string) {
  */
 export class EnvironmentAwareConfig {
   private config: ConfigManager;
-  
+
   constructor(config?: ConfigManager) {
     this.config = config || getConfig();
   }
@@ -491,7 +491,7 @@ export class EnvironmentAwareConfig {
   getForEnvironment<T = any>(baseKey: string, environment?: string): T {
     const env = environment || this.config.get('environment', 'development');
     const envKey = `${baseKey}.${env}`;
-    
+
     // Try environment-specific first, fall back to base
     return this.config.get(envKey) || this.config.get(baseKey);
   }
@@ -508,7 +508,7 @@ export class EnvironmentAwareConfig {
    */
   getRateLimitConfig(endpoint?: string): any {
     if (endpoint) {
-      return this.config.get(`rateLimit.endpoints.${endpoint}`) || 
+      return this.config.get(`rateLimit.endpoints.${endpoint}`) ||
              this.config.get('rateLimit.default');
     }
     return this.config.get('rateLimit.default');

@@ -7,15 +7,15 @@ pci_dss_compliance:
   standard_reference: "PCI Security Standards Council"
   last_updated: "2024-08-20"
   merchant_level: "level_1"  # Adjust based on transaction volume
-  
+
   # PCI DSS Requirements
   requirements:
-    
+
     # Requirement 1: Install and maintain network security controls
     requirement_1:
       title: "Install and maintain network security controls"
       description: "Network security controls protect the cardholder data environment"
-      
+
       controls:
         1_1_1: # Network security controls are documented
           title: "Network security controls are documented and approved"
@@ -40,7 +40,7 @@ pci_dss_compliance:
             - "Approval records"
             - "Network diagrams"
             - "Change logs"
-            
+
         1_1_2: # Network security controls are implemented
           title: "Network security controls are implemented and operational"
           description: "Active implementation of documented network security controls"
@@ -65,7 +65,7 @@ pci_dss_compliance:
             - "Network topology"
             - "Traffic logs"
             - "Segmentation validation"
-            
+
         1_2_1: # Restrict connections between untrusted networks and CDE
           title: "Restrict connections between untrusted networks and CDE"
           description: "Control and restrict connections to cardholder data environment"
@@ -90,12 +90,12 @@ pci_dss_compliance:
             - "Blocking events"
             - "Monitoring reports"
             - "Incident records"
-    
+
     # Requirement 2: Apply secure configurations to all system components
     requirement_2:
       title: "Apply secure configurations to all system components"
       description: "Secure configurations protect against vulnerabilities"
-      
+
       controls:
         2_1_1: # Secure configuration standards are defined
           title: "Secure configuration standards are defined and implemented"
@@ -127,7 +127,7 @@ pci_dss_compliance:
             - "Implementation records"
             - "Compliance scan results"
             - "Remediation logs"
-            
+
         2_2_1: # Vendor-supplied defaults are changed
           title: "Vendor-supplied defaults are changed before deployment"
           description: "Change default passwords and security parameters"
@@ -153,12 +153,12 @@ pci_dss_compliance:
             - "Configuration change logs"
             - "Validation test results"
             - "Compliance reports"
-    
+
     # Requirement 3: Protect stored cardholder data
     requirement_3:
       title: "Protect stored cardholder data"
       description: "Cardholder data must be protected wherever it is stored"
-      
+
       controls:
         3_1_1: # Data retention and disposal policy
           title: "Data retention and disposal policy is implemented"
@@ -185,7 +185,7 @@ pci_dss_compliance:
             - "Data inventory reports"
             - "Disposal records"
             - "Destruction certificates"
-            
+
         3_2_1: # PAN is protected when stored
           title: "Primary Account Number (PAN) is protected when stored"
           description: "PAN must be rendered unreadable when stored"
@@ -216,7 +216,7 @@ pci_dss_compliance:
             - "Key management logs"
             - "Tokenization system documentation"
             - "Masking validation reports"
-            
+
         3_3_1: # SAD is not stored after authorization
           title: "Sensitive authentication data is not stored after authorization"
           description: "Prohibit storage of sensitive authentication data"
@@ -242,12 +242,12 @@ pci_dss_compliance:
             - "Violation logs"
             - "Remediation records"
             - "Prevention system logs"
-    
+
     # Requirement 4: Protect cardholder data with strong cryptography
     requirement_4:
       title: "Protect cardholder data with strong cryptography during transmission"
       description: "Cardholder data must be protected during transmission"
-      
+
       controls:
         4_1_1: # Strong cryptography for transmission
           title: "Strong cryptography is used to protect cardholder data during transmission"
@@ -273,7 +273,7 @@ pci_dss_compliance:
             - "Certificate management records"
             - "Transmission logs"
             - "Vulnerability scan results"
-            
+
         4_2_1: # Never send PAN by unprotected methods
           title: "Never send PAN by unprotected methods"
           description: "Prohibit sending PAN via unencrypted communications"
@@ -299,12 +299,12 @@ pci_dss_compliance:
             - "Transmission monitoring reports"
             - "Violation incidents"
             - "Prevention system records"
-    
+
     # Requirement 5: Protect all systems and networks from malicious software
     requirement_5:
       title: "Protect all systems and networks from malicious software"
       description: "Deploy and maintain anti-malware solutions"
-      
+
       controls:
         5_1_1: # Anti-malware software deployment
           title: "Anti-malware software is deployed on all systems"
@@ -336,12 +336,12 @@ pci_dss_compliance:
             - "Update logs"
             - "Scan results"
             - "Incident reports"
-    
+
     # Requirement 6: Develop and maintain secure systems and software
     requirement_6:
       title: "Develop and maintain secure systems and software"
       description: "Secure development and maintenance practices"
-      
+
       controls:
         6_1_1: # Vulnerability management program
           title: "Vulnerability management program is implemented"
@@ -373,7 +373,7 @@ pci_dss_compliance:
             - "Risk assessment records"
             - "Patch deployment logs"
             - "Remediation verification"
-            
+
         6_2_1: # Secure development practices
           title: "Secure development practices are implemented"
           description: "Develop software using secure coding practices"
@@ -399,12 +399,12 @@ pci_dss_compliance:
             - "Code review records"
             - "Security test results"
             - "Penetration test reports"
-    
+
     # Requirement 7: Restrict access to system components and cardholder data
     requirement_7:
       title: "Restrict access to system components and cardholder data"
       description: "Access to cardholder data must be restricted by business need-to-know"
-      
+
       controls:
         7_1_1: # Access control policies
           title: "Access control policies are defined and implemented"
@@ -431,12 +431,12 @@ pci_dss_compliance:
             - "Role definitions"
             - "Access review reports"
             - "Violation logs"
-    
+
     # Requirement 8: Identify users and authenticate access to system components
     requirement_8:
       title: "Identify users and authenticate access to system components"
       description: "Unique identification and strong authentication for access"
-      
+
       controls:
         8_1_1: # User identification
           title: "Users are assigned unique identification"
@@ -463,7 +463,7 @@ pci_dss_compliance:
             - "Account creation logs"
             - "Account modification logs"
             - "Monitoring reports"
-            
+
         8_2_1: # Strong authentication
           title: "Strong authentication is implemented for all access"
           description: "Implement multi-factor authentication"
@@ -489,12 +489,12 @@ pci_dss_compliance:
             - "MFA implementation records"
             - "Failed attempt logs"
             - "Account lockout records"
-    
+
     # Requirement 9: Restrict physical access to cardholder data
     requirement_9:
       title: "Restrict physical access to cardholder data"
       description: "Control physical access to cardholder data and systems"
-      
+
       controls:
         9_1_1: # Physical access controls
           title: "Physical access controls are implemented"
@@ -520,12 +520,12 @@ pci_dss_compliance:
             - "Visitor records"
             - "Surveillance records"
             - "Incident reports"
-    
+
     # Requirement 10: Log and monitor all access to system components and cardholder data
     requirement_10:
       title: "Log and monitor all access to system components and cardholder data"
       description: "Comprehensive logging and monitoring of all access"
-      
+
       controls:
         10_1_1: # Audit trail implementation
           title: "Audit trails are implemented for all system components"
@@ -556,7 +556,7 @@ pci_dss_compliance:
             - "Log configuration records"
             - "Monitoring reports"
             - "Alert records"
-            
+
         10_2_1: # Automated audit trails
           title: "Automated audit trails are implemented"
           description: "Use automated mechanisms to reconstruct events"
@@ -581,12 +581,12 @@ pci_dss_compliance:
             - "Correlation rules"
             - "Alert definitions"
             - "Analysis reports"
-    
+
     # Requirement 11: Test security of systems and networks regularly
     requirement_11:
       title: "Test security of systems and networks regularly"
       description: "Regularly test security controls and systems"
-      
+
       controls:
         11_1_1: # Vulnerability scanning
           title: "Vulnerability scanning is performed regularly"
@@ -611,7 +611,7 @@ pci_dss_compliance:
             - "Remediation records"
             - "Re-scan results"
             - "Risk assessments"
-            
+
         11_2_1: # Penetration testing
           title: "Penetration testing is performed regularly"
           description: "Perform annual penetration testing"
@@ -635,12 +635,12 @@ pci_dss_compliance:
             - "Remediation evidence"
             - "Re-test results"
             - "Methodology documentation"
-    
+
     # Requirement 12: Support information security with organizational policies
     requirement_12:
       title: "Support information security with organizational policies and programs"
       description: "Maintain security policies and programs"
-      
+
       controls:
         12_1_1: # Information security policy
           title: "Information security policy is established and maintained"
@@ -685,7 +685,7 @@ pci_dss_compliance:
         - "Risk scoring algorithms"
         - "Behavioral analysis"
         - "Machine learning models"
-        
+
     payment_application_security:
       pa_dss_compliance:
         - "Payment application validation"
@@ -712,7 +712,7 @@ pci_dss_compliance:
         - "Identity and access management"
         - "Encryption services"
         - "Logging and monitoring"
-        
+
     container_security:
       - "Container image scanning"
       - "Runtime protection"
@@ -732,7 +732,7 @@ pci_dss_compliance:
         - "Policy as code"
         - "Automated testing"
         - "Deployment validation"
-        
+
     compliance_reporting:
       automated_reports:
         - "Compliance status reports"
@@ -752,13 +752,13 @@ automation_framework:
     - "Ansible for configuration management"
     - "Docker for containerization"
     - "Kubernetes for orchestration"
-    
+
   security_automation:
     - "SIEM integration"
     - "Vulnerability scanning automation"
     - "Incident response orchestration"
     - "Compliance monitoring"
-    
+
   monitoring_automation:
     - "Real-time log analysis"
     - "Anomaly detection"
@@ -772,13 +772,13 @@ integration:
     - "PayPal integration"
     - "Square integration"
     - "Authorize.Net integration"
-    
+
   compliance_tools:
     - "Compliance management platforms"
     - "GRC tools integration"
     - "Risk assessment tools"
     - "Audit management systems"
-    
+
   cloud_platforms:
     - "GCP security services"
     - "AWS security services"

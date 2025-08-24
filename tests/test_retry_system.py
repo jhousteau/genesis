@@ -15,12 +15,23 @@ import time
 import pytest
 
 from core.errors.handler import ErrorCategory, GenesisError
+
 # Import the retry system components
-from core.retry import (AGGRESSIVE_POLICY, CONSERVATIVE_POLICY, DEFAULT_POLICY,
-                        BackoffStrategy, CircuitBreaker, CircuitBreakerError,
-                        CircuitBreakerState, RetryExecutor, RetryPolicy,
-                        create_circuit_breaker_policy, create_policy, retry,
-                        retry_async)
+from core.retry import (
+    AGGRESSIVE_POLICY,
+    CONSERVATIVE_POLICY,
+    DEFAULT_POLICY,
+    BackoffStrategy,
+    CircuitBreaker,
+    CircuitBreakerError,
+    CircuitBreakerState,
+    RetryExecutor,
+    RetryPolicy,
+    create_circuit_breaker_policy,
+    create_policy,
+    retry,
+    retry_async,
+)
 
 
 class TestRetryPolicy:

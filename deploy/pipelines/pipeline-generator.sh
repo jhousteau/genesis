@@ -177,7 +177,7 @@ validate_args() {
 generate_variables_doc() {
     local platform="$1"
     local output_file="$2"
-    
+
     cat > "$output_file" << EOF
 # Required Variables and Secrets for $platform Pipeline
 
@@ -251,9 +251,9 @@ EOF
 generate_github_actions() {
     local output_dir=".github/workflows"
     [[ -n "$OUTPUT_DIR" ]] && output_dir="$OUTPUT_DIR"
-    
+
     mkdir -p "$output_dir"
-    
+
     local template_file
     case "$PROJECT_TYPE" in
         web-app)
@@ -267,27 +267,27 @@ generate_github_actions() {
             log_warning "Using web-app template for project type: $PROJECT_TYPE"
             ;;
     esac
-    
+
     if [[ -n "$TEMPLATE_FILE" ]] && [[ -f "$TEMPLATE_FILE" ]]; then
         template_file="$TEMPLATE_FILE"
     fi
-    
+
     local output_file="$output_dir/deploy.yml"
-    
+
     if [[ ! -f "$template_file" ]]; then
         log_error "Template file not found: $template_file"
         exit 1
     fi
-    
+
     # Copy template and customize
     cp "$template_file" "$output_file"
-    
+
     # Replace placeholders
     sed -i.bak "s/\\\${{ vars.PROJECT_NAME }}/$PROJECT_NAME/g" "$output_file"
     rm -f "$output_file.bak"
-    
+
     log_success "Generated GitHub Actions workflow: $output_file"
-    
+
     # Generate documentation
     generate_variables_doc "GitHub Actions" "$output_dir/README-SETUP.md"
     log_info "Setup documentation: $output_dir/README-SETUP.md"
@@ -297,7 +297,7 @@ generate_github_actions() {
 generate_gitlab_ci() {
     local output_file=".gitlab-ci.yml"
     [[ -n "$OUTPUT_DIR" ]] && output_file="$OUTPUT_DIR/.gitlab-ci.yml"
-    
+
     cat > "$output_file" << EOF
 # GitLab CI/CD Pipeline for $PROJECT_NAME ($PROJECT_TYPE)
 # Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -357,16 +357,16 @@ build:
     - |
       IMAGE_TAG="\${CI_COMMIT_SHA}-\$(date +%Y%m%d%H%M%S)"
       IMAGE_URL="\$REGISTRY_REGION-docker.pkg.dev/\$GCP_PROJECT_ID/containers/$PROJECT_NAME"
-      
+
       docker build \\
         --tag "\${IMAGE_URL}:\${IMAGE_TAG}" \\
         --tag "\${IMAGE_URL}:\$CI_ENVIRONMENT_NAME" \\
         --build-arg ENV="\$CI_ENVIRONMENT_NAME" \\
         .
-      
+
       docker push "\${IMAGE_URL}:\${IMAGE_TAG}"
       docker push "\${IMAGE_URL}:\$CI_ENVIRONMENT_NAME"
-      
+
       echo "IMAGE_TAG=\${IMAGE_TAG}" > build.env
       echo "IMAGE_URL=\${IMAGE_URL}" >> build.env
   artifacts:
@@ -444,7 +444,7 @@ deploy-prod:
 EOF
 
     log_success "Generated GitLab CI configuration: $output_file"
-    
+
     # Generate variables documentation
     cat > "gitlab-ci-setup.md" << EOF
 # GitLab CI/CD Setup for $PROJECT_NAME
@@ -481,10 +481,10 @@ EOF
 generate_azure_devops() {
     local output_dir=".azure"
     [[ -n "$OUTPUT_DIR" ]] && output_dir="$OUTPUT_DIR"
-    
+
     mkdir -p "$output_dir"
     local output_file="$output_dir/azure-pipelines.yml"
-    
+
     cat > "$output_file" << EOF
 # Azure DevOps Pipeline for $PROJECT_NAME ($PROJECT_TYPE)
 # Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -517,21 +517,21 @@ stages:
     displayName: Build
     pool:
       vmImage: \$(vmImageName)
-    
+
     steps:
     - task: GoogleCloudSdkTool@0
       displayName: 'Install Google Cloud SDK'
-    
+
     - script: |
         echo "Building \$(projectName)"
         # Add build commands here
       displayName: 'Build Application'
-    
+
     - script: |
         echo "Running tests"
         # Add test commands here
       displayName: 'Run Tests'
-    
+
     - task: Docker@2
       displayName: 'Build Docker Image'
       inputs:
@@ -559,7 +559,7 @@ stages:
           steps:
           - task: GoogleCloudSdkTool@0
             displayName: 'Install Google Cloud SDK'
-          
+
           - script: |
               gcloud run deploy \$(projectName) \\
                 --image=gcr.io/PROJECT_ID/\$(projectName):\$(Build.BuildId) \\
@@ -576,7 +576,7 @@ EOF
 generate_google_cloud_build() {
     local output_file="cloudbuild.yaml"
     [[ -n "$OUTPUT_DIR" ]] && output_file="$OUTPUT_DIR/cloudbuild.yaml"
-    
+
     cat > "$output_file" << EOF
 # Google Cloud Build Configuration for $PROJECT_NAME ($PROJECT_TYPE)
 # Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -660,28 +660,28 @@ EOF
 generate_jenkins() {
     local output_file="Jenkinsfile"
     [[ -n "$OUTPUT_DIR" ]] && output_file="$OUTPUT_DIR/Jenkinsfile"
-    
+
     cat > "$output_file" << EOF
 // Jenkins Pipeline for $PROJECT_NAME ($PROJECT_TYPE)
 // Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 pipeline {
     agent any
-    
+
     environment {
         PROJECT_NAME = '$PROJECT_NAME'
         REGISTRY_REGION = 'us-central1'
         GCP_PROJECT_ID = credentials('gcp-project-id')
         GOOGLE_APPLICATION_CREDENTIALS = credentials('gcp-service-account')
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
+
         stage('Validate') {
             steps {
                 script {
@@ -700,7 +700,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Test') {
             steps {
                 script {
@@ -718,34 +718,34 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Build') {
             steps {
                 script {
                     def imageTag = "\${env.BUILD_ID}-\$(date +%Y%m%d%H%M%S)"
                     def imageUrl = "\${REGISTRY_REGION}-docker.pkg.dev/\${GCP_PROJECT_ID}/containers/\${PROJECT_NAME}"
-                    
+
                     sh """
                         gcloud auth activate-service-account --key-file=\${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud config set project \${GCP_PROJECT_ID}
                         gcloud auth configure-docker \${REGISTRY_REGION}-docker.pkg.dev
-                        
+
                         docker build \\
                             -t "\${imageUrl}:\${imageTag}" \\
                             -t "\${imageUrl}:latest" \\
                             --build-arg ENV=production \\
                             .
-                        
+
                         docker push "\${imageUrl}:\${imageTag}"
                         docker push "\${imageUrl}:latest"
                     """
-                    
+
                     env.IMAGE_TAG = imageTag
                     env.IMAGE_URL = imageUrl
                 }
             }
         }
-        
+
         stage('Deploy') {
             when {
                 branch 'main'
@@ -763,7 +763,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Validate Deployment') {
             when {
                 branch 'main'
@@ -774,7 +774,7 @@ pipeline {
                         script: "gcloud run services describe \${PROJECT_NAME} --region=\${REGISTRY_REGION} --format='value(status.url)'",
                         returnStdout: true
                     ).trim()
-                    
+
                     sh """
                         for i in {1..30}; do
                             if curl -f "\${serviceUrl}/health" --max-time 10; then
@@ -788,7 +788,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             cleanWs()

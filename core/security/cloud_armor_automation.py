@@ -240,9 +240,9 @@ class CloudArmorAutomation:
                             "type": "high_request_volume",
                             "source_ip": ip,
                             "request_count": count,
-                            "severity": "HIGH"
-                            if count > threshold_requests * 2
-                            else "MEDIUM",
+                            "severity": (
+                                "HIGH" if count > threshold_requests * 2 else "MEDIUM"
+                            ),
                         }
                     )
 

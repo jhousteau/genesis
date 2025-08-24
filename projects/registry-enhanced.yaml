@@ -7,21 +7,21 @@ global:
   default_region: "us-central1"
   plumbing_version: "2.0.0"
   bootstrap_version: "1.0.0"
-  
+
   # Default policies
   policies:
     require_approval_for_prod: true
     auto_backup_enabled: true
     security_scanning_enabled: true
     cost_monitoring_enabled: true
-    
+
   # Default environments for all projects
   default_environments:
     - dev
     - test
     - staging
     - prod
-    
+
   # Global resource limits
   resource_limits:
     max_instances_per_env: 10
@@ -40,7 +40,7 @@ projects:
     criticality: "high"
     description: "Universal Project Platform - manages all other projects"
     repository: "https://github.com/whitehorse/bootstrapper"
-    
+
     environments:
       dev:
         gcp_project: "whitehorse-bootstrap-dev"
@@ -49,7 +49,7 @@ projects:
         terraform_backend:
           bucket: "whitehorse-bootstrap-dev-tfstate"
           prefix: "terraform/state"
-      
+
       test:
         gcp_project: "whitehorse-bootstrap-test"
         gcloud_home: "~/.gcloud/bootstrapper-test"
@@ -57,7 +57,7 @@ projects:
         terraform_backend:
           bucket: "whitehorse-bootstrap-test-tfstate"
           prefix: "terraform/state"
-      
+
       staging:
         gcp_project: "whitehorse-bootstrap-staging"
         gcloud_home: "~/.gcloud/bootstrapper-staging"
@@ -65,7 +65,7 @@ projects:
         terraform_backend:
           bucket: "whitehorse-bootstrap-staging-tfstate"
           prefix: "terraform/state"
-      
+
       prod:
         gcp_project: "whitehorse-bootstrap-prod"
         gcloud_home: "~/.gcloud/bootstrapper-prod"
@@ -74,7 +74,7 @@ projects:
         terraform_backend:
           bucket: "whitehorse-bootstrap-prod-tfstate"
           prefix: "terraform/state"
-        
+
     monitoring:
       enabled: true
       alerts:
@@ -82,21 +82,21 @@ projects:
           threshold: 150  # % of expected cost
         - type: "deployment_failure"
         - type: "security_scan_failure"
-      
+
     security:
       vulnerability_scanning: true
       secret_scanning: true
       compliance_checks:
         - "SOC2"
         - "GDPR"
-    
+
     # Intelligence layer configuration
     intelligence:
       auto_fix_enabled: true
       optimization_enabled: true
       predictions_enabled: true
       recommendations_enabled: true
-      
+
     # Metadata
     created_date: "2024-08-20"
     last_updated: "2024-08-20"
@@ -229,7 +229,7 @@ templates:
           auto_scaling:
             min_instances: 2
             max_instances: 10
-    
+
   cloud-run:
     description: "Serverless containerized applications"
     default_config:
@@ -251,7 +251,7 @@ templates:
           memory: "4Gi"
           max_instances: 100
           min_instances: 1
-  
+
   kubernetes:
     description: "Kubernetes-based applications"
     default_config:

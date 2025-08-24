@@ -237,9 +237,11 @@ class HealthChecker:
                 name="websocket_connection_time",
                 value=response_time,
                 threshold=500.0,
-                status=HealthStatus.HEALTHY
-                if response_time < 500
-                else HealthStatus.DEGRADED,
+                status=(
+                    HealthStatus.HEALTHY
+                    if response_time < 500
+                    else HealthStatus.DEGRADED
+                ),
                 timestamp=datetime.now(),
                 unit="ms",
                 description="WebSocket connection establishment time",
@@ -273,9 +275,11 @@ class HealthChecker:
                                 name="cpu_usage",
                                 value=cpu_usage,
                                 threshold=80.0,
-                                status=HealthStatus.HEALTHY
-                                if cpu_usage < 80
-                                else HealthStatus.DEGRADED,
+                                status=(
+                                    HealthStatus.HEALTHY
+                                    if cpu_usage < 80
+                                    else HealthStatus.DEGRADED
+                                ),
                                 timestamp=datetime.now(),
                                 unit="%",
                                 description="CPU usage percentage",
@@ -290,9 +294,11 @@ class HealthChecker:
                                 name="memory_usage",
                                 value=memory_usage,
                                 threshold=85.0,
-                                status=HealthStatus.HEALTHY
-                                if memory_usage < 85
-                                else HealthStatus.DEGRADED,
+                                status=(
+                                    HealthStatus.HEALTHY
+                                    if memory_usage < 85
+                                    else HealthStatus.DEGRADED
+                                ),
                                 timestamp=datetime.now(),
                                 unit="%",
                                 description="Memory usage percentage",
@@ -307,9 +313,11 @@ class HealthChecker:
                                 name="active_connections",
                                 value=connections,
                                 threshold=1000.0,
-                                status=HealthStatus.HEALTHY
-                                if connections < 1000
-                                else HealthStatus.DEGRADED,
+                                status=(
+                                    HealthStatus.HEALTHY
+                                    if connections < 1000
+                                    else HealthStatus.DEGRADED
+                                ),
                                 timestamp=datetime.now(),
                                 unit="count",
                                 description="Number of active connections",
@@ -327,9 +335,11 @@ class HealthChecker:
                                 name="error_rate",
                                 value=recent_error_rate,
                                 threshold=5.0,
-                                status=HealthStatus.HEALTHY
-                                if recent_error_rate < 5
-                                else HealthStatus.UNHEALTHY,
+                                status=(
+                                    HealthStatus.HEALTHY
+                                    if recent_error_rate < 5
+                                    else HealthStatus.UNHEALTHY
+                                ),
                                 timestamp=datetime.now(),
                                 unit="errors/min",
                                 description="Recent error rate",
@@ -395,9 +405,11 @@ class HealthChecker:
                             name="critical_services_available",
                             value=len(critical_services) - len(missing_services),
                             threshold=len(critical_services),
-                            status=HealthStatus.HEALTHY
-                            if not missing_services
-                            else HealthStatus.UNHEALTHY,
+                            status=(
+                                HealthStatus.HEALTHY
+                                if not missing_services
+                                else HealthStatus.UNHEALTHY
+                            ),
                             timestamp=datetime.now(),
                             unit="count",
                             description=f"Critical services available. Missing: {missing_services}",

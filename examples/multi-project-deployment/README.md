@@ -130,10 +130,10 @@ The `projects.json` file demonstrates loading projects from external data:
      {
        project_id      = "custom-project"
        billing_account = var.billing_account
-       
+
        # Custom APIs
        activate_apis = ["specific.googleapis.com"]
-       
+
        # Custom service accounts
        custom_service_accounts = {
          my_sa = {
@@ -142,7 +142,7 @@ The `projects.json` file demonstrates loading projects from external data:
            project_roles = ["roles/viewer"]
          }
        }
-       
+
        # Enable networking
        create_network = true
        subnets = [{
@@ -161,24 +161,24 @@ Edit the module parameters:
 ```hcl
 module "deployment" {
   source = "../../modules/multi-project"
-  
+
   # Change default region
   default_region = "europe-west1"
-  
+
   # Add default labels
   default_labels = {
     team        = "platform"
     cost_center = "engineering"
     managed_by  = "terraform"
   }
-  
+
   # Modify default APIs
   default_apis = [
     "compute.googleapis.com",
     "storage.googleapis.com",
     # Add more...
   ]
-  
+
   # Configure WIF defaults
   default_wif_providers = {
     github = {
@@ -200,7 +200,7 @@ For large numbers of projects or quota limitations:
 ```hcl
 module "deployment" {
   source = "../../modules/multi-project"
-  
+
   parallel_deployments = false  # Deploy one at a time
   projects = var.projects
 }
@@ -212,7 +212,7 @@ Stop on first error:
 ```hcl
 module "deployment" {
   source = "../../modules/multi-project"
-  
+
   error_on_partial_failure = true
   projects = var.projects
 }
@@ -224,7 +224,7 @@ Test without applying:
 ```hcl
 module "deployment" {
   source = "../../modules/multi-project"
-  
+
   dry_run = true
   projects = var.projects
 }

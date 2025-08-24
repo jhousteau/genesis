@@ -5,7 +5,7 @@ registry:
   health_check_interval: 30  # seconds
   heartbeat_timeout: 300  # seconds
   auto_discovery: true
-  
+
   # Paths to scan for components
   discovery_paths:
     - /Users/jameshousteau/source_code/bootstrapper/bin
@@ -24,43 +24,43 @@ components:
     description: "Universal command-line interface"
     health_endpoint: null
     priority: medium
-    
+
   registry:
     name: "Component Registry"
     description: "Service discovery and registration"
     health_endpoint: null
     priority: high
-    
+
   monitoring:
     name: "Monitoring System"
     description: "Unified monitoring and observability"
     health_endpoint: null
     priority: high
-    
+
   intelligence:
     name: "AI Intelligence Layer"
     description: "Automated optimization and insights"
     health_endpoint: null
     priority: medium
-    
+
   deployment:
     name: "Deployment Engine"
     description: "Automated deployment and rollback"
     health_endpoint: null
     priority: critical
-    
+
   infrastructure:
     name: "Infrastructure Manager"
     description: "Terraform-based infrastructure"
     health_endpoint: null
     priority: critical
-    
+
   isolation:
     name: "Isolation Layer"
     description: "Environment and credential isolation"
     health_endpoint: null
     priority: critical
-    
+
   governance:
     name: "Governance Engine"
     description: "Compliance and policy enforcement"

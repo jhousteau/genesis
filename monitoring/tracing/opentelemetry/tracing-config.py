@@ -12,10 +12,8 @@ from typing import Any, Dict
 try:
     from opentelemetry import trace
     from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
-        OTLPSpanExporter
-    from opentelemetry.instrumentation.auto_instrumentation import \
-        sitecustomize
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.instrumentation.auto_instrumentation import sitecustomize
     from opentelemetry.instrumentation.celery import CeleryInstrumentor
     from opentelemetry.instrumentation.django import DjangoInstrumentor
     from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -29,11 +27,13 @@ try:
     from opentelemetry.propagators.jaeger import JaegerPropagator
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import (BatchSpanProcessor,
-                                                SimpleSpanProcessor)
-    from opentelemetry.sdk.trace.sampling import (AlwaysOff, AlwaysOn,
-                                                  ParentBased,
-                                                  TraceIdRatioBased)
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
+    from opentelemetry.sdk.trace.sampling import (
+        AlwaysOff,
+        AlwaysOn,
+        ParentBased,
+        TraceIdRatioBased,
+    )
     from opentelemetry.semconv.resource import ResourceAttributes
     from opentelemetry.semconv.trace import SpanAttributes
 

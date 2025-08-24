@@ -161,7 +161,7 @@ load_config() {
     if command -v yq &> /dev/null; then
         PROJECT_NAME="${PROJECT_NAME:-$(yq e '.project.name' "$DEPLOY_CONFIG_FILE")}"
         PROJECT_TYPE="$(yq e '.project.type' "$DEPLOY_CONFIG_FILE")"
-        
+
         if [[ -n "$ENVIRONMENT" ]]; then
             GCP_PROJECT="$(yq e ".environments.$ENVIRONMENT.gcp_project" "$DEPLOY_CONFIG_FILE")"
             DEPLOYMENT_STRATEGY="${DEPLOYMENT_STRATEGY:-$(yq e ".environments.$ENVIRONMENT.deployment_strategy // .strategies.default" "$DEPLOY_CONFIG_FILE")}"
@@ -170,7 +170,7 @@ load_config() {
         log_debug "yq not available, using basic parsing"
         PROJECT_NAME="${PROJECT_NAME:-$(grep "name:" "$DEPLOY_CONFIG_FILE" | head -1 | awk '{print $2}')}"
         PROJECT_TYPE="$(grep "type:" "$DEPLOY_CONFIG_FILE" | head -1 | awk '{print $2}')"
-        
+
         # Basic environment parsing
         if [[ -n "$ENVIRONMENT" ]]; then
             GCP_PROJECT="${PROJECT_NAME}-${ENVIRONMENT}"
@@ -374,7 +374,7 @@ execute_deployment_strategy() {
     log_progress "Running deployment strategy script..."
     if ! "$strategy_script"; then
         log_error "Deployment strategy failed: $DEPLOYMENT_STRATEGY"
-        
+
         if [[ "$ROLLBACK_ON_FAILURE" == "true" ]] && [[ "$DRY_RUN" != "true" ]]; then
             log_warning "Initiating automatic rollback..."
             "$SCRIPT_DIR/../rollback/rollback-runner.sh" \
@@ -382,7 +382,7 @@ execute_deployment_strategy() {
                 --env "$ENVIRONMENT" \
                 --automatic
         fi
-        
+
         exit 1
     fi
 
@@ -394,7 +394,7 @@ run_post_deployment_validation() {
     log_info "Running post-deployment validation..."
 
     local service_url=""
-    
+
     # Get service URL based on project type
     case "$PROJECT_TYPE" in
         web-app|api|microservice)
@@ -411,22 +411,22 @@ run_post_deployment_validation() {
 
     if [[ -n "$service_url" ]]; then
         log_progress "Running health checks..."
-        
+
         # Wait for service to be ready
         local max_attempts=30
         local attempt=1
-        
+
         while [[ $attempt -le $max_attempts ]]; do
             log_debug "Health check attempt $attempt/$max_attempts"
-            
+
             if curl -f "${service_url}/health" --max-time 10 --silent > /dev/null 2>&1; then
                 log_success "Health check passed"
                 break
             fi
-            
+
             if [[ $attempt -eq $max_attempts ]]; then
                 log_error "Health check failed after $max_attempts attempts"
-                
+
                 if [[ "$ROLLBACK_ON_FAILURE" == "true" ]]; then
                     log_warning "Health check failed, initiating rollback..."
                     "$SCRIPT_DIR/../rollback/rollback-runner.sh" \
@@ -435,10 +435,10 @@ run_post_deployment_validation() {
                         --reason "health_check_failure" \
                         --automatic
                 fi
-                
+
                 return 1
             fi
-            
+
             sleep 10
             ((attempt++))
         done
@@ -446,14 +446,14 @@ run_post_deployment_validation() {
         # Run performance validation
         log_progress "Running performance validation..."
         local response_time=$(curl -o /dev/null -s -w '%{time_total}' "${service_url}/health" 2>/dev/null || echo "999")
-        
+
         log_info "Response time: ${response_time}s"
-        
+
         # Check if response time is acceptable (configurable threshold)
         local max_response_time="5.0"
         if (( $(echo "${response_time} > ${max_response_time}" | bc -l 2>/dev/null || echo "0") )); then
             log_warning "Response time ${response_time}s exceeds threshold ${max_response_time}s"
-            
+
             if [[ "$ENVIRONMENT" == "prod" ]] && [[ "$ROLLBACK_ON_FAILURE" == "true" ]]; then
                 log_warning "Performance degradation in production, considering rollback..."
             fi
@@ -585,7 +585,7 @@ show_deployment_summary() {
     echo "  • Monitor deployment: deploy-orchestrator monitor --project $PROJECT_NAME --env $ENVIRONMENT"
     echo "  • View logs: deploy-orchestrator logs --project $PROJECT_NAME --env $ENVIRONMENT"
     echo "  • Rollback if needed: deploy-orchestrator rollback --project $PROJECT_NAME --env $ENVIRONMENT"
-    
+
     if [[ "$ENVIRONMENT" == "dev" ]]; then
         echo "  • Promote to test: deploy-orchestrator deploy --project $PROJECT_NAME --env test"
     elif [[ "$ENVIRONMENT" == "test" ]]; then
@@ -634,7 +634,7 @@ main() {
     run_pre_deployment_validation
     build_and_push_image
     execute_deployment_strategy
-    
+
     if [[ "$DRY_RUN" != "true" ]]; then
         run_post_deployment_validation
         create_deployment_record

@@ -1,202 +1,181 @@
 ---
 title: Genesis Quick Start Guide
 category: getting-started
-status: approved
-version: 1.0.0
-updated: 2024-08-21
+status: current
+version: 2.0.0
+updated: 2025-08-24
 ---
 
-# Genesis Quick Start - 5 Minutes to Production
+# Genesis Quick Start
 
-Get your first Genesis project deployed to GCP in under 5 minutes.
+Get started with Genesis Universal Infrastructure Platform in minutes.
 
 ## Prerequisites
 
 - Google Cloud account with billing enabled
-- `gcloud` CLI installed
-- Node.js 18+ or Python 3.10+
+- `gcloud` CLI installed and authenticated
+- Python 3.10+
 - Git installed
 
-## Step 1: Install Genesis CLI
+## Step 1: Clone and Setup
 
 ```bash
-# Option 1: Install globally
-curl -sSL https://genesis.dev/install | bash
-
-# Option 2: Clone and install locally
+# Clone Genesis repository
 git clone https://github.com/jhousteau/genesis.git
 cd genesis
+
+# Run bootstrap script
 ./scripts/bootstrap.sh
 ```
 
-## Step 2: Initialize Genesis
+## Step 2: Configure Environment
 
 ```bash
-# Set up your GCP project
-g init
+# Set your GCP project
+export PROJECT_ID=your-gcp-project-id
+export ENVIRONMENT=dev
 
-# This will:
-# - Configure GCP project settings
-# - Set up service accounts
-# - Create Terraform state bucket
-# - Configure Workload Identity Federation
+# Initialize Terraform backend
+g infra init
 ```
 
-## Step 3: Create Your First Project
+## Step 3: Deploy Infrastructure
 
 ```bash
-# Create a new project from template
-g new my-api --template=cloud-run
+# Plan infrastructure changes
+g infra plan --module vm-management --environment dev
 
-# Or migrate an existing project
-g migrate ./my-existing-project
+# Apply infrastructure
+g infra apply --module vm-management --environment dev
 ```
 
-## Step 4: Local Development
+## Step 4: Manage Agents
 
 ```bash
-# Start local development server
-cd my-api
-g dev
+# Create agent VM pool
+g vm create-pool --type backend-developer --size 2
 
-# Your service is now running at http://localhost:8080
-# Changes auto-reload with hot module replacement
+# Start agents
+g agent start --type backend-developer --count 2
 ```
 
-## Step 5: Deploy to GCP
+## Step 5: Container Orchestration
 
 ```bash
-# Run smart-commit (formats, validates, fixes)
-g commit -m "Initial deployment"
+# Create GKE cluster
+g container create-cluster genesis-cluster --autopilot
 
-# Deploy to development environment
-g deploy dev
-
-# Your service is now live at:
-# https://my-api-dev-xxxxx.run.app
+# Deploy agent-cage service
+g container deploy --service agent-cage --environment dev
 ```
 
-## What Just Happened?
+## What Genesis Provides
 
-Genesis automatically:
-
-✅ **Created production-ready infrastructure**
-- Error handling and retry logic
-- Structured logging to Cloud Logging
-- Health checks and monitoring
-- Security scanning and compliance
-
-✅ **Set up GCP resources**
-- Cloud Run service with auto-scaling
-- Service accounts with least privilege
-- Cloud Build pipeline
-- Monitoring dashboards
-
-✅ **Configured development tools**
-- Local development environment
-- Hot reload for rapid iteration
-- Integrated debugging
-- Test framework
+✅ **VM Management** - Agent pools with autoscaling
+✅ **Container Orchestration** - GKE clusters and deployments
+✅ **Infrastructure Automation** - Terraform modules and state management
+✅ **Agent Operations** - Multi-agent coordination and migration
+✅ **Smart Commit** - Quality gates and automated validation
 
 ## Common Commands
 
 ```bash
-# Development
-g dev              # Start local development
-g test             # Run tests
-g lint             # Run linters
-g debug            # Start debugger
+# VM Management
+g vm create-pool --type backend-developer --size 3
+g vm scale-pool pool-name --min 1 --max 10
+g vm health-check --pool pool-name
+g vm list-pools
 
-# Deployment
-g deploy [env]     # Deploy to environment
-g rollback [env]   # Rollback deployment
-g status [env]     # Check deployment status
+# Container Orchestration
+g container create-cluster cluster-name --autopilot
+g container deploy --service agent-cage --environment dev
+g container scale --deployment claude-talk --replicas 5
+g container logs --service agent-cage --follow
 
-# Project Management
-g new [name]       # Create new project
-g migrate [path]   # Migrate existing project
-g list             # List all projects
+# Infrastructure
+g infra plan --module vm-management --environment dev
+g infra apply --module container-orchestration --environment prod
+g infra status --all
 
-# Smart Commit (never use git commit directly)
-g commit           # Smart commit with quality gates
-g fix              # Run autofix pipeline
+# Agent Operations
+g agent start --type backend-developer --count 2
+g agent status --all
+g agent migrate --from legacy --to agent-cage
+
+# Smart Commit (use project's smart-commit)
+./smart-commit.sh  # Quality gates and validation
 ```
 
-## Project Structure
+## Genesis Structure
 
 ```
-my-api/
-├── .genesis/          # Genesis configuration
-│   ├── config.yaml    # Project settings
-│   └── hooks/         # Git hooks
-├── src/               # Your application code
-│   ├── main.py        # Entry point
-│   └── handlers/      # Request handlers
-├── terraform/         # Infrastructure as code
-│   ├── main.tf        # Generated Terraform
-│   └── variables.tf   # Environment variables
-├── tests/             # Test suite
-│   ├── unit/          # Unit tests
-│   └── integration/   # Integration tests
-├── Dockerfile         # Container definition
-├── cloudbuild.yaml    # CI/CD pipeline
-└── genesis.yaml       # Genesis project config
+genesis/
+├── cli/               # Genesis CLI commands
+├── core/              # Production-ready libraries
+├── intelligence/      # Smart-commit and SOLVE framework
+├── modules/           # Terraform infrastructure modules
+├── templates/         # Project templates
+├── monitoring/        # Observability stack
+├── config/            # Environment configurations
+└── scripts/           # Automation scripts
 ```
 
 ## Environment Management
 
 ```bash
-# Deploy to different environments
-g deploy dev       # Development
-g deploy staging   # Staging
-g deploy prod      # Production
+# Set environment
+export ENVIRONMENT=dev|staging|prod
+export PROJECT_ID=your-gcp-project
 
-# Environment-specific configuration
-g config set --env=prod MIN_INSTANCES=3
-g config set --env=dev DEBUG=true
+# Environment-specific infrastructure
+g infra apply --module vm-management --environment dev
+g infra apply --module container-orchestration --environment prod
+
+# Check environment status
+g infra status --all
 ```
 
-## Monitoring Your Application
+## Monitoring
 
 ```bash
-# View logs
-g logs --tail
+# View container logs
+g container logs --service agent-cage --follow
 
-# Check metrics
-g metrics
+# Check VM health
+g vm health-check --pool backend-pool
 
-# View traces
-g traces
+# Agent status
+g agent status --all
 
-# Open monitoring dashboard
-g dashboard
+# Infrastructure status
+g infra status --all
 ```
 
 ## Next Steps
 
 ### Learn More
-- [Installation Guide](./installation.md) - Detailed setup instructions
-- [First Project Tutorial](./first-project.md) - Build a complete application
-- [Architecture Overview](../02-architecture/foundation.md) - Understand Genesis internals
+- [GCP Isolation Setup](../04-guides/gcp-isolation-setup.md) - Environment isolation
+- [VM Management](../04-guides/vm-management-deployment.md) - Agent VM deployment
+- [Architecture Overview](../00-overview/GRAND_DESIGN.md) - Complete platform vision
 
-### Explore Features
-- [Smart Commit Workflow](../04-guides/deployment/smart-commit.md)
-- [Multi-Agent Development](../04-guides/deployment/multi-agent.md)
-- [Monitoring Setup](../04-guides/monitoring/setup.md)
+### Core Components
+- [Genesis Core](../../core/README.md) - Production libraries
+- [Smart Commit](../../intelligence/smart-commit/README.md) - Quality gates
+- [SOLVE Framework](../../intelligence/solve/README.md) - AI orchestration
 
 ### Get Help
-- Run `g help` for command reference
-- Check [Troubleshooting Guide](../04-guides/troubleshooting/common-issues.md)
-- Join our [Discord Community](https://discord.genesis.dev)
+- Run `g --help` for command reference
+- Check project documentation in `/docs`
+- Review component README files
 
-## Tips for Success
+## Key Principles
 
-1. **Always use `g commit`** - Never use `git commit` directly
-2. **Start with templates** - Use `g new --list-templates` to see options
-3. **Test locally first** - Use `g dev` before deploying
-4. **Monitor deployments** - Use `g status` to track progress
-5. **Use environments** - Keep dev, staging, and prod separate
+1. **Use smart-commit** - `./smart-commit.sh` for all changes
+2. **Environment isolation** - Separate dev/staging/prod
+3. **Infrastructure as code** - All resources via Terraform
+4. **Agent coordination** - Multi-agent development workflows
+5. **Quality gates** - Automated validation and testing
 
 ---
 
-**Ready to build?** You now have a production-ready application with 80% less code to maintain!
+**Genesis: Write features, not plumbing.**

@@ -16,8 +16,12 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from solve.improvement_metrics import ImprovementMetricsCalculator
-from solve.lesson_capture_system import (EnhancedLesson, LessonCaptureSystem,
-                                         LessonProcessor, LessonStore)
+from solve.lesson_capture_system import (
+    EnhancedLesson,
+    LessonCaptureSystem,
+    LessonProcessor,
+    LessonStore,
+)
 from solve.lessons import LessonCapture
 from solve.models import Lesson
 from solve.template_evolution import TemplateEvolution, TemplateRegistry
@@ -171,9 +175,9 @@ class EnhancementEngine:
                 )
 
             # Track effectiveness improvements
-            results[
-                "effectiveness_improvements"
-            ] = await self._calculate_effectiveness_improvements()
+            results["effectiveness_improvements"] = (
+                await self._calculate_effectiveness_improvements()
+            )
 
         except Exception as e:
             logger.error(f"Comprehensive enhancement failed: {e}")

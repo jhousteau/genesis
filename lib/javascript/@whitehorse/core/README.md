@@ -178,9 +178,9 @@ const featureFlag = envConfig.getFeatureFlag('new_feature', false);
 ### Error Handling
 
 ```typescript
-import { 
-  WhitehorseError, 
-  ValidationError, 
+import {
+  WhitehorseError,
+  ValidationError,
   NetworkError,
   CircuitBreaker,
   retry
@@ -382,7 +382,7 @@ const logger = getLogger(__name__);
 // Request logging middleware
 export const requestLogger = (req, res, next) => {
   const start = Date.now();
-  
+
   res.on('finish', () => {
     const duration = Date.now() - start;
     logger.info('HTTP request', {
@@ -394,7 +394,7 @@ export const requestLogger = (req, res, next) => {
       ip: req.ip
     });
   });
-  
+
   next();
 };
 ```

@@ -260,7 +260,7 @@ spec:
       storage:
         storageClassName: fast-ssd
         size: 100Gi
-  
+
   collector:
     resources:
       limits:
@@ -269,7 +269,7 @@ spec:
       requests:
         cpu: 500m
         memory: 512Mi
-    
+
   query:
     resources:
       limits:

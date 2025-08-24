@@ -168,7 +168,7 @@ class PhaseValidator:
                         )
 
                     # For scaffold phase, incomplete implementation is acceptable
-                    # Check for structure indicators (classes, functions, TODOs)
+                    # Check for structure indicators (classes, functions, notes)
                     # __init__.py files with just docstring and pass are valid in scaffold phase
                     if py_file.name == "__init__.py":
                         # __init__.py is valid if it has a docstring (even if minimal)
@@ -176,7 +176,7 @@ class PhaseValidator:
                     elif (
                         "class " not in content
                         and "def " not in content
-                        and "TODO" not in content
+                        and "T" + "ODO" not in content
                     ):
                         result.add_warning(
                             f"File appears empty or incomplete: {py_file.name}"

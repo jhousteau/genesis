@@ -35,7 +35,7 @@ EMERGENCY_LOG_FILE="${REPO_GCLOUD_HOME:-$HOME/.gcloud}/logs/emergency-actions.lo
 # Destructive operation patterns
 DESTRUCTIVE_PATTERNS=(
     "delete"
-    "destroy" 
+    "destroy"
     "remove"
     "rm"
     "terminate"
@@ -86,16 +86,16 @@ print_banner() {
 # Initialize safety configuration
 init_safety_config() {
     log_step "Initializing production safety configuration..."
-    
+
     mkdir -p "$(dirname "$SAFETY_CONFIG_FILE")"
     mkdir -p "$(dirname "$SAFETY_LOG_FILE")"
     mkdir -p "$(dirname "$APPROVAL_QUEUE_FILE")"
     mkdir -p "$(dirname "$EMERGENCY_LOG_FILE")"
-    
+
     if [[ ! -f "$SAFETY_CONFIG_FILE" ]]; then
         create_default_safety_config
     fi
-    
+
     log_success "Safety configuration initialized"
 }
 
@@ -170,7 +170,7 @@ load_safety_config() {
     if [[ ! -f "$SAFETY_CONFIG_FILE" ]]; then
         init_safety_config
     fi
-    
+
     SAFETY_LEVEL=$(jq -r '.safety_level // "maximum"' "$SAFETY_CONFIG_FILE")
     PROJECT_ID=$(jq -r '.project_id // ""' "$SAFETY_CONFIG_FILE")
     ENVIRONMENT=$(jq -r '.environment // ""' "$SAFETY_CONFIG_FILE")
@@ -179,46 +179,46 @@ load_safety_config() {
 # Check if operation is destructive
 is_destructive_operation() {
     local command_string="$1"
-    
+
     for pattern in "${DESTRUCTIVE_PATTERNS[@]}"; do
         if echo "$command_string" | grep -qi "$pattern"; then
             return 0
         fi
     done
-    
+
     return 1
 }
 
 # Check if operation affects high-risk resources
 is_high_risk_resource() {
     local command_string="$1"
-    
+
     for pattern in "${HIGH_RISK_RESOURCES[@]}"; do
         if echo "$command_string" | grep -qiE "$pattern"; then
             return 0
         fi
     done
-    
+
     return 1
 }
 
 # Check if operation is bulk operation
 is_bulk_operation() {
     local command_string="$1"
-    
+
     # Look for patterns indicating bulk operations
     if echo "$command_string" | grep -qE "(--all|--filter=|--zone=.*--all|instances.*list.*delete)"; then
         return 0
     fi
-    
+
     # Check for multiple resource names
     local resource_count
     resource_count=$(echo "$command_string" | grep -o '[a-zA-Z0-9-]*instance[a-zA-Z0-9-]*\|[a-zA-Z0-9-]*bucket[a-zA-Z0-9-]*\|[a-zA-Z0-9-]*cluster[a-zA-Z0-9-]*' | wc -l)
-    
+
     if [[ "$resource_count" -gt 5 ]]; then
         return 0
     fi
-    
+
     return 1
 }
 
@@ -226,40 +226,40 @@ is_bulk_operation() {
 calculate_risk_score() {
     local command_string="$1"
     local score=0
-    
+
     # Base risk factors
     if is_destructive_operation "$command_string"; then
         ((score += 50))
     fi
-    
+
     if is_high_risk_resource "$command_string"; then
         ((score += 30))
     fi
-    
+
     if is_bulk_operation "$command_string"; then
         ((score += 20))
     fi
-    
+
     # Additional risk factors
     if echo "$command_string" | grep -qi "prod\|production"; then
         ((score += 20))
     fi
-    
+
     if echo "$command_string" | grep -qi "force\|--quiet\|--no-prompt"; then
         ((score += 15))
     fi
-    
+
     if echo "$command_string" | grep -qi "recursive\|--all"; then
         ((score += 10))
     fi
-    
+
     echo "$score"
 }
 
 # Get risk level from score
 get_risk_level() {
     local score="$1"
-    
+
     if [[ "$score" -ge 80 ]]; then
         echo "CRITICAL"
     elif [[ "$score" -ge 60 ]]; then
@@ -279,10 +279,10 @@ create_approval_request() {
     local risk_level="$2"
     local risk_score="$3"
     local justification="$4"
-    
+
     local approval_id
     approval_id="approval_$(date +%s)_$(printf '%04d' $RANDOM)"
-    
+
     local approval_request
     approval_request=$(cat <<EOF
 {
@@ -305,7 +305,7 @@ create_approval_request() {
 }
 EOF
 )
-    
+
     # Add to approval queue
     if [[ -f "$APPROVAL_QUEUE_FILE" ]]; then
         local existing_approvals
@@ -314,9 +314,9 @@ EOF
     else
         echo "[$approval_request]" > "$APPROVAL_QUEUE_FILE"
     fi
-    
+
     log_approval_request "$approval_id" "$command_string" "$risk_level" "$justification"
-    
+
     echo "$approval_id"
 }
 
@@ -326,7 +326,7 @@ log_approval_request() {
     local command_string="$2"
     local risk_level="$3"
     local justification="$4"
-    
+
     local log_entry
     log_entry=$(cat <<EOF
 {
@@ -343,7 +343,7 @@ log_approval_request() {
 }
 EOF
 )
-    
+
     mkdir -p "$(dirname "$SAFETY_LOG_FILE")"
     echo "$log_entry" >> "$SAFETY_LOG_FILE"
 }
@@ -354,13 +354,13 @@ send_approval_notification() {
     local command_string="$2"
     local risk_level="$3"
     local justification="$4"
-    
+
     load_safety_config
-    
+
     # Send Slack notification
     local slack_webhook
     slack_webhook=$(jq -r '.notifications.slack_webhook // empty' "$SAFETY_CONFIG_FILE")
-    
+
     if [[ -n "$slack_webhook" ]]; then
         local color="danger"
         case "$risk_level" in
@@ -368,7 +368,7 @@ send_approval_notification() {
             "HIGH") color="warning" ;;
             *) color="good" ;;
         esac
-        
+
         local payload
         payload=$(cat <<EOF
 {
@@ -393,7 +393,7 @@ send_approval_notification() {
                     "value": "approve_$approval_id"
                 },
                 {
-                    "type": "button", 
+                    "type": "button",
                     "text": "Deny",
                     "style": "danger",
                     "value": "deny_$approval_id"
@@ -406,16 +406,16 @@ send_approval_notification() {
 }
 EOF
 )
-        
+
         curl -X POST -H 'Content-type: application/json' \
             --data "$payload" \
             "$slack_webhook" >/dev/null 2>&1 || true
     fi
-    
+
     # Send email notification
     local email_alerts
     email_alerts=$(jq -r '.notifications.email_alerts // empty' "$SAFETY_CONFIG_FILE")
-    
+
     if [[ -n "$email_alerts" ]] && command -v mail >/dev/null 2>&1; then
         local subject="🛡️ Production Operation Approval Required - $risk_level"
         local body
@@ -439,7 +439,7 @@ This request will expire in 1 hour.
 Generated by Production Guardrails v$PRODUCTION_GUARDRAILS_VERSION
 EOF
 )
-        
+
         echo "$body" | mail -s "$subject" "$email_alerts" >/dev/null 2>&1 || true
     fi
 }
@@ -447,56 +447,56 @@ EOF
 # Check for existing approval
 check_approval_status() {
     local approval_id="$1"
-    
+
     if [[ ! -f "$APPROVAL_QUEUE_FILE" ]]; then
         echo "NOT_FOUND"
         return 1
     fi
-    
+
     local approval_status
     approval_status=$(jq -r ".[] | select(.approval_id == \"$approval_id\") | .status" "$APPROVAL_QUEUE_FILE" 2>/dev/null || echo "NOT_FOUND")
-    
+
     echo "$approval_status"
 }
 
 # Production safety check
 production_safety_check() {
     local command_string="$1"
-    
+
     log_step "Running production safety check..."
-    
+
     load_safety_config
-    
+
     # Skip if not production environment
     if [[ "${ENVIRONMENT:-}" != "prod" && "${ENVIRONMENT:-}" != "production" && "${PRODUCTION_MODE:-false}" != "true" ]]; then
         log_info "Non-production environment detected. Skipping safety checks."
         return 0
     fi
-    
+
     # Calculate risk score
     local risk_score risk_level
     risk_score=$(calculate_risk_score "$command_string")
     risk_level=$(get_risk_level "$risk_score")
-    
+
     log_info "Command risk assessment:"
     log_info "  Command: $command_string"
     log_info "  Risk Score: $risk_score"
     log_info "  Risk Level: $risk_level"
-    
+
     # Check for emergency bypass
     if [[ "${EMERGENCY_BYPASS:-}" == "ACTIVE" ]]; then
         log_warning "EMERGENCY BYPASS ACTIVE - Operation allowed"
         log_emergency_bypass "$command_string" "$risk_level"
         return 0
     fi
-    
+
     # Check existing confirmation
     if [[ "${CONFIRM_PROD:-}" == "I_UNDERSTAND" ]]; then
         log_warning "Manual confirmation provided - Operation allowed"
         log_manual_confirmation "$command_string" "$risk_level"
         return 0
     fi
-    
+
     # Risk-based decision
     case "$risk_level" in
         "CRITICAL"|"HIGH")
@@ -521,7 +521,7 @@ production_safety_check() {
             echo -e "${YELLOW}3. Emergency Bypass (emergencies only):${NC}"
             echo "   production-guardrails emergency-bypass \"[justification]\""
             echo ""
-            
+
             # Create approval request automatically if justification provided
             if [[ -n "${OPERATION_JUSTIFICATION:-}" ]]; then
                 local approval_id
@@ -530,7 +530,7 @@ production_safety_check() {
                 echo "Waiting for approval..."
                 send_approval_notification "$approval_id" "$command_string" "$risk_level" "$OPERATION_JUSTIFICATION"
             fi
-            
+
             return 1
             ;;
         "MEDIUM")
@@ -541,7 +541,7 @@ production_safety_check() {
             echo "Risk Score: $risk_score"
             echo ""
             read -p "Do you want to proceed? (type 'yes' to confirm): " confirmation
-            
+
             if [[ "$confirmation" == "yes" ]]; then
                 log_success "User confirmed medium risk operation"
                 log_manual_confirmation "$command_string" "$risk_level"
@@ -562,7 +562,7 @@ production_safety_check() {
 log_manual_confirmation() {
     local command_string="$1"
     local risk_level="$2"
-    
+
     local log_entry
     log_entry=$(cat <<EOF
 {
@@ -578,7 +578,7 @@ log_manual_confirmation() {
 }
 EOF
 )
-    
+
     mkdir -p "$(dirname "$SAFETY_LOG_FILE")"
     echo "$log_entry" >> "$SAFETY_LOG_FILE"
 }
@@ -587,7 +587,7 @@ EOF
 log_emergency_bypass() {
     local command_string="$1"
     local risk_level="$2"
-    
+
     local log_entry
     log_entry=$(cat <<EOF
 {
@@ -604,7 +604,7 @@ log_emergency_bypass() {
 }
 EOF
 )
-    
+
     mkdir -p "$(dirname "$EMERGENCY_LOG_FILE")"
     echo "$log_entry" >> "$EMERGENCY_LOG_FILE"
     echo "$log_entry" >> "$SAFETY_LOG_FILE"
@@ -614,20 +614,20 @@ EOF
 request_approval() {
     local command_string="$1"
     local justification="$2"
-    
+
     if [[ -z "$justification" ]]; then
         log_error "Justification required for approval request"
         echo "Usage: production-guardrails request-approval \"<command>\" \"<justification>\""
         return 1
     fi
-    
+
     local risk_score risk_level
     risk_score=$(calculate_risk_score "$command_string")
     risk_level=$(get_risk_level "$risk_score")
-    
+
     local approval_id
     approval_id=$(create_approval_request "$command_string" "$risk_level" "$risk_score" "$justification")
-    
+
     echo ""
     echo -e "${CYAN}🔔 Approval Request Created${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -641,20 +641,20 @@ request_approval() {
     echo ""
     echo "Notifications sent to approvers."
     echo "You can check status with: production-guardrails status $approval_id"
-    
+
     send_approval_notification "$approval_id" "$command_string" "$risk_level" "$justification"
 }
 
 # Emergency bypass
 emergency_bypass() {
     local justification="$1"
-    
+
     if [[ -z "$justification" ]]; then
         log_error "Justification required for emergency bypass"
         echo "Usage: production-guardrails emergency-bypass \"<justification>\""
         return 1
     fi
-    
+
     echo ""
     echo -e "${RED}🚨 EMERGENCY BYPASS ACTIVATED${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -668,7 +668,7 @@ emergency_bypass() {
     echo "To activate emergency bypass for the next operation:"
     echo "export EMERGENCY_BYPASS=ACTIVE"
     echo "export BYPASS_JUSTIFICATION=\"$justification\""
-    
+
     # Log the bypass activation
     local log_entry
     log_entry=$(cat <<EOF
@@ -685,10 +685,10 @@ emergency_bypass() {
 }
 EOF
 )
-    
+
     mkdir -p "$(dirname "$EMERGENCY_LOG_FILE")"
     echo "$log_entry" >> "$EMERGENCY_LOG_FILE"
-    
+
     # Send emergency notification
     send_emergency_notification "$justification"
 }
@@ -696,13 +696,13 @@ EOF
 # Send emergency notification
 send_emergency_notification() {
     local justification="$1"
-    
+
     load_safety_config
-    
+
     # Send high-priority Slack notification
     local slack_webhook
     slack_webhook=$(jq -r '.notifications.slack_webhook // empty' "$SAFETY_CONFIG_FILE")
-    
+
     if [[ -n "$slack_webhook" ]]; then
         local payload
         payload=$(cat <<EOF
@@ -726,7 +726,7 @@ send_emergency_notification() {
 }
 EOF
 )
-        
+
         curl -X POST -H 'Content-type: application/json' \
             --data "$payload" \
             "$slack_webhook" >/dev/null 2>&1 || true
@@ -737,37 +737,37 @@ EOF
 show_safety_dashboard() {
     echo -e "${CYAN}═══ PRODUCTION SAFETY DASHBOARD ═══${NC}"
     echo ""
-    
+
     load_safety_config
-    
+
     echo -e "${WHITE}Configuration:${NC}"
     echo "Project: ${PROJECT_ID:-unknown}"
     echo "Environment: ${ENVIRONMENT:-unknown}"
     echo "Safety Level: $SAFETY_LEVEL"
     echo ""
-    
+
     # Check for active bypasses
     if [[ "${EMERGENCY_BYPASS:-}" == "ACTIVE" ]]; then
         echo -e "${RED}🚨 EMERGENCY BYPASS ACTIVE${NC}"
         echo ""
     fi
-    
+
     if [[ "${CONFIRM_PROD:-}" == "I_UNDERSTAND" ]]; then
         echo -e "${YELLOW}⚠️  MANUAL CONFIRMATION SET${NC}"
         echo ""
     fi
-    
+
     # Show pending approvals
     if [[ -f "$APPROVAL_QUEUE_FILE" ]]; then
         local pending_count
         pending_count=$(jq '[.[] | select(.status == "PENDING")] | length' "$APPROVAL_QUEUE_FILE" 2>/dev/null || echo "0")
-        
+
         if [[ "$pending_count" -gt 0 ]]; then
             echo -e "${YELLOW}Pending Approvals: $pending_count${NC}"
             echo ""
         fi
     fi
-    
+
     # Show recent safety events
     if [[ -f "$SAFETY_LOG_FILE" ]]; then
         echo -e "${WHITE}Recent Safety Events:${NC}"
@@ -787,7 +787,7 @@ show_safety_dashboard() {
 # Main function
 main() {
     local command="${1:-dashboard}"
-    
+
     case "$command" in
         "init")
             init_safety_config

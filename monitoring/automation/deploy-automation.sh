@@ -34,24 +34,24 @@ log_error() {
 # Check prerequisites
 check_prerequisites() {
     log_info "Checking prerequisites..."
-    
+
     # Check if kubectl is available
     if ! command -v kubectl &> /dev/null; then
         log_error "kubectl is not installed or not in PATH"
         exit 1
     fi
-    
+
     # Check if we can connect to Kubernetes
     if ! kubectl cluster-info &> /dev/null; then
         log_error "Cannot connect to Kubernetes cluster"
         exit 1
     fi
-    
+
     # Check if docker is available for building
     if ! command -v docker &> /dev/null; then
         log_warn "Docker is not available, will skip image building"
     fi
-    
+
     # Check if helm is available
     if command -v helm &> /dev/null; then
         log_info "Helm detected, will use for deployment"
@@ -60,24 +60,24 @@ check_prerequisites() {
         log_info "Helm not detected, will use kubectl"
         USE_HELM=false
     fi
-    
+
     log_info "Prerequisites check completed"
 }
 
 # Create namespace
 create_namespace() {
     log_info "Creating namespace: $NAMESPACE"
-    
+
     kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
     kubectl label namespace "$NAMESPACE" name="$NAMESPACE" --overwrite
-    
+
     log_info "Namespace $NAMESPACE ready"
 }
 
 # Create service account and RBAC
 create_rbac() {
     log_info "Creating RBAC configuration..."
-    
+
     cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ServiceAccount
@@ -116,32 +116,32 @@ subjects:
   name: monitoring-orchestrator
   namespace: $NAMESPACE
 EOF
-    
+
     log_info "RBAC configuration created"
 }
 
 # Create ConfigMaps for configuration
 create_config_maps() {
     log_info "Creating configuration ConfigMaps..."
-    
+
     # Create orchestrator config
     kubectl create configmap orchestrator-config \
         --from-file=orchestrator-config.yaml \
         --namespace="$NAMESPACE" \
         --dry-run=client -o yaml | kubectl apply -f -
-    
+
     # Create discovery config
     kubectl create configmap discovery-config \
         --from-file=discovery-config.yaml \
         --namespace="$NAMESPACE" \
         --dry-run=client -o yaml | kubectl apply -f -
-    
+
     # Create config manager config
     kubectl create configmap config-manager-config \
         --from-file=config-manager.yaml \
         --namespace="$NAMESPACE" \
         --dry-run=client -o yaml | kubectl apply -f -
-    
+
     # Create templates configmap if directory exists
     if [ -d "templates" ]; then
         kubectl create configmap orchestrator-templates \
@@ -149,14 +149,14 @@ create_config_maps() {
             --namespace="$NAMESPACE" \
             --dry-run=client -o yaml | kubectl apply -f -
     fi
-    
+
     log_info "Configuration ConfigMaps created"
 }
 
 # Create PersistentVolumeClaims
 create_storage() {
     log_info "Creating storage resources..."
-    
+
     cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -197,7 +197,7 @@ spec:
       storage: 1Gi
   storageClassName: fast-ssd
 EOF
-    
+
     log_info "Storage resources created"
 }
 
@@ -207,9 +207,9 @@ build_image() {
         log_warn "Docker not available, skipping image build"
         return
     fi
-    
+
     log_info "Building monitoring orchestrator image..."
-    
+
     # Create Dockerfile
     cat <<EOF > Dockerfile
 FROM python:3.9-slim
@@ -244,7 +244,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \\
 # Default command
 CMD ["python", "orchestrator.py", "--daemon"]
 EOF
-    
+
     # Create requirements.txt
     cat <<EOF > requirements.txt
 kubernetes>=24.2.0
@@ -255,24 +255,24 @@ python-consul>=1.1.0
 asyncio>=3.4.3
 prometheus-client>=0.14.0
 EOF
-    
+
     # Build image
     IMAGE_TAG="${DOCKER_REGISTRY}${ORCHESTRATOR_IMAGE}"
     docker build -t "$IMAGE_TAG" .
-    
+
     # Push to registry if specified
     if [ -n "$DOCKER_REGISTRY" ]; then
         log_info "Pushing image to registry..."
         docker push "$IMAGE_TAG"
     fi
-    
+
     log_info "Image built: $IMAGE_TAG"
 }
 
 # Deploy orchestrator
 deploy_orchestrator() {
     log_info "Deploying monitoring orchestrator..."
-    
+
     cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
@@ -394,14 +394,14 @@ spec:
     targetPort: 9090
   type: ClusterIP
 EOF
-    
+
     log_info "Monitoring orchestrator deployed"
 }
 
 # Create ServiceMonitor for Prometheus
 create_service_monitor() {
     log_info "Creating ServiceMonitor for monitoring..."
-    
+
     cat <<EOF | kubectl apply -f -
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -419,23 +419,23 @@ spec:
     interval: 30s
     path: /metrics
 EOF
-    
+
     log_info "ServiceMonitor created"
 }
 
 # Verify deployment
 verify_deployment() {
     log_info "Verifying deployment..."
-    
+
     # Wait for deployment to be ready
     kubectl rollout status deployment/monitoring-orchestrator -n "$NAMESPACE" --timeout=300s
-    
+
     # Check pod status
     kubectl get pods -n "$NAMESPACE" -l app=monitoring-orchestrator
-    
+
     # Check service status
     kubectl get svc -n "$NAMESPACE" -l app=monitoring-orchestrator
-    
+
     # Test health endpoint
     log_info "Testing health endpoint..."
     if kubectl exec -n "$NAMESPACE" deployment/monitoring-orchestrator -- curl -f http://localhost:8081/health; then
@@ -444,7 +444,7 @@ verify_deployment() {
         log_error "Health check failed"
         return 1
     fi
-    
+
     # Test API endpoint
     log_info "Testing API endpoint..."
     if kubectl exec -n "$NAMESPACE" deployment/monitoring-orchestrator -- curl -f http://localhost:8080/status; then
@@ -453,7 +453,7 @@ verify_deployment() {
         log_error "API check failed"
         return 1
     fi
-    
+
     log_info "Deployment verification completed successfully"
 }
 
@@ -461,27 +461,27 @@ verify_deployment() {
 show_status() {
     log_info "Monitoring Automation Status:"
     echo ""
-    
+
     echo "Namespace: $NAMESPACE"
     echo "Environment: $ENVIRONMENT"
     echo ""
-    
+
     echo "Pods:"
     kubectl get pods -n "$NAMESPACE" -l app=monitoring-orchestrator
     echo ""
-    
+
     echo "Services:"
     kubectl get svc -n "$NAMESPACE" -l app=monitoring-orchestrator
     echo ""
-    
+
     echo "ConfigMaps:"
     kubectl get configmaps -n "$NAMESPACE" | grep -E "(orchestrator|discovery|config-manager)"
     echo ""
-    
+
     echo "PVCs:"
     kubectl get pvc -n "$NAMESPACE"
     echo ""
-    
+
     # Get orchestrator status via API
     POD_NAME=$(kubectl get pods -n "$NAMESPACE" -l app=monitoring-orchestrator -o jsonpath='{.items[0].metadata.name}')
     if [ -n "$POD_NAME" ]; then
@@ -493,7 +493,7 @@ show_status() {
 # Cleanup function
 cleanup() {
     log_info "Cleaning up monitoring automation..."
-    
+
     kubectl delete deployment monitoring-orchestrator -n "$NAMESPACE" --ignore-not-found
     kubectl delete service monitoring-orchestrator -n "$NAMESPACE" --ignore-not-found
     kubectl delete servicemonitor monitoring-orchestrator -n "$NAMESPACE" --ignore-not-found
@@ -502,7 +502,7 @@ cleanup() {
     kubectl delete clusterrolebinding monitoring-orchestrator --ignore-not-found
     kubectl delete clusterrole monitoring-orchestrator --ignore-not-found
     kubectl delete serviceaccount monitoring-orchestrator -n "$NAMESPACE" --ignore-not-found
-    
+
     log_info "Cleanup completed"
 }
 

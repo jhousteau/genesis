@@ -6,7 +6,7 @@ system:
   debug: true
   log_level: "DEBUG"
   base_url: "http://localhost:8000"
-  
+
   features:
     # Enable all features for development
     intelligence_layer: true
@@ -20,36 +20,36 @@ intelligence:
     auto_execute: true  # Enable auto-execution for faster development
     timeout: 120  # Shorter timeout for development
     concurrent_fixes: 5  # Higher concurrency for testing
-    
+
     # Enable all categories for development
     categories:
       security: true
       dependencies: true
       configuration: true
       infrastructure: true
-    
+
     notifications:
       on_execution: false  # Less noisy in development
       on_completion: true
       on_failure: true
-  
+
   optimization:
     analysis_interval: 300  # Every 5 minutes for rapid feedback
     cost_threshold: 10  # Lower threshold to see more recommendations
     auto_apply_threshold: 100  # Auto-apply minor optimizations
-  
+
   predictions:
     confidence_threshold: 0.5  # Lower threshold to see more predictions
-    
+
     alerts:
       high_confidence: 0.7
       critical_prediction: 0.8
-  
+
   self_healing:
     monitoring_interval: 30  # Frequent monitoring for development
     auto_heal_enabled: true
     max_healing_attempts: 5  # More attempts for experimentation
-    
+
     # Enable all healing actions for development
     actions:
       restart_services: true
@@ -67,7 +67,7 @@ coordination:
 
 deployment:
   default_strategy: "rolling"  # Faster strategy for development
-  
+
   strategies:
     blue_green:
       timeout: 600  # 10 minutes
@@ -79,12 +79,12 @@ deployment:
     rolling:
       max_unavailable: 2  # Allow more unavailable for faster deployments
       timeout: 600
-  
+
   validation:
     pre_deploy_checks: true
     post_deploy_validation: false  # Skip for faster deployments
     rollback_on_failure: false  # Manual rollback for learning
-    
+
   approvals:
     production_required: false
     staging_required: false
@@ -95,7 +95,7 @@ governance:
   policy_enforcement: "permissive"
   audit_logging: false  # Less overhead
   cost_monitoring: false
-  
+
   frameworks:
     soc2: false
     hipaa: false
@@ -109,12 +109,12 @@ security:
   encryption_at_rest: false
   encryption_in_transit: false
   vulnerability_scanning: false
-  
+
   sessions:
     timeout: 28800  # 8 hours for long development sessions
     refresh_enabled: true
     secure_cookies: false  # Allow non-HTTPS cookies
-  
+
   api:
     rate_limiting: false  # No rate limiting in development
     cors_enabled: true  # Permissive CORS
@@ -122,21 +122,21 @@ security:
 
 monitoring:
   retention_days: 7  # Shorter retention for development
-  
+
   metrics:
     collection_interval: 120  # Less frequent collection
     batch_size: 50
     compression_enabled: false  # Easier debugging
-  
+
   logging:
     level: "DEBUG"  # Verbose logging
     structured: false  # Easier to read
     format: "text"
-  
+
   tracing:
     sampling_rate: 1.0  # 100% sampling for development
     max_span_duration: 3600
-  
+
   alerting:
     error_rate_threshold: 0.20  # 20% - relaxed for development
     latency_threshold: 5000  # 5 seconds - relaxed
@@ -145,17 +145,17 @@ monitoring:
 performance:
   caching_enabled: false  # Disable caching to see real performance
   compression_enabled: false  # Easier debugging
-  
+
   cache:
     default_ttl: 60  # 1 minute for quick cache invalidation
     max_size: "100MB"  # Smaller cache
     compression: false
-  
+
   database:
     connection_pool_size: 5  # Smaller pool for development
     query_timeout: 60  # Longer timeout for debugging
     slow_query_threshold: 2000  # More relaxed slow query detection
-  
+
   network:
     keepalive_enabled: false  # Easier connection debugging
     compression_enabled: false
@@ -165,16 +165,16 @@ integrations:
   # Mock integrations for development
   github:
     enabled: false
-  
+
   gitlab:
     enabled: false
-  
+
   slack:
     enabled: false
-  
+
   pagerduty:
     enabled: false
-  
+
   gcp:
     enabled: true  # Keep GCP for testing
 
@@ -183,20 +183,20 @@ development:
   hot_reload: true  # Enable hot reload for development
   mock_external_services: true  # Mock external APIs
   test_data_enabled: true  # Enable test data generation
-  
+
   testing:
     integration_tests: true
     performance_tests: true
     security_tests: true
     chaos_testing: true  # Enable chaos testing for experimentation
-  
+
   # Development-specific settings
   dev_tools:
     auto_restart: true
     file_watching: true
     debug_toolbar: true
     profiling: true
-    
+
   # Database seeding
   database:
     auto_seed: true

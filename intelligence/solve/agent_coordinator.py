@@ -18,10 +18,19 @@ from solve.constitutional_ai import ConstitutionalAI
 from solve.governance import GovernanceEngine
 from solve.knowledge_loader import KnowledgeLoader
 from solve.lessons import LessonCapture
-from solve.models import (ADRConfig, AgentDecisionRequest,
-                          AgentDecisionResponse, AgentInteraction, AgentTask,
-                          ConstitutionalContext, ConstitutionalMetrics, Goal,
-                          Result, SystemState, TaskStatus)
+from solve.models import (
+    ADRConfig,
+    AgentDecisionRequest,
+    AgentDecisionResponse,
+    AgentInteraction,
+    AgentTask,
+    ConstitutionalContext,
+    ConstitutionalMetrics,
+    Goal,
+    Result,
+    SystemState,
+    TaskStatus,
+)
 
 if TYPE_CHECKING:
     pass

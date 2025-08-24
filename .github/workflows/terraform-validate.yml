@@ -19,32 +19,32 @@ jobs:
   validate:
     name: Validate Terraform
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.5.7
-      
+
       - name: Terraform Format Check
         id: fmt
         run: |
           terraform fmt -check -recursive
         continue-on-error: true
-      
+
       - name: Initialize Terraform
         id: init
         run: |
           terraform init -backend=false
-      
+
       - name: Validate Terraform
         id: validate
         run: |
           terraform validate -no-color
-      
+
       - name: Comment PR - Validation Results
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
@@ -55,22 +55,22 @@ jobs:
             #### Format Check: \`${{ steps.fmt.outcome }}\`
             #### Initialization: \`${{ steps.init.outcome }}\`
             #### Validation: \`${{ steps.validate.outcome }}\`
-            
+
             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: output
             })
-      
+
       - name: Terraform Format Status
         if: steps.fmt.outcome == 'failure'
         run: |
           echo "Terraform files need formatting. Run 'terraform fmt -recursive' to fix."
           exit 1
-      
+
       - name: Terraform Validation Status
         if: steps.validate.outcome == 'failure'
         run: exit 1
@@ -78,31 +78,31 @@ jobs:
   tflint:
     name: TFLint Analysis
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Setup TFLint
         uses: terraform-linters/setup-tflint@v4
         with:
           tflint_version: latest
-      
+
       - name: Initialize TFLint
         run: tflint --init
         env:
           GITHUB_TOKEN: ${{ github.token }}
-      
+
       - name: Run TFLint
         run: tflint --recursive --format compact
-      
+
       - name: Run TFLint (JSON output for PR)
         if: github.event_name == 'pull_request'
         id: tflint_json
         run: |
           tflint --recursive --format json > tflint-results.json
         continue-on-error: true
-      
+
       - name: Upload TFLint Results
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
@@ -113,11 +113,11 @@ jobs:
   checkov:
     name: Checkov Security Scan
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Run Checkov
         id: checkov
         uses: bridgecrewio/checkov-action@master
@@ -128,7 +128,7 @@ jobs:
           framework: terraform
           output_format: sarif
           output_file_path: checkov-results.sarif
-      
+
       - name: Upload Checkov Results
         if: always()
         uses: github/codeql-action/upload-sarif@v3
@@ -139,20 +139,20 @@ jobs:
     name: Generate Documentation
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Setup terraform-docs
         run: |
           curl -sSLo terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz
           tar -xzf terraform-docs.tar.gz
           chmod +x terraform-docs
           sudo mv terraform-docs /usr/local/bin/
-      
+
       - name: Generate Module Documentation
         run: |
           for dir in modules/*/; do
@@ -161,7 +161,7 @@ jobs:
               terraform-docs markdown table "$dir" > "$dir/README.md"
             fi
           done
-      
+
       - name: Check for Documentation Changes
         id: docs_changed
         run: |
@@ -170,7 +170,7 @@ jobs:
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Commit Documentation
         if: steps.docs_changed.outputs.changed == 'true'
         run: |

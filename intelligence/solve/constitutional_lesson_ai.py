@@ -24,8 +24,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Tuple
 
-from solve.lesson_capture_system import (EnhancedLesson, ImpactLevel,
-                                         LessonSource, ProcessedLesson)
+from solve.lesson_capture_system import (
+    EnhancedLesson,
+    ImpactLevel,
+    LessonSource,
+    ProcessedLesson,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -7,9 +7,13 @@ supporting both claude-talk and agent-cage migrations.
 """
 
 from .access_patterns import SecretAccessPattern, SecretCache
-from .exceptions import (SecretAccessDeniedError, SecretError,
-                         SecretNotFoundError, SecretRotationError,
-                         SecretValidationError)
+from .exceptions import (
+    SecretAccessDeniedError,
+    SecretError,
+    SecretNotFoundError,
+    SecretRotationError,
+    SecretValidationError,
+)
 from .manager import SecretManager, get_secret_manager
 from .monitoring import SecretMonitor
 from .rotation import SecretRotator

@@ -52,26 +52,26 @@ SERVICE_URL=""
 # Step 1: Capture current state for rollback
 capture_current_state() {
     log_progress "Capturing current deployment state"
-    
+
     # Get current revision for rollback capability
     PREVIOUS_REVISION=$(gcloud run services describe "$PROJECT_NAME" \
         --region="$REGION" \
         --project="$GCP_PROJECT" \
         --format="value(status.traffic[].revisionName)" \
         --filter="status.traffic[].percent=100" 2>/dev/null | head -1 || echo "")
-    
+
     if [[ -n "$PREVIOUS_REVISION" ]]; then
         log_info "Current revision: $PREVIOUS_REVISION"
     else
         log_info "No existing revision found (first deployment)"
     fi
-    
+
     # Get current service URL if exists
     SERVICE_URL=$(gcloud run services describe "$PROJECT_NAME" \
         --region="$REGION" \
         --project="$GCP_PROJECT" \
         --format="value(status.url)" 2>/dev/null || echo "")
-    
+
     if [[ -n "$SERVICE_URL" ]]; then
         log_info "Current service URL: $SERVICE_URL"
     fi
@@ -80,12 +80,12 @@ capture_current_state() {
 # Step 2: Deploy new revision
 deploy_new_revision() {
     log_progress "Deploying new revision"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would deploy new revision with image: ${IMAGE_URL}:${IMAGE_TAG}"
         return 0
     fi
-    
+
     local deploy_args=(
         "run" "deploy" "$PROJECT_NAME"
         "--image=${IMAGE_URL}:${IMAGE_TAG}"
@@ -99,7 +99,7 @@ deploy_new_revision() {
         "--timeout=300"
         "--set-env-vars=ENV=$ENVIRONMENT,VERSION=$IMAGE_TAG,DEPLOYMENT_STRATEGY=rolling"
     )
-    
+
     # Add deployment-specific configurations
     case "$DEPLOYMENT_MODE" in
         recreate)
@@ -115,7 +115,7 @@ deploy_new_revision() {
             fi
             ;;
     esac
-    
+
     # Set traffic allocation
     if [[ "$DEPLOYMENT_MODE" == "recreate" ]] && [[ -n "$PREVIOUS_REVISION" ]]; then
         # For recreate mode, initially deploy with no traffic
@@ -125,27 +125,27 @@ deploy_new_revision() {
         # For rolling deployment, allow traffic to flow to new revision
         deploy_args+=("--allow-unauthenticated")
     fi
-    
+
     # Execute deployment
     log_info "Executing Cloud Run deployment..."
     gcloud "${deploy_args[@]}"
-    
+
     # Get the new revision name
     local new_revision
     new_revision=$(gcloud run services describe "$PROJECT_NAME" \
         --region="$REGION" \
         --project="$GCP_PROJECT" \
         --format="value(status.latestReadyRevisionName)" 2>/dev/null)
-    
+
     export NEW_REVISION="$new_revision"
     log_success "New revision deployed: $NEW_REVISION"
-    
+
     # Update service URL
     SERVICE_URL=$(gcloud run services describe "$PROJECT_NAME" \
         --region="$REGION" \
         --project="$GCP_PROJECT" \
         --format="value(status.url)")
-    
+
     export SERVICE_URL
 }
 
@@ -154,36 +154,36 @@ handle_recreate_mode() {
     if [[ "$DEPLOYMENT_MODE" != "recreate" ]]; then
         return 0
     fi
-    
+
     log_progress "Handling recreate mode traffic switching"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would switch traffic for recreate mode"
         return 0
     fi
-    
+
     # Wait a moment for the new revision to stabilize
     log_info "Waiting for new revision to stabilize..."
     sleep 30
-    
+
     # Switch all traffic to the new revision
     gcloud run services update-traffic "$PROJECT_NAME" \
         --region="$REGION" \
         --project="$GCP_PROJECT" \
         --to-revisions="$NEW_REVISION=100"
-    
+
     log_success "Traffic switched to new revision in recreate mode"
 }
 
 # Step 4: Wait for deployment to stabilize
 wait_for_stabilization() {
     log_progress "Waiting for deployment to stabilize"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would wait for deployment stabilization"
         return 0
     fi
-    
+
     # Check if service is ready
     local attempt=1
     while [[ $attempt -le 10 ]]; do
@@ -193,22 +193,22 @@ wait_for_stabilization() {
             --project="$GCP_PROJECT" \
             --format="value(status.conditions[].status)" \
             --filter="status.conditions[].type=Ready" 2>/dev/null)
-        
+
         if [[ "$ready_conditions" == "True" ]]; then
             log_success "Service is ready"
             break
         fi
-        
+
         if [[ $attempt -eq 10 ]]; then
             log_error "Service failed to become ready after 10 attempts"
             return 1
         fi
-        
+
         log_info "Waiting for service to be ready... (attempt $attempt/10)"
         sleep 15
         ((attempt++))
     done
-    
+
     # Additional stabilization wait
     log_info "Allowing additional time for deployment to stabilize..."
     sleep 30
@@ -217,33 +217,33 @@ wait_for_stabilization() {
 # Step 5: Comprehensive health checks
 run_health_checks() {
     log_progress "Running comprehensive health checks"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would run health checks on: ${SERVICE_URL}${HEALTH_CHECK_PATH}"
         return 0
     fi
-    
+
     if [[ -z "$SERVICE_URL" ]]; then
         log_error "Service URL not available for health checks"
         return 1
     fi
-    
+
     local attempt=1
     local consecutive_successes=0
     local required_successes=3
-    
+
     while [[ $attempt -le $MAX_HEALTH_CHECK_ATTEMPTS ]]; do
         log_info "Health check attempt $attempt/$MAX_HEALTH_CHECK_ATTEMPTS (need $required_successes consecutive successes)"
-        
+
         if curl -f "${SERVICE_URL}${HEALTH_CHECK_PATH}" \
             --max-time 10 \
             --silent \
             --show-error \
             --connect-timeout 5; then
-            
+
             consecutive_successes=$((consecutive_successes + 1))
             log_success "Health check passed ($consecutive_successes/$required_successes)"
-            
+
             if [[ $consecutive_successes -ge $required_successes ]]; then
                 log_success "All health checks passed!"
                 return 0
@@ -252,12 +252,12 @@ run_health_checks() {
             consecutive_successes=0
             log_warning "Health check failed, resetting success counter"
         fi
-        
+
         if [[ $attempt -eq $MAX_HEALTH_CHECK_ATTEMPTS ]]; then
             log_error "Health checks failed after $MAX_HEALTH_CHECK_ATTEMPTS attempts"
             return 1
         fi
-        
+
         sleep $HEALTH_CHECK_INTERVAL
         ((attempt++))
     done
@@ -266,19 +266,19 @@ run_health_checks() {
 # Step 6: Performance validation
 validate_performance() {
     log_progress "Running performance validation"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would run performance validation"
         return 0
     fi
-    
+
     # Response time test
     local response_times=()
     local failed_requests=0
     local total_requests=5
-    
+
     log_info "Testing response times ($total_requests samples)..."
-    
+
     for ((i=1; i<=total_requests; i++)); do
         local response_time
         if response_time=$(curl -o /dev/null -s -w '%{time_total}' "${SERVICE_URL}${HEALTH_CHECK_PATH}" --max-time 10 2>/dev/null); then
@@ -290,7 +290,7 @@ validate_performance() {
         fi
         sleep 1
     done
-    
+
     # Calculate average response time
     if [[ ${#response_times[@]} -gt 0 ]]; then
         local total_time=0
@@ -299,9 +299,9 @@ validate_performance() {
         done
         local avg_time=$(echo "scale=3; $total_time / ${#response_times[@]}" | bc -l)
         local avg_time_ms=$(echo "$avg_time * 1000" | bc -l | cut -d. -f1)
-        
+
         log_info "Average response time: ${avg_time}s (${avg_time_ms}ms)"
-        
+
         # Check if response time is acceptable
         if (( $(echo "$avg_time > 5.0" | bc -l) )); then
             log_warning "Average response time exceeds 5s threshold"
@@ -311,40 +311,40 @@ validate_performance() {
             fi
         fi
     fi
-    
+
     # Check failure rate
     local failure_rate=$(echo "scale=2; $failed_requests * 100 / $total_requests" | bc -l)
     log_info "Request failure rate: ${failure_rate}%"
-    
+
     if (( $(echo "$failure_rate > 20" | bc -l) )); then
         log_error "Request failure rate ${failure_rate}% exceeds 20% threshold"
         return 1
     fi
-    
+
     log_success "Performance validation completed successfully"
 }
 
 # Step 7: Test critical endpoints
 test_critical_endpoints() {
     log_progress "Testing critical endpoints"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would test critical endpoints"
         return 0
     fi
-    
+
     # Define critical endpoints to test
     local endpoints=(
         "$HEALTH_CHECK_PATH"
         "/version"
         "/ready"
     )
-    
+
     local failed_endpoints=()
-    
+
     for endpoint in "${endpoints[@]}"; do
         log_info "Testing endpoint: $endpoint"
-        
+
         if curl -f "${SERVICE_URL}${endpoint}" --max-time 10 --silent > /dev/null 2>&1; then
             log_success "Endpoint $endpoint is accessible"
         else
@@ -352,11 +352,11 @@ test_critical_endpoints() {
             failed_endpoints+=("$endpoint")
         fi
     done
-    
+
     # Only fail if critical endpoints are not accessible
     if [[ "${#failed_endpoints[@]}" -gt 0 ]]; then
         log_warning "Some endpoints are not accessible: ${failed_endpoints[*]}"
-        
+
         # Only fail if health endpoint is not accessible
         for failed in "${failed_endpoints[@]}"; do
             if [[ "$failed" == "$HEALTH_CHECK_PATH" ]]; then
@@ -364,25 +364,25 @@ test_critical_endpoints() {
                 return 1
             fi
         done
-        
+
         log_warning "Non-critical endpoints failed, but deployment can continue"
     fi
-    
+
     log_success "Critical endpoint testing completed"
 }
 
 # Step 8: Clean up old revisions (keep retention policy)
 cleanup_old_revisions() {
     log_progress "Cleaning up old revisions"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would clean up old revisions"
         return 0
     fi
-    
+
     # Keep the last 5 revisions for rollback capability
     local revisions_to_keep=5
-    
+
     local old_revisions
     old_revisions=$(gcloud run revisions list \
         --service="$PROJECT_NAME" \
@@ -391,10 +391,10 @@ cleanup_old_revisions() {
         --format="value(metadata.name)" \
         --limit=50 \
         --sort-by="~metadata.creationTimestamp" | tail -n +$((revisions_to_keep + 1)))
-    
+
     if [[ -n "$old_revisions" ]]; then
         log_info "Cleaning up old revisions (keeping $revisions_to_keep most recent)..."
-        
+
         echo "$old_revisions" | while read -r revision; do
             if [[ -n "$revision" ]]; then
                 log_info "Deleting old revision: $revision"
@@ -404,7 +404,7 @@ cleanup_old_revisions() {
                     --quiet || log_warning "Failed to delete revision: $revision"
             fi
         done
-        
+
         log_success "Old revision cleanup completed"
     else
         log_info "No old revisions to clean up"
@@ -414,15 +414,15 @@ cleanup_old_revisions() {
 # Rollback function
 rollback_deployment() {
     log_error "Rolling deployment failed - initiating rollback"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "[DRY RUN] Would rollback to previous revision"
         return 0
     fi
-    
+
     if [[ -n "$PREVIOUS_REVISION" ]]; then
         log_info "Rolling back to previous revision: $PREVIOUS_REVISION"
-        
+
         # Restore 100% traffic to previous revision
         gcloud run services update-traffic "$PROJECT_NAME" \
             --region="$REGION" \
@@ -431,26 +431,26 @@ rollback_deployment() {
             log_error "Failed to rollback traffic allocation"
             return 1
         }
-        
+
         # Verify rollback
         local rollback_url
         rollback_url=$(gcloud run services describe "$PROJECT_NAME" \
             --region="$REGION" \
             --project="$GCP_PROJECT" \
             --format="value(status.url)")
-        
+
         if curl -f "${rollback_url}${HEALTH_CHECK_PATH}" --max-time 10 --silent > /dev/null; then
             log_success "Rollback successful - service restored"
         else
             log_error "Rollback verification failed"
             return 1
         fi
-        
+
         # Clean up failed revision if it exists
         if [[ -n "${NEW_REVISION:-}" ]]; then
             log_info "Failed revision will be cleaned up by retention policy"
         fi
-        
+
     else
         log_warning "No previous revision available for rollback"
         log_info "This might be the first deployment"
@@ -460,7 +460,7 @@ rollback_deployment() {
 # Save deployment state
 save_deployment_state() {
     local status="$1"
-    
+
     cat > ".rolling-deployment-state.json" << EOF
 {
   "deployment_id": "$DEPLOYMENT_ID",
@@ -480,62 +480,62 @@ EOF
 # Main execution
 main() {
     local step_failed="false"
-    
+
     # Trap to handle rollback on failure
     trap 'if [[ "$step_failed" == "true" ]] && [[ "$ROLLBACK_ON_FAILURE" == "true" ]]; then rollback_deployment; fi; save_deployment_state "failed"' EXIT
-    
+
     # Execute rolling deployment steps
     capture_current_state
-    
+
     if ! deploy_new_revision; then
         step_failed="true"
         log_error "Failed to deploy new revision"
         exit 1
     fi
-    
+
     if ! handle_recreate_mode; then
         step_failed="true"
         log_error "Failed to handle recreate mode"
         exit 1
     fi
-    
+
     if ! wait_for_stabilization; then
         step_failed="true"
         log_error "Deployment failed to stabilize"
         exit 1
     fi
-    
+
     if ! run_health_checks; then
         step_failed="true"
         log_error "Health checks failed"
         exit 1
     fi
-    
+
     if ! validate_performance; then
         step_failed="true"
         log_error "Performance validation failed"
         exit 1
     fi
-    
+
     if ! test_critical_endpoints; then
         step_failed="true"
         log_error "Critical endpoint testing failed"
         exit 1
     fi
-    
+
     cleanup_old_revisions
-    
+
     # Disable trap - deployment successful
     trap - EXIT
-    
+
     save_deployment_state "successful"
-    
+
     log_success "Rolling deployment completed successfully!"
     log_info "Service URL: $SERVICE_URL"
     if [[ -n "$PREVIOUS_REVISION" ]]; then
         log_info "Previous revision available for rollback: $PREVIOUS_REVISION"
     fi
-    
+
     # Show deployment summary
     echo ""
     echo "===== ROLLING DEPLOYMENT SUMMARY ====="

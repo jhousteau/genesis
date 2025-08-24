@@ -477,9 +477,9 @@ resource "google_cloudfunctions_function" "default" {
                             )
                         else:
                             validation_result["valid"] = False
-                            validation_result[
-                                "error"
-                            ] = f"Missing required field: {required_field}"
+                            validation_result["error"] = (
+                                f"Missing required field: {required_field}"
+                            )
                             break
 
                 return validation_result

@@ -31,8 +31,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from solve_core.monitoring import MetricsRegistry
-from solve_core.utils.async_utils import (gather_with_concurrency,
-                                          wait_for_with_timeout)
+from solve_core.utils.async_utils import gather_with_concurrency, wait_for_with_timeout
 
 from .models import Result
 

@@ -5,10 +5,10 @@ soc2_compliance:
   version: "1.0.0"
   framework: "SOC 2 Type II"
   last_updated: "2024-08-20"
-  
+
   # Trust Services Categories
   trust_services:
-    
+
     # CC - Common Criteria
     common_criteria:
       CC1: # Control Environment
@@ -25,7 +25,7 @@ soc2_compliance:
               - "Collect training completion metrics"
               - "Monitor code of conduct acknowledgments"
               - "Track management communications"
-              
+
           CC1.2:
             description: "Board of directors demonstrates independence and exercises oversight"
             evidence_collection:
@@ -35,7 +35,7 @@ soc2_compliance:
             automation:
               - "Board meeting attendance tracking"
               - "Independence verification workflow"
-              
+
           CC1.3:
             description: "Management establishes structure, authority, and responsibility"
             evidence_collection:
@@ -45,7 +45,7 @@ soc2_compliance:
             automation:
               - "RBAC configuration validation"
               - "Authority matrix compliance checks"
-              
+
       CC2: # Communication and Information
         title: "Communication and Information"
         description: "The entity obtains or generates and uses relevant, quality information"
@@ -59,7 +59,7 @@ soc2_compliance:
             automation:
               - "Data quality monitoring"
               - "Information freshness checks"
-              
+
           CC2.2:
             description: "Entity internally communicates information necessary for effective functioning"
             evidence_collection:
@@ -69,7 +69,7 @@ soc2_compliance:
             automation:
               - "Communication effectiveness metrics"
               - "Policy distribution tracking"
-              
+
       CC3: # Risk Assessment
         title: "Risk Assessment"
         description: "The entity identifies risks to the achievement of its objectives"
@@ -83,7 +83,7 @@ soc2_compliance:
             automation:
               - "Objective tracking dashboards"
               - "KPI monitoring"
-              
+
           CC3.2:
             description: "Entity identifies risks to objectives across the entity"
             evidence_collection:
@@ -93,17 +93,17 @@ soc2_compliance:
             automation:
               - "Automated risk scanning"
               - "Risk register updates"
-              
+
     # Security Criteria
     security:
       title: "Security"
       description: "Information and systems are protected against unauthorized access"
-      
+
       controls:
         S1: # Access Controls
           title: "Logical and Physical Access Controls"
           description: "Access to systems and data is restricted to authorized personnel"
-          
+
           S1.1:
             description: "Entity restricts logical access to systems, programs, and data"
             technical_controls:
@@ -119,7 +119,7 @@ soc2_compliance:
               - "MFA compliance monitoring"
               - "Access review workflows"
               - "Privileged account monitoring"
-              
+
           S1.2:
             description: "Entity restricts physical access to facilities and computer hardware"
             technical_controls:
@@ -133,11 +133,11 @@ soc2_compliance:
             automation:
               - "Badge access monitoring"
               - "Visitor tracking system"
-              
+
         S2: # System Operations
           title: "System Operations"
           description: "Systems are maintained and monitored to prevent security incidents"
-          
+
           S2.1:
             description: "Entity monitors system components for anomalies"
             technical_controls:
@@ -153,7 +153,7 @@ soc2_compliance:
               - "Automated threat detection"
               - "Anomaly detection algorithms"
               - "Real-time alerting"
-              
+
           S2.2:
             description: "Entity implements change management procedures"
             technical_controls:
@@ -169,17 +169,17 @@ soc2_compliance:
               - "Automated change tracking"
               - "Approval workflow enforcement"
               - "Deployment pipeline controls"
-              
+
     # Availability Criteria
     availability:
       title: "Availability"
       description: "Information and systems are available for operation and use"
-      
+
       controls:
         A1: # System Availability
           title: "System Availability"
           description: "Systems are designed and operated to meet availability commitments"
-          
+
           A1.1:
             description: "Entity maintains system availability through performance monitoring"
             technical_controls:
@@ -195,7 +195,7 @@ soc2_compliance:
               - "Automated uptime monitoring"
               - "Performance threshold alerting"
               - "Capacity utilization tracking"
-              
+
           A1.2:
             description: "Entity implements backup and recovery procedures"
             technical_controls:
@@ -211,17 +211,17 @@ soc2_compliance:
               - "Backup success monitoring"
               - "Recovery testing automation"
               - "RTO/RPO tracking"
-              
+
     # Processing Integrity Criteria
     processing_integrity:
       title: "Processing Integrity"
       description: "System processing is complete, valid, accurate, timely and authorized"
-      
+
       controls:
         PI1: # Data Processing
           title: "Data Processing Controls"
           description: "Data processing is accurate, complete and authorized"
-          
+
           PI1.1:
             description: "Entity implements input controls to ensure processing integrity"
             technical_controls:
@@ -237,17 +237,17 @@ soc2_compliance:
               - "Input validation monitoring"
               - "Data quality checks"
               - "Error rate tracking"
-              
+
     # Confidentiality Criteria
     confidentiality:
       title: "Confidentiality"
       description: "Information designated as confidential is protected"
-      
+
       controls:
         C1: # Data Protection
           title: "Confidential Data Protection"
           description: "Confidential information is protected throughout its lifecycle"
-          
+
           C1.1:
             description: "Entity implements encryption for confidential data"
             technical_controls:
@@ -273,23 +273,23 @@ automation_controls:
       - "Cloud Security Command Center"
       - "AWS Security Hub"
       - "Azure Security Center"
-      
+
   evidence_collection:
     automated: true
     retention_period: "7 years"
     storage_location: "compliance-evidence-bucket"
     encryption: "required"
-    
+
   reporting:
     executive_summary: "monthly"
     detailed_reports: "quarterly"
     audit_packages: "annual"
-    
+
   remediation:
     automated_fixes: true
     approval_required: true
     escalation_procedures: true
-    
+
 # Compliance validation
 validation_procedures:
   daily_checks:
@@ -297,19 +297,19 @@ validation_procedures:
     - "Encryption status validation"
     - "Monitoring system health"
     - "Backup completion verification"
-    
+
   weekly_reviews:
     - "User access reviews"
     - "Security incident analysis"
     - "Performance metrics review"
     - "Change management audit"
-    
+
   monthly_assessments:
     - "Control effectiveness evaluation"
     - "Risk assessment updates"
     - "Compliance gap analysis"
     - "Evidence collection review"
-    
+
   quarterly_audits:
     - "Comprehensive control testing"
     - "Third-party security assessments"
@@ -321,26 +321,26 @@ integrations:
   terraform:
     policy_enforcement: true
     compliance_modules: true
-    
+
   kubernetes:
     pod_security_policies: true
     network_policies: true
-    
+
   cloud_providers:
     gcp_security_center: true
     aws_security_hub: true
     azure_security_center: true
-    
+
 # Notification and alerting
 notifications:
   compliance_violations:
     immediate: true
     channels: ["email", "slack", "pagerduty"]
-    
+
   control_failures:
     severity_based: true
     escalation_matrix: true
-    
+
   audit_readiness:
     quarterly_reminders: true
     evidence_collection_alerts: true

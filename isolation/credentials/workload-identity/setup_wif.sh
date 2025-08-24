@@ -38,23 +38,23 @@ print_banner() {
 # Validate required parameters
 validate_parameters() {
     log_step "Validating parameters..."
-    
+
     # Required parameters
     : "${PROJECT_ID:?PROJECT_ID is required}"
     : "${GITHUB_REPO:?GITHUB_REPO is required (format: owner/repo)}"
     : "${SERVICE_ACCOUNT_NAME:?SERVICE_ACCOUNT_NAME is required}"
-    
+
     # Optional parameters with defaults
     POOL_ID="${POOL_ID:-github-actions-pool}"
     PROVIDER_ID="${PROVIDER_ID:-github-actions-provider}"
     LOCATION="${LOCATION:-global}"
-    
+
     # Validate GitHub repo format
     if [[ ! "$GITHUB_REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
         log_error "Invalid GITHUB_REPO format. Expected: owner/repo"
         exit 1
     fi
-    
+
     log_success "Parameters validated"
 }
 
@@ -75,7 +75,7 @@ show_configuration() {
 # Check if WIF is already configured
 check_existing_wif() {
     log_step "Checking existing Workload Identity Federation setup..."
-    
+
     # Check if pool exists
     if gcloud iam workload-identity-pools describe "$POOL_ID" \
         --location="$LOCATION" \
@@ -86,7 +86,7 @@ check_existing_wif() {
         log_info "Workload Identity Pool '$POOL_ID' does not exist"
         POOL_EXISTS=false
     fi
-    
+
     # Check if provider exists
     if gcloud iam workload-identity-pools providers describe "$PROVIDER_ID" \
         --workload-identity-pool="$POOL_ID" \
@@ -103,13 +103,13 @@ check_existing_wif() {
 # Enable required APIs
 enable_apis() {
     log_step "Enabling required APIs..."
-    
+
     local apis=(
         "iamcredentials.googleapis.com"
         "cloudresourcemanager.googleapis.com"
         "sts.googleapis.com"
     )
-    
+
     for api in "${apis[@]}"; do
         log_info "Enabling $api..."
         if gcloud services enable "$api" --project="$PROJECT_ID"; then
@@ -124,9 +124,9 @@ enable_apis() {
 # Create service account if it doesn't exist
 create_service_account() {
     log_step "Creating service account..."
-    
+
     local sa_email="${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
-    
+
     if gcloud iam service-accounts describe "$sa_email" \
         --project="$PROJECT_ID" >/dev/null 2>&1; then
         log_warning "Service account already exists: $sa_email"
@@ -141,7 +141,7 @@ create_service_account() {
             exit 1
         fi
     fi
-    
+
     echo "$sa_email"
 }
 
@@ -149,7 +149,7 @@ create_service_account() {
 create_wif_pool() {
     if [[ "$POOL_EXISTS" == "false" ]]; then
         log_step "Creating Workload Identity Pool..."
-        
+
         if gcloud iam workload-identity-pools create "$POOL_ID" \
             --location="$LOCATION" \
             --display-name="GitHub Actions Pool" \
@@ -169,11 +169,11 @@ create_wif_pool() {
 create_wif_provider() {
     if [[ "$PROVIDER_EXISTS" == "false" ]]; then
         log_step "Creating Workload Identity Provider..."
-        
+
         # Create attribute mapping and conditions
         local attribute_mapping='google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner'
         local attribute_condition="assertion.repository_owner == '$(echo "$GITHUB_REPO" | cut -d'/' -f1)'"
-        
+
         if gcloud iam workload-identity-pools providers create-oidc "$PROVIDER_ID" \
             --workload-identity-pool="$POOL_ID" \
             --location="$LOCATION" \
@@ -194,11 +194,11 @@ create_wif_provider() {
 # Configure IAM bindings
 configure_iam_bindings() {
     log_step "Configuring IAM bindings..."
-    
+
     local sa_email="$1"
     local principal_repo="principalSet://iam.googleapis.com/projects/$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")/locations/$LOCATION/workloadIdentityPools/$POOL_ID/attribute.repository/$GITHUB_REPO"
     local principal_main="principalSet://iam.googleapis.com/projects/$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")/locations/$LOCATION/workloadIdentityPools/$POOL_ID/attribute.repository_owner/$(echo "$GITHUB_REPO" | cut -d'/' -f1)"
-    
+
     # Allow the GitHub Actions to impersonate the service account
     log_info "Binding repository-specific access..."
     if gcloud iam service-accounts add-iam-policy-binding "$sa_email" \
@@ -210,7 +210,7 @@ configure_iam_bindings() {
         log_error "Failed to add repository-specific binding"
         exit 1
     fi
-    
+
     # Optional: Allow all repositories in the organization (less secure)
     if [[ "${ALLOW_ORG_ACCESS:-false}" == "true" ]]; then
         log_info "Binding organization-wide access..."
@@ -228,9 +228,9 @@ configure_iam_bindings() {
 # Grant necessary permissions to service account
 grant_service_account_permissions() {
     log_step "Granting service account permissions..."
-    
+
     local sa_email="$1"
-    
+
     # Basic permissions needed for most operations
     local roles=(
         "roles/cloudtrace.agent"
@@ -238,24 +238,24 @@ grant_service_account_permissions() {
         "roles/monitoring.metricWriter"
         "roles/storage.objectViewer"
     )
-    
+
     # Additional roles based on environment variables
     if [[ "${GRANT_COMPUTE_ADMIN:-false}" == "true" ]]; then
         roles+=("roles/compute.admin")
     fi
-    
+
     if [[ "${GRANT_STORAGE_ADMIN:-false}" == "true" ]]; then
         roles+=("roles/storage.admin")
     fi
-    
+
     if [[ "${GRANT_CLOUDSQL_CLIENT:-false}" == "true" ]]; then
         roles+=("roles/cloudsql.client")
     fi
-    
+
     if [[ "${GRANT_SECRETMANAGER_ACCESSOR:-false}" == "true" ]]; then
         roles+=("roles/secretmanager.secretAccessor")
     fi
-    
+
     # Grant custom roles if specified
     if [[ -n "${CUSTOM_ROLES:-}" ]]; then
         IFS=',' read -ra CUSTOM_ROLE_ARRAY <<< "$CUSTOM_ROLES"
@@ -263,7 +263,7 @@ grant_service_account_permissions() {
             roles+=("$role")
         done
     fi
-    
+
     for role in "${roles[@]}"; do
         log_info "Granting role: $role"
         if gcloud projects add-iam-policy-binding "$PROJECT_ID" \
@@ -279,18 +279,18 @@ grant_service_account_permissions() {
 # Generate GitHub Actions workflow configuration
 generate_github_actions_config() {
     log_step "Generating GitHub Actions configuration..."
-    
+
     local sa_email="$1"
     local project_number
     project_number=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
     local wif_provider="projects/$project_number/locations/$LOCATION/workloadIdentityPools/$POOL_ID/providers/$PROVIDER_ID"
-    
+
     local config_file="github-actions-wif-config.yaml"
-    
+
     cat > "$config_file" <<EOF
 # GitHub Actions Workload Identity Federation Configuration
 # Generated by Universal Project Platform - Agent 5 Isolation Layer
-# 
+#
 # Add this to your GitHub Actions workflow to authenticate with GCP:
 #
 # jobs:
@@ -329,9 +329,9 @@ export WIF_PROVIDER="${wif_provider}"
 export WIF_SA_EMAIL="${sa_email}"
 export GITHUB_REPO="${GITHUB_REPO}"
 EOF
-    
+
     log_success "Generated GitHub Actions configuration: $config_file"
-    
+
     # Also create environment file for local testing
     cat > ".envrc.wif" <<EOF
 # Workload Identity Federation Environment Variables
@@ -341,16 +341,16 @@ export WIF_PROVIDER="${wif_provider}"
 export WIF_SA_EMAIL="${sa_email}"
 export GITHUB_REPO="${GITHUB_REPO}"
 EOF
-    
+
     log_success "Generated local environment file: .envrc.wif"
 }
 
 # Test WIF configuration
 test_wif_configuration() {
     log_step "Testing Workload Identity Federation configuration..."
-    
+
     local sa_email="$1"
-    
+
     # Basic validation - check if resources exist and are accessible
     if gcloud iam workload-identity-pools describe "$POOL_ID" \
         --location="$LOCATION" \
@@ -360,7 +360,7 @@ test_wif_configuration() {
         log_error "Cannot access Workload Identity Pool"
         return 1
     fi
-    
+
     if gcloud iam workload-identity-pools providers describe "$PROVIDER_ID" \
         --workload-identity-pool="$POOL_ID" \
         --location="$LOCATION" \
@@ -370,7 +370,7 @@ test_wif_configuration() {
         log_error "Cannot access Workload Identity Provider"
         return 1
     fi
-    
+
     if gcloud iam service-accounts describe "$sa_email" \
         --project="$PROJECT_ID" >/dev/null 2>&1; then
         log_success "Service account is accessible"
@@ -378,21 +378,21 @@ test_wif_configuration() {
         log_error "Cannot access service account"
         return 1
     fi
-    
+
     log_success "WIF configuration test completed"
 }
 
 # Create audit log
 create_audit_log() {
     log_step "Creating audit log..."
-    
+
     local sa_email="$1"
     local project_number
     project_number=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
     local wif_provider="projects/$project_number/locations/$LOCATION/workloadIdentityPools/$POOL_ID/providers/$PROVIDER_ID"
-    
+
     local audit_file="wif-setup-audit-$(date +%Y%m%d-%H%M%S).json"
-    
+
     cat > "$audit_file" <<EOF
 {
   "setup_metadata": {
@@ -421,17 +421,17 @@ create_audit_log() {
   }
 }
 EOF
-    
+
     log_success "Created audit log: $audit_file"
 }
 
 # Print next steps
 print_next_steps() {
     log_section() { echo -e "${CYAN}═══ $1 ═══${NC}"; }
-    
+
     echo ""
     log_section "Setup Complete!"
-    
+
     echo -e "${WHITE}Next Steps:${NC}"
     echo ""
     echo "1. Add the GitHub Actions workflow configuration from:"
@@ -447,7 +447,7 @@ print_next_steps() {
     echo "4. For local testing, source the WIF environment:"
     echo "   ${CYAN}source .envrc.wif${NC}"
     echo ""
-    
+
     if [[ "${PRODUCTION_MODE:-false}" == "true" ]]; then
         echo -e "${YELLOW}Production Environment Notes:${NC}"
         echo "• Review and approve all IAM bindings"
@@ -456,7 +456,7 @@ print_next_steps() {
         echo "• Set up alerting for authentication events"
         echo ""
     fi
-    
+
     echo -e "${WHITE}Troubleshooting:${NC}"
     echo "• Verify repository name exactly matches: $GITHUB_REPO"
     echo "• Ensure GitHub Actions has 'id-token: write' permission"
@@ -469,7 +469,7 @@ main() {
     print_banner
     validate_parameters
     show_configuration
-    
+
     # Confirmation for production
     if [[ "${PRODUCTION_MODE:-false}" == "true" && "${SKIP_CONFIRMATION:-false}" != "true" ]]; then
         echo -e "${YELLOW}⚠️  Production environment detected${NC}"
@@ -479,13 +479,13 @@ main() {
             exit 0
         fi
     fi
-    
+
     check_existing_wif
     enable_apis
-    
+
     local sa_email
     sa_email=$(create_service_account)
-    
+
     create_wif_pool
     create_wif_provider
     configure_iam_bindings "$sa_email"
@@ -494,7 +494,7 @@ main() {
     test_wif_configuration "$sa_email"
     create_audit_log "$sa_email"
     print_next_steps
-    
+
     log_success "Workload Identity Federation setup complete!"
 }
 

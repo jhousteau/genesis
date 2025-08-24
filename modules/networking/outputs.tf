@@ -6,10 +6,10 @@
 output "network" {
   description = "The VPC network"
   value = {
-    id            = google_compute_network.vpc.id
-    name          = google_compute_network.vpc.name
-    self_link     = google_compute_network.vpc.self_link
-    routing_mode  = google_compute_network.vpc.routing_mode
+    id           = google_compute_network.vpc.id
+    name         = google_compute_network.vpc.name
+    self_link    = google_compute_network.vpc.self_link
+    routing_mode = google_compute_network.vpc.routing_mode
     mtu          = google_compute_network.vpc.mtu
   }
 }
@@ -34,12 +34,12 @@ output "subnets" {
   description = "The created subnets"
   value = {
     for k, v in google_compute_subnetwork.subnets : k => {
-      id                = v.id
-      name              = v.name
-      self_link         = v.self_link
-      ip_cidr_range     = v.ip_cidr_range
-      region            = v.region
-      gateway_address   = v.gateway_address
+      id                 = v.id
+      name               = v.name
+      self_link          = v.self_link
+      ip_cidr_range      = v.ip_cidr_range
+      region             = v.region
+      gateway_address    = v.gateway_address
       secondary_ip_range = v.secondary_ip_range
     }
   }
@@ -129,18 +129,18 @@ output "load_balancer_ips" {
   description = "Static IP addresses for load balancers"
   value = merge(
     { for k, v in google_compute_global_address.lb_addresses : k => {
-      address    = v.address
+      address   = v.address
       id        = v.id
       self_link = v.self_link
       type      = "global"
-    }},
+    } },
     { for k, v in google_compute_address.regional_lb_addresses : k => {
-      address    = v.address
+      address   = v.address
       id        = v.id
       self_link = v.self_link
       type      = "regional"
       region    = v.region
-    }}
+    } }
   )
 }
 
@@ -161,10 +161,10 @@ output "vpn_tunnels" {
   description = "The created VPN tunnels"
   value = {
     for k, v in google_compute_vpn_tunnel.vpn_tunnels : k => {
-      id                = v.id
-      name              = v.name
-      self_link         = v.self_link
-      peer_ip           = v.peer_ip
+      id                 = v.id
+      name               = v.name
+      self_link          = v.self_link
+      peer_ip            = v.peer_ip
       target_vpn_gateway = v.target_vpn_gateway
     }
   }
@@ -175,11 +175,11 @@ output "network_peerings" {
   description = "The created network peerings"
   value = {
     for k, v in google_compute_network_peering.peerings : k => {
-      id           = v.id
-      name         = v.name
-      network      = v.network
-      peer_network = v.peer_network
-      state        = v.state
+      id            = v.id
+      name          = v.name
+      network       = v.network
+      peer_network  = v.peer_network
+      state         = v.state
       state_details = v.state_details
     }
   }
@@ -200,27 +200,27 @@ output "network_info" {
       self_link     = v.self_link
       ip_cidr_range = v.ip_cidr_range
       region        = v.region
-    }}
+    } }
     firewall_rules = { for k, v in google_compute_firewall.rules : k => {
       id   = v.id
       name = v.name
-    }}
+    } }
     dns_zones = { for k, v in google_dns_managed_zone.zones : k => {
       id           = v.id
       name         = v.name
       dns_name     = v.dns_name
       name_servers = v.name_servers
-    }}
+    } }
     nat_gateways = { for k, v in google_compute_router_nat.nat_gateways : k => {
       id     = v.id
       name   = v.name
       region = v.region
-    }}
+    } }
     vpn_gateways = { for k, v in google_compute_vpn_gateway.vpn_gateways : k => {
       id     = v.id
       name   = v.name
       region = v.region
-    }}
+    } }
   }
 }
 

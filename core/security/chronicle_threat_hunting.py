@@ -276,11 +276,11 @@ class ChroniclethreatHunting:
                 meta:
                     description = "Detect potential malware execution"
                     severity = "HIGH"
-                
+
                 events:
                     $process = $detection.metadata.event_type = "PROCESS_LAUNCH"
                     $file = $detection.metadata.event_type = "FILE_CREATION"
-                
+
                 condition:
                     $process and (
                         $process.principal.process.command_line contains "powershell" and
@@ -307,17 +307,17 @@ class ChroniclethreatHunting:
                 meta:
                     description = "Detect potential data exfiltration"
                     severity = "CRITICAL"
-                
+
                 events:
                     $network = $detection.metadata.event_type = "NETWORK_CONNECTION"
                     $file = $detection.metadata.event_type = "FILE_READ"
-                
+
                 condition:
                     $network and $file and (
                         $network.target.ip != /^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/ and
                         $file.target.file.size > 10000000  // > 10MB
                     )
-                
+
                 outcome:
                     $network and $file within 5m
             }
@@ -338,11 +338,11 @@ class ChroniclethreatHunting:
                 meta:
                     description = "Detect C2 communication patterns"
                     severity = "HIGH"
-                
+
                 events:
                     $dns = $detection.metadata.event_type = "NETWORK_DNS"
                     $http = $detection.metadata.event_type = "NETWORK_HTTP"
-                
+
                 condition:
                     ($dns and $dns.network.dns.questions.name matches /[a-z]{10,}\.(tk|ml|ga|cf)$/) or
                     ($http and (
@@ -368,18 +368,18 @@ class ChroniclethreatHunting:
                 meta:
                     description = "Detect lateral movement activities"
                     severity = "HIGH"
-                
+
                 events:
                     $auth = $detection.metadata.event_type = "USER_LOGIN"
                     $network = $detection.metadata.event_type = "NETWORK_CONNECTION"
-                
+
                 condition:
                     $auth and $network and (
                         $auth.security_result.action = "ALLOW" and
                         $auth.principal.user.user_display_name != /^(admin|administrator|root)$/ and
                         $network.target.port in [445, 139, 135, 3389]
                     )
-                
+
                 outcome:
                     $auth and $network within 10m
             }
@@ -472,9 +472,9 @@ class ChroniclethreatHunting:
                         )
 
                         result.threat_indicators.append(threat_indicator)
-                        self.threat_indicators[
-                            threat_indicator.ioc_value
-                        ] = threat_indicator
+                        self.threat_indicators[threat_indicator.ioc_value] = (
+                            threat_indicator
+                        )
 
                     # Generate recommendations
                     result.recommendations = self._generate_ioc_recommendations(
@@ -788,9 +788,11 @@ class ChroniclethreatHunting:
             indicator = ThreatIndicator(
                 ioc_value=domain,
                 ioc_type=IOCType.DOMAIN,
-                threat_category=threat_categories[0]
-                if threat_categories
-                else ThreatCategory.RECONNAISSANCE,
+                threat_category=(
+                    threat_categories[0]
+                    if threat_categories
+                    else ThreatCategory.RECONNAISSANCE
+                ),
                 severity=ThreatSeverity.MEDIUM,
                 confidence_score=0.7,
                 source="Chronicle Behavioral Hunt",
@@ -804,9 +806,11 @@ class ChroniclethreatHunting:
             indicator = ThreatIndicator(
                 ioc_value=ip,
                 ioc_type=IOCType.IP_ADDRESS,
-                threat_category=threat_categories[0]
-                if threat_categories
-                else ThreatCategory.C2_COMMUNICATION,
+                threat_category=(
+                    threat_categories[0]
+                    if threat_categories
+                    else ThreatCategory.C2_COMMUNICATION
+                ),
                 severity=ThreatSeverity.MEDIUM,
                 confidence_score=0.6,
                 source="Chronicle Behavioral Hunt",
@@ -1275,10 +1279,12 @@ class ChroniclethreatHunting:
                     if r.severity in [ThreatSeverity.HIGH, ThreatSeverity.CRITICAL]
                 ]
             ),
-            "avg_confidence": sum(r.confidence for r in self.hunt_results.values())
-            / len(self.hunt_results)
-            if self.hunt_results
-            else 0.0,
+            "avg_confidence": (
+                sum(r.confidence for r in self.hunt_results.values())
+                / len(self.hunt_results)
+                if self.hunt_results
+                else 0.0
+            ),
         }
 
     def export_threat_indicators(self, format: str = "json") -> str:

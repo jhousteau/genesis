@@ -10,7 +10,7 @@ output "vm_instances" {
       id        = v.id
       name      = v.name
       self_link = v.self_link
-    }}
+    } }
   }
 }
 
@@ -24,11 +24,11 @@ output "instance_groups" {
   description = "Managed instance groups"
   value = {
     for k, v in google_compute_region_instance_group_manager.managed_groups : k => {
-      id                = v.id
-      name              = v.name
-      self_link         = v.self_link
-      instance_group    = v.instance_group
-      target_size       = v.target_size
+      id                 = v.id
+      name               = v.name
+      self_link          = v.self_link
+      instance_group     = v.instance_group
+      target_size        = v.target_size
       base_instance_name = v.base_instance_name
     }
   }
@@ -74,13 +74,13 @@ output "gke_clusters" {
   description = "GKE cluster information"
   value = {
     for k, v in google_container_cluster.clusters : k => {
-      id                     = v.id
-      name                   = v.name
-      location               = v.location
-      cluster_ipv4_cidr      = v.cluster_ipv4_cidr
-      services_ipv4_cidr     = v.services_ipv4_cidr
-      master_version         = v.master_version
-      endpoint               = v.endpoint
+      id                 = v.id
+      name               = v.name
+      location           = v.location
+      cluster_ipv4_cidr  = v.cluster_ipv4_cidr
+      services_ipv4_cidr = v.services_ipv4_cidr
+      master_version     = v.master_version
+      endpoint           = v.endpoint
       master_auth = {
         cluster_ca_certificate = v.master_auth[0].cluster_ca_certificate
       }
@@ -108,11 +108,11 @@ output "gke_node_pools" {
   description = "GKE node pool information"
   value = {
     for k, v in google_container_node_pool.node_pools : k => {
-      id              = v.id
-      name            = v.name
-      location        = v.location
-      cluster         = v.cluster
-      node_count      = v.node_count
+      id                  = v.id
+      name                = v.name
+      location            = v.location
+      cluster             = v.cluster
+      node_count          = v.node_count
       instance_group_urls = v.instance_group_urls
     }
   }
@@ -128,7 +128,7 @@ output "cloud_run_services" {
       location = v.location
       uri      = v.uri
       status = {
-        url = v.uri
+        url        = v.uri
         conditions = v.conditions
       }
       traffic = v.traffic
@@ -156,12 +156,12 @@ output "cloud_functions" {
         entry_point = v.build_config[0].entry_point
       }
       service_config = {
-        uri                     = v.service_config[0].uri
-        available_memory        = v.service_config[0].available_memory
-        timeout_seconds         = v.service_config[0].timeout_seconds
-        available_cpu          = v.service_config[0].available_cpu
-        max_instance_count     = v.service_config[0].max_instance_count
-        min_instance_count     = v.service_config[0].min_instance_count
+        uri                = v.service_config[0].uri
+        available_memory   = v.service_config[0].available_memory
+        timeout_seconds    = v.service_config[0].timeout_seconds
+        available_cpu      = v.service_config[0].available_cpu
+        max_instance_count = v.service_config[0].max_instance_count
+        min_instance_count = v.service_config[0].min_instance_count
       }
     }
   }
@@ -181,38 +181,38 @@ output "compute_info" {
         id        = v.id
         name      = v.name
         self_link = v.self_link
-      }}
+      } }
     }
     instance_groups = { for k, v in google_compute_region_instance_group_manager.managed_groups : k => {
-      id           = v.id
-      name         = v.name
-      self_link    = v.self_link
-      target_size  = v.target_size
-    }}
+      id          = v.id
+      name        = v.name
+      self_link   = v.self_link
+      target_size = v.target_size
+    } }
     health_checks = { for k, v in google_compute_health_check.health_checks : k => {
       id        = v.id
       name      = v.name
       self_link = v.self_link
-    }}
+    } }
     gke_clusters = { for k, v in google_container_cluster.clusters : k => {
       id       = v.id
       name     = v.name
       location = v.location
       endpoint = v.endpoint
       network  = v.network
-    }}
+    } }
     cloud_run_services = { for k, v in google_cloud_run_v2_service.services : k => {
       id       = v.id
       name     = v.name
       location = v.location
       uri      = v.uri
-    }}
+    } }
     cloud_functions = { for k, v in google_cloudfunctions2_function.functions : k => {
       id       = v.id
       name     = v.name
       location = v.location
       url      = v.url
-    }}
+    } }
   }
   sensitive = true
 }
@@ -225,13 +225,13 @@ output "terraform_state" {
     created_at     = timestamp()
     project_id     = var.project_id
     resource_counts = {
-      vm_templates     = length(google_compute_instance_template.templates)
-      instance_groups  = length(google_compute_region_instance_group_manager.managed_groups)
-      health_checks    = length(google_compute_health_check.health_checks)
-      gke_clusters     = length(google_container_cluster.clusters)
-      gke_node_pools   = length(google_container_node_pool.node_pools)
+      vm_templates       = length(google_compute_instance_template.templates)
+      instance_groups    = length(google_compute_region_instance_group_manager.managed_groups)
+      health_checks      = length(google_compute_health_check.health_checks)
+      gke_clusters       = length(google_container_cluster.clusters)
+      gke_node_pools     = length(google_container_node_pool.node_pools)
       cloud_run_services = length(google_cloud_run_v2_service.services)
-      cloud_functions  = length(google_cloudfunctions2_function.functions)
+      cloud_functions    = length(google_cloudfunctions2_function.functions)
     }
   }
 }
@@ -245,7 +245,7 @@ output "gke_kubeconfigs" {
       cluster_endpoint       = v.endpoint
       cluster_ca_certificate = v.master_auth[0].cluster_ca_certificate
       cluster_location       = v.location
-      project_id            = var.project_id
+      project_id             = var.project_id
     }
   }
   sensitive = true
@@ -264,7 +264,7 @@ output "service_urls" {
 output "resource_naming" {
   description = "Resource naming patterns for consistency"
   value = {
-    prefix = var.name_prefix
+    prefix      = var.name_prefix
     environment = var.environment
     patterns = {
       vm_template    = "${var.name_prefix}-{name}-template"

@@ -24,10 +24,10 @@ jobs:
     permissions:
       contents: read
       id-token: write  # for workload identity federation
-    
+
     # Set environment based on branch or manual input
     environment: ${{ inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'dev') }}
-    
+
     env:
       PROJECT_ID: ${{ vars.PROJECT_ID }}              # Set in repository/environment variables
       REGION: ${{ vars.REGION || 'us-central1' }}
@@ -35,7 +35,7 @@ jobs:
       CLOUDSDK_CONFIG: ./.ci_gcloud                    # Ephemeral per-run config dir
       GCLOUD_IMPERSONATE_SA: ${{ vars.DEPLOY_SA }}
       ENVIRONMENT: ${{ inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'dev') }}
-    
+
     steps:
       - uses: actions/checkout@v4
 

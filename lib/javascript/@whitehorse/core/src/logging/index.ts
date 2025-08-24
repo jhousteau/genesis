@@ -1,6 +1,6 @@
 /**
  * Logging Module
- * 
+ *
  * Provides structured logging with GCP Cloud Logging integration,
  * correlation IDs, and consistent formatting across all projects.
  */
@@ -53,7 +53,7 @@ const structuredFormatter = winston.format.combine(
   winston.format.json(),
   winston.format.printf((info) => {
     const context = correlationStorage.getStore() || {};
-    
+
     const logEntry: LogEntry = {
       level: info.level as LogLevel,
       message: info.message,
@@ -84,7 +84,7 @@ export class Logger {
 
   constructor(serviceName: string = 'whitehorse-service', options?: winston.LoggerOptions) {
     this.serviceName = serviceName;
-    
+
     const defaultOptions: winston.LoggerOptions = {
       level: process.env.LOG_LEVEL || 'info',
       format: structuredFormatter,
@@ -110,7 +110,7 @@ export class Logger {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { LoggingWinston } = require('@google-cloud/logging-winston');
-      
+
       const gcpTransport = new LoggingWinston({
         projectId,
         keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
@@ -223,12 +223,12 @@ export class Logger {
     return ((...args: any[]) => {
       const start = Date.now();
       const operationId = uuidv4();
-      
+
       this.info(`Starting ${operation}`, { operationId, operation });
-      
+
       try {
         const result = fn(...args);
-        
+
         if (result instanceof Promise) {
           return result
             .then((value) => {
@@ -378,7 +378,7 @@ export function correlationMiddleware() {
     };
 
     res.setHeader('x-correlation-id', correlationId);
-    
+
     correlationStorage.run(context, () => {
       next();
     });

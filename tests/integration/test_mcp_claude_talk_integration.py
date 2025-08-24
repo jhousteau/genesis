@@ -11,6 +11,7 @@ import json
 import os
 import statistics
 import subprocess
+
 # Add the project root to the Python path for imports
 import sys
 import tempfile
@@ -559,9 +560,9 @@ class MCPIntegrationTester:
             ] = await self.test_claude_talk_integration()
 
             # Run performance benchmark
-            results["tests"][
-                "performance_benchmark"
-            ] = await self.run_performance_benchmark(num_requests=50, concurrent=5)
+            results["tests"]["performance_benchmark"] = (
+                await self.run_performance_benchmark(num_requests=50, concurrent=5)
+            )
 
             # Calculate overall success rate
             successful_tests = sum(

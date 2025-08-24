@@ -13,12 +13,12 @@ service_discovery:
   config_file: "discovery-config.yaml"
   enabled: true
   continuous_mode: true
-  
+
 config_manager:
   config_file: "config-manager.yaml"
   enabled: true
   auto_update: true
-  
+
 # Automation features
 automation_features:
   auto_scaling_alerts: true      # Monitor for auto-scaling needs
@@ -113,7 +113,7 @@ anomaly_detection:
     - "threshold_based"         # Simple threshold-based detection
   sensitivity: "medium"         # low, medium, high
   historical_data_window: "7d" # Use 7 days of historical data
-  
+
 # Notification configuration
 notification:
   webhooks:
@@ -166,20 +166,20 @@ integrations:
   prometheus:
     url: "http://prometheus:9090"
     timeout: 30
-    
+
   grafana:
     url: "http://grafana:3000"
     api_key: "${GRAFANA_API_KEY}"
     timeout: 30
-    
+
   alertmanager:
     url: "http://alertmanager:9093"
     timeout: 30
-    
+
   jaeger:
     url: "http://jaeger-query:16686"
     timeout: 30
-    
+
   elasticsearch:
     url: "http://elasticsearch:9200"
     timeout: 30
@@ -200,21 +200,21 @@ logging:
   file: "/var/log/monitoring-orchestrator.log"
   rotation: "daily"
   retention_days: 30
-  
+
 # Metrics configuration for the orchestrator itself
 self_metrics:
   enabled: true
   port: 9090
   path: "/metrics"
   interval: 15
-  
+
 # Health check configuration
 health_checks:
   enabled: true
   port: 8081
   path: "/health"
   timeout: 10
-  
+
 # Shutdown configuration
 shutdown:
   graceful_timeout: 30          # Graceful shutdown timeout in seconds

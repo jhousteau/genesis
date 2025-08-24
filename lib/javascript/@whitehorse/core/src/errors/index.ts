@@ -1,6 +1,6 @@
 /**
  * Error Handling Module
- * 
+ *
  * Comprehensive error handling with recovery mechanisms, structured error logging,
  * and integration with monitoring systems.
  */
@@ -66,7 +66,7 @@ export class WhitehorseError extends Error {
     } = {}
   ) {
     super(message);
-    
+
     this.name = this.constructor.name;
     this.errorCode = options.errorCode || this.constructor.name;
     this.severity = options.severity || ErrorSeverity.MEDIUM;
@@ -80,7 +80,7 @@ export class WhitehorseError extends Error {
 
     // Ensure proper prototype chain
     Object.setPrototypeOf(this, new.target.prototype);
-    
+
     // Capture stack trace
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -318,11 +318,11 @@ export const DEFAULT_RETRY_POLICY: RetryPolicy = {
 export function calculateRetryDelay(attempt: number, policy: RetryPolicy): number {
   let delay = policy.baseDelay * Math.pow(policy.exponentialBase, attempt - 1);
   delay = Math.min(delay, policy.maxDelay);
-  
+
   if (policy.jitter) {
     delay *= (0.5 + Math.random() * 0.5); // 50-100% of calculated delay
   }
-  
+
   return delay;
 }
 
@@ -379,7 +379,7 @@ export class CircuitBreaker {
   private onFailure(): void {
     this.failureCount++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.failureCount >= this.options.failureThreshold) {
       this.state = 'open';
     }
@@ -415,7 +415,7 @@ export class ErrorHandler {
     this.errorCount++;
 
     let errorInfo: Record<string, any>;
-    
+
     if (error instanceof WhitehorseError) {
       errorInfo = error.toObject();
     } else {
@@ -472,7 +472,7 @@ export class ErrorHandler {
     for (const error of recentErrors) {
       const severity = error.severity || 'unknown';
       const category = error.category || 'unknown';
-      
+
       severityCounts[severity] = (severityCounts[severity] || 0) + 1;
       categoryCounts[category] = (categoryCounts[category] || 0) + 1;
     }
@@ -527,7 +527,7 @@ export function setupErrorHandling(serviceName?: string): void {
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (reason, promise) => {
     globalErrorHandler.handleError(
-      new SystemError('Unhandled promise rejection', { 
+      new SystemError('Unhandled promise rejection', {
         reason: reason instanceof Error ? reason.message : String(reason),
         promise: promise.toString()
       }),

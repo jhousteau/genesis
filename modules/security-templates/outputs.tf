@@ -22,8 +22,8 @@ output "kubernetes_service_accounts" {
   description = "Kubernetes service account information"
   value = {
     for k, v in kubernetes_service_account.agent_k8s_service_accounts : k => {
-      name      = v.metadata[0].name
-      namespace = v.metadata[0].namespace
+      name        = v.metadata[0].name
+      namespace   = v.metadata[0].namespace
       annotations = v.metadata[0].annotations
     }
   }
@@ -46,8 +46,8 @@ output "iam_configuration" {
     security_policies = {
       for agent_type in local.agent_types : agent_type => {
         security_level = local.agent_security_policies[agent_type].security_level
-        compute_role = contains(["platform-engineer", "devops-agent", "sre-agent"], agent_type) ? "roles/compute.admin" : "roles/compute.viewer"
-        storage_role = contains(["data-engineer", "platform-engineer"], agent_type) ? "roles/storage.admin" : "roles/storage.objectViewer"
+        compute_role   = contains(["platform-engineer", "devops-agent", "sre-agent"], agent_type) ? "roles/compute.admin" : "roles/compute.viewer"
+        storage_role   = contains(["data-engineer", "platform-engineer"], agent_type) ? "roles/storage.admin" : "roles/storage.objectViewer"
       }
     }
   }
@@ -181,9 +181,9 @@ output "pod_security" {
     pod_security_standards_enabled = var.enable_pod_security_standards
 
     security_context_defaults = {
-      privileged                = false
-      allowPrivilegeEscalation  = false
-      readOnlyRootFilesystem    = true
+      privileged               = false
+      allowPrivilegeEscalation = false
+      readOnlyRootFilesystem   = true
       runAsNonRoot             = true
       requiredDropCapabilities = ["ALL"]
     }
@@ -204,27 +204,27 @@ output "security_compliance_summary" {
   description = "Summary of security compliance features"
   value = {
     # Core security features
-    workload_identity        = var.enable_workload_identity
-    network_policies         = var.enable_kubernetes_network_policies
-    pod_security_standards   = var.enable_pod_security_standards
-    binary_authorization     = var.enable_binary_authorization
+    workload_identity      = var.enable_workload_identity
+    network_policies       = var.enable_kubernetes_network_policies
+    pod_security_standards = var.enable_pod_security_standards
+    binary_authorization   = var.enable_binary_authorization
 
     # Monitoring and auditing
-    security_audit_logging   = var.enable_security_audit_logging
-    asset_inventory_feed     = var.enable_asset_inventory_feed
-    firewall_logging        = var.enable_firewall_logging
+    security_audit_logging = var.enable_security_audit_logging
+    asset_inventory_feed   = var.enable_asset_inventory_feed
+    firewall_logging       = var.enable_firewall_logging
 
     # Access control
-    service_accounts_count  = length(google_service_account.agent_service_accounts)
+    service_accounts_count = length(google_service_account.agent_service_accounts)
     custom_roles_count     = length(google_project_iam_custom_role.agent_custom_roles)
     rbac_roles_count       = length(kubernetes_cluster_role.agent_cluster_roles)
 
     # Secret management
-    secrets_count          = length(google_secret_manager_secret.agent_secrets)
-    k8s_secrets_count      = length(kubernetes_secret.agent_kubernetes_secrets)
+    secrets_count     = length(google_secret_manager_secret.agent_secrets)
+    k8s_secrets_count = length(kubernetes_secret.agent_kubernetes_secrets)
 
     # Network security
-    firewall_rules_count   = length(google_compute_firewall.agent_security_rules)
+    firewall_rules_count = length(google_compute_firewall.agent_security_rules)
 
     # Agent security levels
     high_security_agents = [
@@ -276,50 +276,50 @@ output "security_checklist" {
   value = {
     # Identity and Access Management
     iam = {
-      service_accounts_per_agent     = "✓ Implemented"
-      least_privilege_permissions    = "✓ Implemented"
-      workload_identity             = var.enable_workload_identity ? "✓ Enabled" : "⚠ Disabled"
-      custom_roles_for_elevation    = length(google_project_iam_custom_role.agent_custom_roles) > 0 ? "✓ Implemented" : "⚠ Not configured"
+      service_accounts_per_agent  = "✓ Implemented"
+      least_privilege_permissions = "✓ Implemented"
+      workload_identity           = var.enable_workload_identity ? "✓ Enabled" : "⚠ Disabled"
+      custom_roles_for_elevation  = length(google_project_iam_custom_role.agent_custom_roles) > 0 ? "✓ Implemented" : "⚠ Not configured"
     }
 
     # Network Security
     network = {
-      firewall_rules_configured     = length(google_compute_firewall.agent_security_rules) > 0 ? "✓ Configured" : "⚠ Not configured"
-      deny_by_default              = "✓ Implemented"
-      network_policies_enabled      = var.enable_kubernetes_network_policies ? "✓ Enabled" : "⚠ Disabled"
-      firewall_logging             = var.enable_firewall_logging ? "✓ Enabled" : "⚠ Disabled"
+      firewall_rules_configured = length(google_compute_firewall.agent_security_rules) > 0 ? "✓ Configured" : "⚠ Not configured"
+      deny_by_default           = "✓ Implemented"
+      network_policies_enabled  = var.enable_kubernetes_network_policies ? "✓ Enabled" : "⚠ Disabled"
+      firewall_logging          = var.enable_firewall_logging ? "✓ Enabled" : "⚠ Disabled"
     }
 
     # Container Security
     container = {
-      pod_security_standards        = var.enable_pod_security_standards ? "✓ Enabled" : "⚠ Disabled"
-      binary_authorization         = var.enable_binary_authorization ? "✓ Enabled" : "⚠ Disabled"
-      non_root_containers          = "✓ Enforced"
-      readonly_filesystem          = "✓ Enforced"
-      dropped_capabilities         = "✓ All capabilities dropped"
+      pod_security_standards = var.enable_pod_security_standards ? "✓ Enabled" : "⚠ Disabled"
+      binary_authorization   = var.enable_binary_authorization ? "✓ Enabled" : "⚠ Disabled"
+      non_root_containers    = "✓ Enforced"
+      readonly_filesystem    = "✓ Enforced"
+      dropped_capabilities   = "✓ All capabilities dropped"
     }
 
     # Secret Management
     secrets = {
-      secret_manager_integration    = length(google_secret_manager_secret.agent_secrets) > 0 ? "✓ Configured" : "⚠ Not configured"
-      no_hardcoded_secrets         = "✓ Enforced"
-      secret_access_controls       = "⚠ Temporarily disabled pending refactor"
-      kubernetes_secret_sync       = length(kubernetes_secret.agent_kubernetes_secrets) > 0 ? "✓ Configured" : "⚠ Not configured"
+      secret_manager_integration = length(google_secret_manager_secret.agent_secrets) > 0 ? "✓ Configured" : "⚠ Not configured"
+      no_hardcoded_secrets       = "✓ Enforced"
+      secret_access_controls     = "⚠ Temporarily disabled pending refactor"
+      kubernetes_secret_sync     = length(kubernetes_secret.agent_kubernetes_secrets) > 0 ? "✓ Configured" : "⚠ Not configured"
     }
 
     # Monitoring and Auditing
     monitoring = {
-      security_audit_logging       = var.enable_security_audit_logging ? "✓ Enabled" : "⚠ Disabled"
-      asset_inventory_monitoring   = var.enable_asset_inventory_feed ? "✓ Enabled" : "⚠ Disabled"
-      bigquery_audit_dataset      = var.enable_security_audit_logging ? "✓ Configured" : "⚠ Not configured"
+      security_audit_logging     = var.enable_security_audit_logging ? "✓ Enabled" : "⚠ Disabled"
+      asset_inventory_monitoring = var.enable_asset_inventory_feed ? "✓ Enabled" : "⚠ Disabled"
+      bigquery_audit_dataset     = var.enable_security_audit_logging ? "✓ Configured" : "⚠ Not configured"
     }
 
     # Compliance
     compliance = {
-      rbac_configured              = length(kubernetes_cluster_role.agent_cluster_roles) > 0 ? "✓ Configured" : "⚠ Not configured"
-      agent_isolation             = "✓ Implemented"
-      security_boundaries         = "✓ Established"
-      least_privilege_networking   = var.enable_kubernetes_network_policies ? "✓ Implemented" : "⚠ Not implemented"
+      rbac_configured            = length(kubernetes_cluster_role.agent_cluster_roles) > 0 ? "✓ Configured" : "⚠ Not configured"
+      agent_isolation            = "✓ Implemented"
+      security_boundaries        = "✓ Established"
+      least_privilege_networking = var.enable_kubernetes_network_policies ? "✓ Implemented" : "⚠ Not implemented"
     }
   }
 }
@@ -351,7 +351,7 @@ output "integration_endpoints" {
 
     # Security monitoring endpoints
     monitoring_endpoints = {
-      audit_dataset = var.enable_security_audit_logging ? google_bigquery_dataset.security_audit_dataset[0].dataset_id : null
+      audit_dataset    = var.enable_security_audit_logging ? google_bigquery_dataset.security_audit_dataset[0].dataset_id : null
       monitoring_topic = var.enable_asset_inventory_feed ? google_pubsub_topic.security_monitoring_topic[0].name : null
     }
   }

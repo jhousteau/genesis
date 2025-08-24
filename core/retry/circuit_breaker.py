@@ -31,6 +31,7 @@ from enum import Enum
 from typing import Any, Callable, Deque, Optional, TypeVar
 
 from ..errors.handler import ErrorCategory, GenesisError
+
 # Import Genesis core components
 from ..logging.logger import GenesisLogger
 

@@ -15,8 +15,7 @@ from typing import Any, Dict, List, Optional
 from google.cloud import iam_v1, resourcemanager_v3
 from google.cloud.exceptions import GoogleCloudError
 
-from .exceptions import (SecretAccessDeniedError, SecretConfigurationError,
-                         SecretError)
+from .exceptions import SecretAccessDeniedError, SecretConfigurationError, SecretError
 
 
 class IAMRole(Enum):

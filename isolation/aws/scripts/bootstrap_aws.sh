@@ -53,12 +53,12 @@ print_banner() {
 # Validation functions
 validate_environment() {
     log_step "Validating AWS environment variables..."
-    
+
     # Required variables
     : "${AWS_ACCOUNT_ID:?AWS_ACCOUNT_ID environment variable is required}"
     : "${AWS_ENVIRONMENT:?AWS_ENVIRONMENT environment variable is required}"
     : "${AWS_REGION:?AWS_REGION environment variable is required}"
-    
+
     # Optional with defaults
     AWS_PROJECT_NAME="${AWS_PROJECT_NAME:-$(basename "$PWD")}"
     REPO_AWS_HOME="${REPO_AWS_HOME:-$HOME/.aws/${AWS_PROJECT_NAME}-${AWS_ENVIRONMENT}}"
@@ -66,19 +66,19 @@ validate_environment() {
     PRODUCTION_MODE="${PRODUCTION_MODE:-false}"
     AUDIT_ENABLED="${AUDIT_ENABLED:-true}"
     AWS_PROFILE="${AWS_PROFILE:-default}"
-    
+
     # Validate AWS account ID format
     if [[ ! "$AWS_ACCOUNT_ID" =~ ^[0-9]{12}$ ]]; then
         log_error "Invalid AWS_ACCOUNT_ID format. Expected 12-digit number: $AWS_ACCOUNT_ID"
         exit 1
     fi
-    
+
     # Validate region format
     if [[ ! "$AWS_REGION" =~ ^[a-z]{2}-[a-z]+-[0-9]$ ]]; then
         log_error "Invalid AWS_REGION format: $AWS_REGION"
         exit 1
     fi
-    
+
     # Validate isolation level
     case "$ISOLATION_LEVEL" in
         strict|standard|relaxed)
@@ -88,7 +88,7 @@ validate_environment() {
             exit 1
             ;;
     esac
-    
+
     log_success "Environment validation passed"
 }
 
@@ -104,43 +104,43 @@ print_configuration() {
     echo "Isolation Level:   ${ISOLATION_LEVEL}"
     echo "Production Mode:   ${PRODUCTION_MODE}"
     echo "Audit Enabled:     ${AUDIT_ENABLED}"
-    
+
     if [[ -n "${AWS_ROLE_ARN:-}" ]]; then
         echo "Role ARN:          ${AWS_ROLE_ARN}"
     fi
-    
+
     if [[ -n "${AWS_ROLE_TO_ASSUME:-}" ]]; then
         echo "Role to Assume:    ${AWS_ROLE_TO_ASSUME}"
     fi
-    
+
     if [[ -n "${AWS_COST_THRESHOLD_USD:-}" ]]; then
         echo "Cost Threshold:    \$${AWS_COST_THRESHOLD_USD} USD"
     fi
-    
+
     echo "────────────────────────────────────────────────────────"
     echo ""
 }
 
 setup_isolation_directory() {
     log_step "Setting up AWS isolation directory..."
-    
+
     # Create per-repo config folder with proper permissions
     mkdir -p "${REPO_AWS_HOME}"
     chmod 700 "${REPO_AWS_HOME}"
-    
+
     # Create subdirectories
     mkdir -p "${REPO_AWS_HOME}/"{logs,cache,temp}
-    
+
     # Secure directories
     chmod 700 "${REPO_AWS_HOME}/cache"
     chmod 700 "${REPO_AWS_HOME}/temp"
-    
+
     log_success "Isolation directory configured: ${REPO_AWS_HOME}"
 }
 
 create_aws_configuration() {
     log_step "Creating AWS configuration..."
-    
+
     # Create AWS config file
     cat > "${REPO_AWS_HOME}/config" <<EOF
 [default]
@@ -163,7 +163,7 @@ region = ${AWS_REGION}
 role_session_name = ${AWS_ROLE_SESSION_NAME:-isolation-session}
 EOF
     fi
-    
+
     # Create placeholder credentials file
     cat > "${REPO_AWS_HOME}/credentials" <<EOF
 # AWS Credentials for ${AWS_PROJECT_NAME}-${AWS_ENVIRONMENT}
@@ -176,23 +176,23 @@ EOF
 [${AWS_PROFILE}]
 # Add your credentials here or use alternative authentication methods
 EOF
-    
+
     chmod 600 "${REPO_AWS_HOME}/credentials"
     chmod 600 "${REPO_AWS_HOME}/config"
-    
+
     log_success "AWS configuration files created"
 }
 
 setup_oidc_authentication() {
     if [[ -n "${AWS_ROLE_TO_ASSUME:-}" ]]; then
         log_step "Configuring OIDC/Web Identity authentication..."
-        
+
         # Validate role ARN format
         if [[ ! "$AWS_ROLE_TO_ASSUME" =~ ^arn:aws:iam::[0-9]{12}:role/.+ ]]; then
             log_error "Invalid AWS_ROLE_TO_ASSUME format: ${AWS_ROLE_TO_ASSUME}"
             exit 1
         fi
-        
+
         # Store OIDC configuration
         cat > "${REPO_AWS_HOME}/oidc-config.json" <<EOF
 {
@@ -202,7 +202,7 @@ setup_oidc_authentication() {
     "configured_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF
-        
+
         chmod 600 "${REPO_AWS_HOME}/oidc-config.json"
         log_success "OIDC/Web Identity configuration created"
     fi
@@ -210,24 +210,24 @@ EOF
 
 verify_aws_access() {
     log_step "Verifying AWS access..."
-    
+
     # Set AWS configuration for this session
     export AWS_CONFIG_FILE="${REPO_AWS_HOME}/config"
     export AWS_SHARED_CREDENTIALS_FILE="${REPO_AWS_HOME}/credentials"
-    
+
     # Try to get caller identity
     if CALLER_IDENTITY=$(aws sts get-caller-identity --profile "${AWS_PROFILE}" 2>/dev/null); then
         local account_id user_arn
         account_id=$(echo "$CALLER_IDENTITY" | jq -r '.Account')
         user_arn=$(echo "$CALLER_IDENTITY" | jq -r '.Arn')
-        
+
         if [[ "$account_id" == "$AWS_ACCOUNT_ID" ]]; then
             log_success "AWS access verified for account: ${account_id}"
             log_info "Identity: ${user_arn}"
         else
             log_warning "Account mismatch: Expected ${AWS_ACCOUNT_ID}, got ${account_id}"
         fi
-        
+
         # Log authentication details for audit
         if [[ "$AUDIT_ENABLED" == "true" ]]; then
             cat > "${REPO_AWS_HOME}/logs/auth-$(date +%Y%m%d-%H%M%S).log" <<EOF
@@ -252,7 +252,7 @@ EOF
 
 test_account_access() {
     log_step "Testing AWS account access..."
-    
+
     # Test basic API access
     if aws ec2 describe-regions --region "${AWS_REGION}" --profile "${AWS_PROFILE}" >/dev/null 2>&1; then
         log_success "AWS API access confirmed"
@@ -260,7 +260,7 @@ test_account_access() {
         log_warning "AWS API access test failed"
         log_info "Ensure you have appropriate permissions"
     fi
-    
+
     # Test account-specific access
     if aws organizations describe-account --account-id "${AWS_ACCOUNT_ID}" --profile "${AWS_PROFILE}" >/dev/null 2>&1; then
         log_success "AWS Organizations access confirmed"
@@ -272,7 +272,7 @@ test_account_access() {
 setup_cost_monitoring() {
     if [[ -n "${AWS_COST_THRESHOLD_USD:-}" ]]; then
         log_step "Setting up cost monitoring..."
-        
+
         cat > "${REPO_AWS_HOME}/cost-config.json" <<EOF
 {
     "threshold_usd": ${AWS_COST_THRESHOLD_USD},
@@ -282,14 +282,14 @@ setup_cost_monitoring() {
     "configured_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF
-        
+
         log_success "Cost monitoring configured: \$${AWS_COST_THRESHOLD_USD} USD threshold"
     fi
 }
 
 create_helper_scripts() {
     log_step "Creating helper scripts..."
-    
+
     # Create AWS CLI guard script
     cat > "${REPO_AWS_HOME}/bin/aws" <<'EOF'
 #!/usr/bin/env bash
@@ -305,10 +305,10 @@ else
     exec $(which -a aws | grep -v "$0" | head -1) "$@"
 fi
 EOF
-    
+
     mkdir -p "${REPO_AWS_HOME}/bin"
     chmod +x "${REPO_AWS_HOME}/bin/aws"
-    
+
     # Create self-check script
     cat > "${REPO_AWS_HOME}/bin/aws-self-check" <<'EOF'
 #!/usr/bin/env bash
@@ -321,9 +321,9 @@ else
     exit 1
 fi
 EOF
-    
+
     chmod +x "${REPO_AWS_HOME}/bin/aws-self-check"
-    
+
     log_success "Helper scripts created"
 }
 
@@ -337,7 +337,7 @@ display_final_configuration() {
 
 create_initialization_marker() {
     log_step "Creating initialization marker..."
-    
+
     cat > "${REPO_AWS_HOME}/.initialized" <<EOF
 # AWS Isolation Initialization Marker
 AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}
@@ -350,12 +350,12 @@ SCRIPT_VERSION=${SCRIPT_VERSION}
 INITIALIZED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 INITIALIZED_BY=${USER:-unknown}
 EOF
-    
+
     # Create quick reference files
     echo "${AWS_ACCOUNT_ID}" > "${REPO_AWS_HOME}/.account"
     echo "${AWS_REGION}" > "${REPO_AWS_HOME}/.region"
     echo "${AWS_ENVIRONMENT}" > "${REPO_AWS_HOME}/.environment"
-    
+
     log_success "Initialization markers created"
 }
 
@@ -372,7 +372,7 @@ production_safety_check() {
         echo "   • All operations are logged and audited"
         echo "   • Additional approval gates may be required"
         echo ""
-        
+
         if [[ "${SKIP_PROD_CONFIRMATION:-}" != "true" ]]; then
             read -p "Continue with production setup? (type 'yes' to proceed): " confirmation
             if [[ "$confirmation" != "yes" ]]; then
@@ -399,7 +399,7 @@ print_next_steps() {
     echo "• ${CYAN}aws${NC} - Protected AWS CLI with account isolation"
     echo "• ${CYAN}aws-self-check${NC} - Validate isolation configuration"
     echo ""
-    
+
     if [[ "$PRODUCTION_MODE" == "true" ]]; then
         echo -e "${YELLOW}Production Environment Reminders:${NC}"
         echo "• Use 'export CONFIRM_PROD=I_UNDERSTAND' for destructive operations"
@@ -407,7 +407,7 @@ print_next_steps() {
         echo "• Follow change management procedures"
         echo ""
     fi
-    
+
     echo -e "${WHITE}Configuration Files:${NC}"
     echo "• Config: ${REPO_AWS_HOME}/config"
     echo "• Credentials: ${REPO_AWS_HOME}/credentials"

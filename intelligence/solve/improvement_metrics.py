@@ -22,8 +22,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from solve.lesson_capture_system import (EnhancedLesson, ImpactLevel,
-                                         LessonSource, LessonStore)
+from solve.lesson_capture_system import (
+    EnhancedLesson,
+    ImpactLevel,
+    LessonSource,
+    LessonStore,
+)
 from solve.template_evolution import TemplateRegistry
 
 logger = logging.getLogger(__name__)

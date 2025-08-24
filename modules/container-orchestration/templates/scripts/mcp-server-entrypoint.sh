@@ -37,13 +37,13 @@ success() {
 # Signal handlers for graceful shutdown
 shutdown_handler() {
     log "Received shutdown signal, initiating graceful shutdown..."
-    
+
     if [ ! -z "${MCP_SERVER_PID:-}" ]; then
         log "Stopping MCP server process (PID: $MCP_SERVER_PID)..."
         kill -TERM "$MCP_SERVER_PID" 2>/dev/null || true
         wait "$MCP_SERVER_PID" 2>/dev/null || true
     fi
-    
+
     log "MCP server stopped gracefully"
     exit 0
 }
@@ -53,24 +53,24 @@ trap shutdown_handler SIGTERM SIGINT
 # Validate environment
 validate_environment() {
     log "Validating environment configuration..."
-    
+
     # Check required environment variables
     if [ -z "${PROJECT_ID:-}" ]; then
         error "PROJECT_ID environment variable is required"
         exit 1
     fi
-    
+
     if [ -z "${ENVIRONMENT:-}" ]; then
         warn "ENVIRONMENT not set, defaulting to 'production'"
         export ENVIRONMENT="production"
     fi
-    
+
     # Validate configuration file
     if [ ! -f "$MCP_CONFIG_PATH" ]; then
         error "MCP configuration file not found: $MCP_CONFIG_PATH"
         exit 1
     fi
-    
+
     # Check if Secret Manager credentials are available
     if [ -f "/var/secrets/google/key.json" ]; then
         export GOOGLE_APPLICATION_CREDENTIALS="/var/secrets/google/key.json"
@@ -84,14 +84,14 @@ validate_environment() {
     else
         warn "No explicit credentials found, using default authentication"
     fi
-    
+
     success "Environment validation completed"
 }
 
 # Initialize secret access
 initialize_secrets() {
     log "Initializing secret management..."
-    
+
     # Test Secret Manager access
     if python3 -c "
 import sys
@@ -114,10 +114,10 @@ except Exception as e:
 # Prepare MCP server configuration
 prepare_configuration() {
     log "Preparing MCP server configuration..."
-    
+
     # Create runtime configuration directory
     mkdir -p /app/runtime/config
-    
+
     # Process configuration template with environment variables
     if command -v envsubst >/dev/null 2>&1; then
         envsubst < "$MCP_CONFIG_PATH" > /app/runtime/config/mcp-runtime.yaml
@@ -127,7 +127,7 @@ prepare_configuration() {
         export MCP_RUNTIME_CONFIG="$MCP_CONFIG_PATH"
         warn "envsubst not available, using template configuration directly"
     fi
-    
+
     # Validate configuration
     if ! node -e "
         const yaml = require('js-yaml');
@@ -143,17 +143,17 @@ prepare_configuration() {
         error "MCP configuration validation failed"
         exit 1
     fi
-    
+
     success "Configuration prepared successfully"
 }
 
 # Start MCP server
 start_mcp_server() {
     log "Starting MCP server..."
-    
+
     # Set Node.js options for production
     export NODE_OPTIONS="--max-old-space-size=2048 --unhandled-rejections=strict"
-    
+
     # Create startup script
     cat > /app/runtime/start-server.js << 'EOF'
 const { MCPServer, createSecretAuthBridge, setupMCPAuthWithSecrets } = require('./lib/javascript/@whitehorse/core');
@@ -166,7 +166,7 @@ async function startServer() {
         // Load configuration
         const configPath = process.env.MCP_RUNTIME_CONFIG || '/app/config/mcp-production.yaml';
         const config = yaml.load(fs.readFileSync(configPath, 'utf8'));
-        
+
         // Setup Secret Manager authentication bridge
         const secretBridge = createSecretAuthBridge({
             projectId: process.env.PROJECT_ID,
@@ -174,7 +174,7 @@ async function startServer() {
             pythonPath: 'python3',
             secretManagerScript: '/app/scripts/secret-shield-automation.py'
         });
-        
+
         // Configure authentication strategies
         const authConfigs = [
             {
@@ -190,17 +190,17 @@ async function startServer() {
                 }
             },
             {
-                name: 'api-key', 
+                name: 'api-key',
                 config: {
                     type: 'api-key',
                     secretName: 'mcp-api-keys'
                 }
             }
         ];
-        
+
         // Setup authentication
         const strategies = await setupMCPAuthWithSecrets(secretBridge, authConfigs);
-        
+
         // Create and configure MCP server
         const server = new MCPServer({
             port: parseInt(process.env.PORT || '8080'),
@@ -216,7 +216,7 @@ async function startServer() {
                 metricsPort: parseInt(process.env.METRICS_PORT || '8081')
             }
         });
-        
+
         // Setup handlers for claude-talk integration
         server.registerHandler('claude-talk.session.create', async (request) => {
             return server.messageFactory.createResponse(request.id, {
@@ -225,7 +225,7 @@ async function startServer() {
                 timestamp: new Date().toISOString()
             });
         });
-        
+
         server.registerHandler('claude-talk.agent.launch', async (request) => {
             const { agentType, configuration } = request.params;
             return server.messageFactory.createResponse(request.id, {
@@ -236,33 +236,33 @@ async function startServer() {
                 timestamp: new Date().toISOString()
             });
         });
-        
+
         // Error handling
         server.on('error', (error) => {
             console.error('MCP Server error:', error);
         });
-        
+
         server.on('started', () => {
             console.log(`MCP Server started successfully on port ${server.options.port}`);
             console.log(`Metrics available on port ${server.options.monitoring.metricsPort}`);
         });
-        
+
         // Start the server
         await server.start();
-        
+
         // Keep the process running
         process.on('SIGTERM', async () => {
             console.log('Received SIGTERM, shutting down gracefully...');
             await server.stop();
             process.exit(0);
         });
-        
+
         process.on('SIGINT', async () => {
             console.log('Received SIGINT, shutting down gracefully...');
             await server.stop();
             process.exit(0);
         });
-        
+
     } catch (error) {
         console.error('Failed to start MCP server:', error);
         process.exit(1);
@@ -271,13 +271,13 @@ async function startServer() {
 
 startServer();
 EOF
-    
+
     # Start the server in background
     cd /app
     node /app/runtime/start-server.js &
     MCP_SERVER_PID=$!
     export MCP_SERVER_PID
-    
+
     # Wait for server to start
     log "Waiting for MCP server to be ready..."
     for i in {1..30}; do
@@ -285,12 +285,12 @@ EOF
             success "MCP server is ready and responding"
             break
         fi
-        
+
         if [ $i -eq 30 ]; then
             error "MCP server failed to start within timeout"
             exit 1
         fi
-        
+
         sleep 2
     done
 }
@@ -303,14 +303,14 @@ main() {
     log "Project ID: ${PROJECT_ID:-'not set'}"
     log "Port: $PORT"
     log "Metrics Port: $METRICS_PORT"
-    
+
     validate_environment
     initialize_secrets
     prepare_configuration
     start_mcp_server
-    
+
     success "MCP server initialization completed successfully"
-    
+
     # Wait for server process
     wait "$MCP_SERVER_PID"
 }

@@ -1,6 +1,7 @@
 """Tests for stability module."""
 
 import pytest
+
 from smart_commit.stability import StabilityEngine
 
 

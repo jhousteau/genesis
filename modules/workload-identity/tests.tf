@@ -21,7 +21,7 @@ module "test_github" {
   providers = {
     github = {
       provider_id = "github-test"
-      
+
       github = {
         organization = "test-org"
         repositories = ["test-repo"]
@@ -33,7 +33,7 @@ module "test_github" {
   service_accounts = {
     test = {
       service_account_id = "github-test-sa"
-      
+
       bindings = [{
         provider_id = "github-test"
       }]
@@ -55,7 +55,7 @@ module "test_multi_provider" {
         organization = "org1"
       }
     }
-    
+
     gitlab = {
       provider_id = "gitlab"
       gitlab = {
@@ -77,7 +77,7 @@ module "test_custom_conditions" {
       provider_id         = "custom"
       issuer_uri          = "https://custom.issuer.com"
       attribute_condition = "assertion.env == 'production'"
-      
+
       attribute_mapping = {
         "google.subject" = "assertion.sub"
         "attribute.env"  = "assertion.environment"
@@ -104,7 +104,7 @@ module "test_existing_sa" {
     existing = {
       create_new     = false
       existing_email = "existing@test-project.iam.gserviceaccount.com"
-      
+
       bindings = [{
         provider_id = "test"
       }]
@@ -122,7 +122,7 @@ module "test_complex_conditions" {
   providers = {
     github_complex = {
       provider_id = "github-complex"
-      
+
       github = {
         organization = "test-org"
         repositories = ["repo1", "repo2", "repo3"]
@@ -135,11 +135,11 @@ module "test_complex_conditions" {
   service_accounts = {
     complex = {
       service_account_id = "complex-sa"
-      project_roles      = [
+      project_roles = [
         "roles/viewer",
         "roles/storage.objectViewer"
       ]
-      
+
       bindings = [
         {
           provider_id         = "github-complex"
@@ -148,7 +148,7 @@ module "test_complex_conditions" {
         {
           provider_id         = "github-complex"
           attribute_condition = "attribute.environment == 'staging'"
-          roles              = ["roles/iam.workloadIdentityUser", "roles/iam.serviceAccountTokenCreator"]
+          roles               = ["roles/iam.workloadIdentityUser", "roles/iam.serviceAccountTokenCreator"]
         }
       ]
     }
@@ -169,21 +169,21 @@ module "test_all_platforms" {
         organization = "org"
       }
     }
-    
+
     gitlab = {
       provider_id = "gitlab"
       gitlab = {
         group_path = "group"
       }
     }
-    
+
     azure = {
       provider_id = "azure"
       azure_devops = {
         organization = "org"
       }
     }
-    
+
     terraform = {
       provider_id = "terraform"
       terraform_cloud = {
@@ -215,7 +215,7 @@ module "test_labels" {
   source = "../workload-identity"
 
   project_id        = "test-project"
-  pool_id          = "labeled-test"
+  pool_id           = "labeled-test"
   pool_display_name = "Test Pool with Labels"
   pool_description  = "This is a test pool with labels"
 
@@ -241,7 +241,7 @@ module "test_session_duration" {
 
   project_id       = "test-project"
   pool_id          = "session-test"
-  session_duration = "7200s"  # 2 hours
+  session_duration = "7200s" # 2 hours
 
   providers = {
     test = {

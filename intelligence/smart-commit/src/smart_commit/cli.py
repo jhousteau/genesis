@@ -9,8 +9,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from .git_integration import CommitType
-from .orchestrator import (ExecutionMode, SmartCommitConfig,
-                           SmartCommitOrchestrator)
+from .orchestrator import ExecutionMode, SmartCommitConfig, SmartCommitOrchestrator
 
 console = Console()
 
@@ -68,7 +67,9 @@ def autofix(dry_run, max_iterations, skip, no_quality_gates, verbose, message):
     if result.success:
         console.print("[green]✓[/green] Autofix completed successfully!")
         if result.convergence_result:
-            console.print(f"  Converged in {result.convergence_result.iterations} iterations")
+            console.print(
+                f"  Converged in {result.convergence_result.iterations} iterations"
+            )
             console.print(f"  Time: {result.execution_time:.2f}s")
         if result.commit_sha:
             console.print(f"  Commit: {result.commit_sha[:8]}")
@@ -199,7 +200,9 @@ def all(dry_run, commit_type, skip, no_quality_gates, verbose, message):
     console.print()  # Add spacing
     if result.success:
         console.print("[green bold]✓ Pipeline completed successfully![/green bold]")
-        console.print(f"  Detected types: {', '.join(t.value for t in result.detected_types)}")
+        console.print(
+            f"  Detected types: {', '.join(t.value for t in result.detected_types)}"
+        )
         console.print(f"  Tools run: {len(result.tools_run)}")
         console.print(f"  Time: {result.execution_time:.2f}s")
         if result.commit_sha:
@@ -217,7 +220,9 @@ def all(dry_run, commit_type, skip, no_quality_gates, verbose, message):
 
         # Show quality gate failures
         if result.quality_gate_results:
-            failed_gates = [g for g, passed in result.quality_gate_results.items() if not passed]
+            failed_gates = [
+                g for g, passed in result.quality_gate_results.items() if not passed
+            ]
             if failed_gates:
                 console.print("\n[yellow]Failed quality gates:[/yellow]")
                 for gate in failed_gates:
@@ -254,7 +259,9 @@ def status():
     console.print("\n[bold]Git Status[/bold]")
     console.print(f"Branch: {git['branch']}")
     console.print(f"Commits: {git['commit_count']}")
-    console.print(f"Changes: {'Yes' if git['has_changes'] else 'No'} ({git['change_count']} files)")
+    console.print(
+        f"Changes: {'Yes' if git['has_changes'] else 'No'} ({git['change_count']} files)"
+    )
 
     # Available tools
     console.print("\n[bold]Available Tools[/bold]")
@@ -299,9 +306,7 @@ def detect():
             status = (
                 "Primary"
                 if score == max(scores.values())
-                else "Secondary"
-                if score > 0.3
-                else "Minor"
+                else "Secondary" if score > 0.3 else "Minor"
             )
             table.add_row(project_type.value, confidence, status)
 
@@ -316,7 +321,9 @@ def detect():
     if available:
         console.print(f"[green]Available:[/green] {', '.join(sorted(available))}")
     if unavailable:
-        console.print(f"[yellow]Not Available:[/yellow] {', '.join(sorted(unavailable))}")
+        console.print(
+            f"[yellow]Not Available:[/yellow] {', '.join(sorted(unavailable))}"
+        )
 
 
 @cli.command()
@@ -350,7 +357,9 @@ def quality(run_all, gate):
 
             for check in result.checks:
                 if check.passed:
-                    console.print(f"[green]✓[/green] {check.check_name}: {check.message}")
+                    console.print(
+                        f"[green]✓[/green] {check.check_name}: {check.message}"
+                    )
                 else:
                     console.print(f"[red]✗[/red] {check.check_name}: {check.message}")
 

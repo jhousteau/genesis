@@ -25,8 +25,9 @@ logger = logging.getLogger(__name__)
 # Contract validation imports
 try:
     from solve.agents.contract_validation import ContractValidationAgent
-    from solve.agents.contract_validation import \
-        ValidationResult as ContractValidationResult
+    from solve.agents.contract_validation import (
+        ValidationResult as ContractValidationResult,
+    )
 
     CONTRACT_VALIDATION_AVAILABLE = True
 except ImportError:

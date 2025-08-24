@@ -294,7 +294,7 @@ gcloud alpha billing budgets list
 
 # Cost breakdown by service
 bq query --use_legacy_sql=false '
-  SELECT service.description, 
+  SELECT service.description,
          SUM(cost) as total_cost
   FROM `billing_dataset.gcp_billing_export_v1`
   WHERE DATE(_PARTITIONTIME) = CURRENT_DATE()
@@ -350,11 +350,11 @@ resources:
   limits:
     cpu: "2"
     memory: "2Gi"
-  
+
 scaling:
   minInstances: 2
   maxInstances: 100
-  
+
 concurrency:
   containerConcurrency: 80
 ```
@@ -370,8 +370,8 @@ CREATE INDEX idx_user_email ON users(email);
 CREATE INDEX idx_created_at ON orders(created_at DESC);
 
 -- Analyze query performance
-SELECT * FROM pg_stat_statements 
-ORDER BY total_time DESC 
+SELECT * FROM pg_stat_statements
+ORDER BY total_time DESC
 LIMIT 10;
 ```
 

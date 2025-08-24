@@ -17,17 +17,17 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Logging functions
-log_error() { 
+log_error() {
     echo -e "${RED}❌ ERROR: $1${NC}" >&2
     ((ERRORS++))
 }
 
-log_warning() { 
+log_warning() {
     echo -e "${YELLOW}⚠️  WARNING: $1${NC}"
     ((WARNINGS++))
 }
 
-log_success() { 
+log_success() {
     echo -e "${GREEN}✅ $1${NC}"
 }
 
@@ -82,13 +82,13 @@ if [[ -f "${PROJECT_ROOT}/README.md" ]]; then
         "## Troubleshooting"
         "## Contributing"
     )
-    
+
     for section in "${REQUIRED_SECTIONS[@]}"; do
         if ! grep -q "^${section}" "${PROJECT_ROOT}/README.md"; then
             log_error "README.md missing required section: ${section}"
         fi
     done
-    
+
     # Check README length
     LINE_COUNT=$(wc -l < "${PROJECT_ROOT}/README.md")
     if [[ ${LINE_COUNT} -lt 50 ]]; then
@@ -125,7 +125,7 @@ for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
         -path "${PROJECT_ROOT}/.venv" -prune -o \
         -path "${PROJECT_ROOT}/temp" -prune -o \
         -name "${pattern}" -type f -print 2>/dev/null || true)
-    
+
     if [[ -n "${FOUND_FILES}" ]]; then
         log_error "Found forbidden files matching pattern '${pattern}':"
         echo "${FOUND_FILES}" | while read -r file; do
@@ -184,7 +184,7 @@ for pattern in "${SECRET_PATTERNS[@]}"; do
         --exclude="*.example" \
         --exclude="*.template" \
         2>/dev/null | grep -v "example\|template\|mock\|test\|fake" || true)
-    
+
     if [[ -n "${FOUND}" ]]; then
         log_error "Potential hardcoded secret found (pattern: ${pattern})"
         echo "${FOUND}" | head -5
@@ -202,7 +202,7 @@ for doc in "${PROJECT_ROOT}"/docs/*.md; do
         else
             AGE=$(( ($(date +%s) - $(stat -c %Y "${doc}")) / 86400 ))
         fi
-        
+
         if [[ ${AGE} -gt 90 ]]; then
             log_warning "Documentation older than 90 days: $(basename ${doc}) (${AGE} days old)"
             ((OLD_DOCS++))
@@ -247,7 +247,7 @@ if [[ -f "${PROJECT_ROOT}/.gitignore" ]]; then
         "build/"
         "*.egg-info"
     )
-    
+
     for pattern in "${REQUIRED_GITIGNORE[@]}"; do
         if ! grep -q "${pattern}" "${PROJECT_ROOT}/.gitignore"; then
             log_warning ".gitignore missing recommended pattern: ${pattern}"
@@ -310,7 +310,7 @@ echo -e "\n🌿 Checking Git configuration..."
 if [[ -d "${PROJECT_ROOT}/.git" ]]; then
     # Check if main/master branch exists
     DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
-    
+
     # Check for direct commits to main
     if git log --oneline -1 --format="%H" origin/${DEFAULT_BRANCH} 2>/dev/null | head -1 > /dev/null; then
         log_info "Git repository detected with default branch: ${DEFAULT_BRANCH}"
@@ -323,7 +323,7 @@ fi
 echo -e "\n🪝 Checking pre-commit hooks..."
 if [[ -f "${PROJECT_ROOT}/.pre-commit-config.yaml" ]]; then
     log_success "Pre-commit configuration found"
-    
+
     if [[ -d "${PROJECT_ROOT}/.git/hooks" ]] && [[ -f "${PROJECT_ROOT}/.git/hooks/pre-commit" ]]; then
         log_success "Pre-commit hooks installed"
     else
@@ -353,12 +353,12 @@ fi
 # 15. Check Container Security (if Dockerfile exists)
 if [[ -f "${PROJECT_ROOT}/Dockerfile" ]]; then
     echo -e "\n🐳 Checking Dockerfile..."
-    
+
     # Check for running as root
     if ! grep -q "USER" "${PROJECT_ROOT}/Dockerfile"; then
         log_warning "Dockerfile does not specify a USER (running as root)"
     fi
-    
+
     # Check for latest tags
     if grep -q ":latest" "${PROJECT_ROOT}/Dockerfile"; then
         log_warning "Dockerfile uses :latest tag (not recommended for production)"

@@ -46,13 +46,13 @@ output "service_accounts" {
   value = {
     for sa_key, sa in google_service_account.service_accounts :
     sa_key => {
-      email       = sa.email
-      unique_id   = sa.unique_id
-      name        = sa.name
-      project     = sa.project
-      account_id  = sa.account_id
-      member      = "serviceAccount:${sa.email}"
-      disabled    = sa.disabled
+      email      = sa.email
+      unique_id  = sa.unique_id
+      name       = sa.name
+      project    = sa.project
+      account_id = sa.account_id
+      member     = "serviceAccount:${sa.email}"
+      disabled   = sa.disabled
     }
   }
 }
@@ -233,11 +233,11 @@ output "key_rotation_jobs" {
 output "backup_configuration" {
   description = "Service account backup configuration"
   value = var.backup_config.enabled ? {
-    backup_bucket = google_storage_bucket.service_account_backup[0].name
-    backup_url    = google_storage_bucket.service_account_backup[0].url
-    schedule      = google_cloud_scheduler_job.backup_scheduler[0].schedule
+    backup_bucket  = google_storage_bucket.service_account_backup[0].name
+    backup_url     = google_storage_bucket.service_account_backup[0].url
+    schedule       = google_cloud_scheduler_job.backup_scheduler[0].schedule
     retention_days = var.backup_config.retention_days
-    cross_region  = var.backup_config.cross_region_backup
+    cross_region   = var.backup_config.cross_region_backup
   } : null
 }
 
@@ -246,55 +246,55 @@ output "enhanced_summary" {
   description = "Comprehensive summary of enhanced service account features"
   value = {
     service_accounts = {
-      total_count = length(google_service_account.service_accounts)
-      with_keys   = length([for sa_key, sa in var.service_accounts : sa_key if sa.create_key])
+      total_count        = length(google_service_account.service_accounts)
+      with_keys          = length([for sa_key, sa in var.service_accounts : sa_key if sa.create_key])
       with_impersonation = length([for sa_key, sa in var.service_accounts : sa_key if length(sa.impersonators) > 0])
     }
     workload_identity = {
-      enabled = var.workload_identity_config.enabled
-      pools_count = length(google_iam_workload_identity_pool.pools)
+      enabled         = var.workload_identity_config.enabled
+      pools_count     = length(google_iam_workload_identity_pool.pools)
       providers_count = length(google_iam_workload_identity_pool_provider.providers)
-      bindings_count = length(var.workload_identity_config.service_account_bindings)
+      bindings_count  = length(var.workload_identity_config.service_account_bindings)
     }
     advanced_iam = {
-      conditional_access = var.advanced_iam_config.enable_conditional_access
-      custom_roles_count = length(google_project_iam_custom_role.custom_roles)
+      conditional_access         = var.advanced_iam_config.enable_conditional_access
+      custom_roles_count         = length(google_project_iam_custom_role.custom_roles)
       conditional_bindings_count = length(var.advanced_iam_config.conditional_bindings)
     }
     security_features = {
       key_rotation_enabled = var.enhanced_security.enable_key_rotation
-      automated_rotation = var.enhanced_security.automated_key_rotation
-      access_logging = var.enhanced_security.enable_access_logging
-      usage_monitoring = var.enhanced_security.enable_usage_monitoring
-      mfa_required = var.enhanced_security.security_policies.require_mfa
+      automated_rotation   = var.enhanced_security.automated_key_rotation
+      access_logging       = var.enhanced_security.enable_access_logging
+      usage_monitoring     = var.enhanced_security.enable_usage_monitoring
+      mfa_required         = var.enhanced_security.security_policies.require_mfa
     }
     cross_project_access = {
-      enabled = var.cross_project_access.enabled
-      target_projects_count = length(var.cross_project_access.target_projects)
+      enabled                   = var.cross_project_access.enabled
+      target_projects_count     = length(var.cross_project_access.target_projects)
       shared_vpc_projects_count = length(var.cross_project_access.shared_vpc_projects)
-      folder_access_count = length(var.cross_project_access.folder_access)
+      folder_access_count       = length(var.cross_project_access.folder_access)
     }
     cicd_integration = {
       github_actions = var.cicd_platforms.github_actions.enabled
-      gitlab_ci = var.cicd_platforms.gitlab_ci.enabled
-      azure_devops = var.cicd_platforms.azure_devops.enabled
-      jenkins = var.cicd_platforms.jenkins.enabled
+      gitlab_ci      = var.cicd_platforms.gitlab_ci.enabled
+      azure_devops   = var.cicd_platforms.azure_devops.enabled
+      jenkins        = var.cicd_platforms.jenkins.enabled
     }
     monitoring = {
-      enabled = var.monitoring_config.enabled
+      enabled              = var.monitoring_config.enabled
       custom_metrics_count = length(google_monitoring_metric_descriptor.service_account_metrics)
       alert_policies_count = length(google_monitoring_alert_policy.service_account_alerts)
-      anomaly_detection = var.monitoring_config.alerting.anomaly_detection
+      anomaly_detection    = var.monitoring_config.alerting.anomaly_detection
     }
     backup_and_recovery = {
-      enabled = var.backup_config.enabled
+      enabled             = var.backup_config.enabled
       cross_region_backup = var.backup_config.cross_region_backup
-      disaster_recovery = var.backup_config.disaster_recovery.enabled
-      retention_days = var.backup_config.retention_days
+      disaster_recovery   = var.backup_config.disaster_recovery.enabled
+      retention_days      = var.backup_config.retention_days
     }
     compliance = {
-      data_governance = var.enhanced_security.compliance_settings.enable_data_governance
-      audit_trail = var.enhanced_security.compliance_settings.enable_audit_trail
+      data_governance       = var.enhanced_security.compliance_settings.enable_data_governance
+      audit_trail           = var.enhanced_security.compliance_settings.enable_audit_trail
       retention_policy_days = var.enhanced_security.compliance_settings.retention_policy_days
     }
     created_at = timestamp()
@@ -305,17 +305,17 @@ output "enhanced_summary" {
 output "github_actions_config" {
   description = "GitHub Actions Workload Identity configuration"
   value = var.cicd_platforms.github_actions.enabled ? {
-    enabled = true
+    enabled      = true
     repositories = var.cicd_platforms.github_actions.repositories
-    pool_name = var.workload_identity_config.enabled ? "projects/${var.project_id}/locations/global/workloadIdentityPools/github-pool" : null
+    pool_name    = var.workload_identity_config.enabled ? "projects/${var.project_id}/locations/global/workloadIdentityPools/github-pool" : null
   } : null
 }
 
 output "gitlab_ci_config" {
   description = "GitLab CI Workload Identity configuration"
   value = var.cicd_platforms.gitlab_ci.enabled ? {
-    enabled = true
-    projects = var.cicd_platforms.gitlab_ci.projects
+    enabled   = true
+    projects  = var.cicd_platforms.gitlab_ci.projects
     pool_name = var.workload_identity_config.enabled ? "projects/${var.project_id}/locations/global/workloadIdentityPools/gitlab-pool" : null
   } : null
 }
@@ -323,16 +323,16 @@ output "gitlab_ci_config" {
 output "azure_devops_config" {
   description = "Azure DevOps Workload Identity configuration"
   value = var.cicd_platforms.azure_devops.enabled ? {
-    enabled = true
+    enabled       = true
     organizations = var.cicd_platforms.azure_devops.organizations
-    pool_name = var.workload_identity_config.enabled ? "projects/${var.project_id}/locations/global/workloadIdentityPools/azure-pool" : null
+    pool_name     = var.workload_identity_config.enabled ? "projects/${var.project_id}/locations/global/workloadIdentityPools/azure-pool" : null
   } : null
 }
 
 output "jenkins_config" {
   description = "Jenkins Workload Identity configuration"
   value = var.cicd_platforms.jenkins.enabled ? {
-    enabled = true
+    enabled   = true
     instances = var.cicd_platforms.jenkins.instances
     pool_name = var.workload_identity_config.enabled ? "projects/${var.project_id}/locations/global/workloadIdentityPools/jenkins-pool" : null
   } : null

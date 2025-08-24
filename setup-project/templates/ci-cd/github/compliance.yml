@@ -14,26 +14,26 @@ jobs:
   compliance:
     name: Compliance Validation
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
-        
+
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
@@ -42,52 +42,52 @@ jobs:
           node_modules
           ~/.cache/go-build
         key: deps-${{ runner.os }}-${{ hashFiles('**/requirements.txt', '**/package-lock.json', '**/go.sum') }}
-        
+
     - name: Install dependencies
       run: |
         # Python dependencies
         if [ -f requirements.txt ]; then
           pip install -r requirements.txt
         fi
-        
+
         # Node.js dependencies
         if [ -f package.json ]; then
           npm ci
         fi
-        
+
         # Go dependencies
         if [ -f go.mod ]; then
           go mod download
         fi
-        
+
     - name: Install compliance tools
       run: |
         pip install pre-commit bandit safety detect-secrets
         npm install -g prettier eslint
-        
+
     - name: Run project compliance validation
       run: |
         chmod +x scripts/validate-compliance.sh
         ./scripts/validate-compliance.sh
-        
+
     - name: Run pre-commit hooks
       run: |
         pre-commit run --all-files
-        
+
     - name: Security scan
       run: |
         # Python security scan
         bandit -r src/ || true
         safety check || true
-        
+
         # Secrets detection
         detect-secrets scan --baseline .secrets.baseline || true
-        
+
         # Node.js security scan
         if [ -f package.json ]; then
           npm audit --audit-level moderate || true
         fi
-        
+
     - name: Test coverage check
       run: |
         # Run tests with coverage
@@ -95,21 +95,21 @@ jobs:
           pip install pytest pytest-cov
           pytest --cov=src tests/ --cov-report=xml || true
         fi
-        
+
         if [ -f package.json ]; then
           npm run test:coverage || true
         fi
-        
+
         if [ -f go.mod ]; then
           go test -coverprofile=coverage.out ./... || true
         fi
-        
+
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
         fail_ci_if_error: false
-        
+
     - name: Check documentation
       run: |
         # Check for required documentation
@@ -120,7 +120,7 @@ jobs:
             exit 1
           fi
         done
-        
+
     - name: Validate project structure
       run: |
         # Check for required directories
@@ -131,7 +131,7 @@ jobs:
             exit 1
           fi
         done
-        
+
     - name: Check for forbidden files
       run: |
         # Check for files that shouldn't be in the repo
@@ -143,7 +143,7 @@ jobs:
           "*.pem"
           ".DS_Store"
         )
-        
+
         for pattern in "${forbidden_patterns[@]}"; do
           if find . -name "$pattern" -not -path "./temp/*" | grep -q .; then
             echo "Found forbidden files matching pattern: $pattern"

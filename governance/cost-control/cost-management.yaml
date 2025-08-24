@@ -6,7 +6,7 @@ cost_management:
   organization: "whitehorse"
   currency: "USD"
   fiscal_year_start: "January"
-  
+
   # Budget Management
   budget_framework:
     budget_hierarchy:
@@ -15,40 +15,40 @@ cost_management:
       - project
       - environment
       - service
-      
+
     budget_types:
       annual_budget:
         description: "Full fiscal year budget allocation"
         planning_horizon: "12 months"
         review_frequency: "monthly"
-        
+
       quarterly_budget:
         description: "Quarterly budget with seasonal adjustments"
         planning_horizon: "3 months"
         review_frequency: "weekly"
-        
+
       project_budget:
         description: "Project-specific budget allocation"
         planning_horizon: "project_duration"
         review_frequency: "bi-weekly"
-        
+
       emergency_budget:
         description: "Emergency spending allocation"
         planning_horizon: "immediate"
         approval_required: true
-        
+
     budget_controls:
       soft_limits:
         threshold: "80%"
         action: "alert_notification"
         recipients: ["project_owner", "finance_team"]
-        
+
       hard_limits:
         threshold: "95%"
         action: "spending_freeze"
         override_required: true
         approval_level: "director"
-        
+
       emergency_limits:
         threshold: "110%"
         action: "resource_shutdown"
@@ -61,16 +61,16 @@ cost_management:
       direct_allocation:
         description: "Directly attributable costs"
         examples: ["compute_instances", "storage_volumes", "network_bandwidth"]
-        
+
       proportional_allocation:
         description: "Shared costs allocated proportionally"
         examples: ["shared_services", "management_overhead", "security_services"]
         basis: ["usage_metrics", "resource_count", "time_based"]
-        
+
       activity_based_allocation:
         description: "Costs based on activity consumption"
         examples: ["api_calls", "data_processing", "transaction_volume"]
-        
+
     cost_dimensions:
       primary_dimensions:
         - project_id
@@ -78,22 +78,22 @@ cost_management:
         - service_type
         - cost_center
         - team_owner
-        
+
       secondary_dimensions:
         - region
         - availability_zone
         - instance_type
         - storage_class
         - network_tier
-        
+
     tagging_requirements:
       mandatory_tags:
         - "Project"
-        - "Environment" 
+        - "Environment"
         - "CostCenter"
         - "Owner"
         - "BudgetCategory"
-        
+
       cost_optimization_tags:
         - "AutoShutdown"
         - "RightsizingCandidate"
@@ -108,26 +108,26 @@ cost_management:
         - "Resource utilization metrics"
         - "Application performance data"
         - "Custom cost allocation rules"
-        
+
       update_frequency:
         billing_data: "hourly"
         utilization_data: "5 minutes"
         cost_projections: "15 minutes"
         budget_status: "real-time"
-        
+
     cost_metrics:
       absolute_metrics:
         - "total_spend"
         - "monthly_spend"
         - "daily_spend"
         - "hourly_spend"
-        
+
       relative_metrics:
         - "cost_per_user"
         - "cost_per_transaction"
         - "cost_per_gb_processed"
         - "cost_efficiency_ratio"
-        
+
       trend_metrics:
         - "month_over_month_growth"
         - "year_over_year_comparison"
@@ -143,34 +143,34 @@ cost_management:
           - "max_cpu_cores"
           - "max_memory_gb"
           - "allowed_instance_types"
-          
+
         storage_quotas:
           - "max_storage_tb"
           - "allowed_storage_classes"
           - "retention_limits"
-          
+
         network_quotas:
           - "max_bandwidth_gbps"
           - "allowed_regions"
           - "external_ip_limits"
-          
+
       approval_workflows:
         low_cost_resources:
           threshold: "$100/month"
           approval: "automatic"
-          
+
         medium_cost_resources:
           threshold: "$1000/month"
           approval: "team_lead"
-          
+
         high_cost_resources:
           threshold: "$5000/month"
           approval: "director"
-          
+
         critical_cost_resources:
           threshold: "$25000/month"
           approval: "c_level"
-          
+
     reactive_controls:
       spending_alerts:
         budget_percentage_alerts:
@@ -178,18 +178,18 @@ cost_management:
           - "75% of budget consumed"
           - "90% of budget consumed"
           - "100% of budget reached"
-          
+
         anomaly_alerts:
           - "spending_spike_detection"
           - "unusual_resource_creation"
           - "cost_trend_deviation"
-          
+
       automatic_actions:
         cost_spike_response:
           - "immediate_notification"
           - "resource_scaling_pause"
           - "approval_required_override"
-          
+
         budget_exhaustion:
           - "new_resource_blocking"
           - "non_critical_resource_shutdown"
@@ -197,7 +197,7 @@ cost_management:
 
   # Cost Optimization
   optimization_strategies:
-    
+
     # Right-sizing
     rightsizing:
       analysis_scope:
@@ -205,41 +205,41 @@ cost_management:
         - "memory_utilization_analysis"
         - "network_utilization_analysis"
         - "storage_utilization_analysis"
-        
+
       optimization_rules:
         underutilized_resources:
           cpu_threshold: "< 20% average utilization"
           memory_threshold: "< 30% average utilization"
           recommendation: "downsize_instance"
-          
+
         overutilized_resources:
           cpu_threshold: "> 80% peak utilization"
           memory_threshold: "> 85% peak utilization"
           recommendation: "upsize_instance"
-          
+
       automation_level:
         - "recommendation_only"
         - "approval_required"
         - "automatic_optimization"
-        
+
     # Reserved Instances and Commitments
     commitment_optimization:
       reservation_analysis:
         scope: "1_year_3_year_commitments"
         coverage_target: "70%_of_steady_state_usage"
         analysis_frequency: "monthly"
-        
+
       savings_plans:
         compute_savings_plans: "flexible_instance_family"
         ec2_instance_savings_plans: "specific_instance_family"
         lambda_savings_plans: "serverless_compute"
-        
+
       commitment_management:
         - "usage_pattern_analysis"
         - "commitment_recommendations"
         - "renewal_notifications"
         - "utilization_tracking"
-        
+
     # Spot Instances and Preemptible VMs
     spot_optimization:
       workload_suitability:
@@ -248,18 +248,18 @@ cost_management:
           - "data_analysis"
           - "ci_cd_pipelines"
           - "development_environments"
-          
+
         unsuitable_workloads:
           - "production_databases"
           - "real_time_applications"
           - "stateful_services"
-          
+
       spot_strategies:
         - "mixed_instance_types"
         - "multiple_availability_zones"
         - "graceful_interruption_handling"
         - "automatic_fallback_to_on_demand"
-        
+
     # Storage Optimization
     storage_optimization:
       lifecycle_policies:
@@ -268,12 +268,12 @@ cost_management:
           - "warm_storage_90_days"
           - "cold_storage_365_days"
           - "archive_storage_7_years"
-          
+
         automatic_deletion:
           - "temporary_data_cleanup"
           - "log_retention_enforcement"
           - "backup_cleanup"
-          
+
       storage_analysis:
         - "unused_volumes"
         - "unattached_snapshots"
@@ -288,24 +288,24 @@ cost_management:
         - "moving_average_deviation"
         - "seasonal_decomposition"
         - "linear_regression_residuals"
-        
+
       machine_learning:
         - "isolation_forest"
         - "autoencoder_anomalies"
         - "clustering_based_detection"
         - "time_series_forecasting"
-        
+
     anomaly_types:
       cost_spikes:
         threshold: "3_standard_deviations"
         minimum_increase: "50%"
         evaluation_period: "24_hours"
-        
+
       usage_anomalies:
         resource_creation_spikes: "5x_normal_rate"
         bandwidth_spikes: "10x_normal_usage"
         storage_growth_spikes: "2x_normal_growth"
-        
+
       billing_anomalies:
         unexpected_charges: "new_service_usage"
         pricing_changes: "rate_increase_detection"
@@ -318,33 +318,33 @@ cost_management:
         description: "Direct billing to cost centers"
         frequency: "monthly"
         accuracy_requirement: "95%"
-        
+
       showback_reporting:
         description: "Transparency without billing"
         frequency: "weekly"
         detail_level: "service_granular"
-        
+
     allocation_precision:
       high_precision:
         - "dedicated_resources"
         - "tagged_resources"
         - "project_specific_usage"
-        
+
       medium_precision:
         - "shared_resources_with_usage_metrics"
         - "proportional_allocation"
-        
+
       low_precision:
         - "organization_overhead"
         - "general_shared_services"
-        
+
     reporting_framework:
       executive_reports:
         - "cost_center_summary"
         - "trend_analysis"
         - "budget_variance"
         - "optimization_opportunities"
-        
+
       operational_reports:
         - "detailed_usage_breakdown"
         - "service_cost_analysis"
@@ -353,25 +353,25 @@ cost_management:
 
   # Integration with Cloud Providers
   cloud_integration:
-    
+
     # Google Cloud Platform
     gcp_integration:
       billing_export:
         - "BigQuery_billing_export"
         - "Cloud_Storage_detailed_export"
         - "Pub_Sub_real_time_notifications"
-        
+
       cost_management_tools:
         - "Cloud_Billing_API"
         - "Recommender_API"
         - "Cloud_Asset_Inventory"
         - "Cloud_Monitoring"
-        
+
       budgets_and_alerts:
         - "Budget_API_integration"
         - "Custom_alert_policies"
         - "Pub_Sub_budget_notifications"
-        
+
     # Amazon Web Services
     aws_integration:
       billing_tools:
@@ -379,18 +379,18 @@ cost_management:
         - "Billing_and_Cost_Management_API"
         - "AWS_Budgets"
         - "Cost_Anomaly_Detection"
-        
+
       optimization_tools:
         - "Trusted_Advisor"
         - "Compute_Optimizer"
         - "Reserved_Instance_Recommendations"
         - "Savings_Plans_Recommendations"
-        
+
       data_export:
         - "Cost_and_Usage_Reports"
         - "Detailed_Billing_Reports"
         - "S3_export_integration"
-        
+
     # Microsoft Azure
     azure_integration:
       cost_management:
@@ -398,7 +398,7 @@ cost_management:
         - "Consumption_API"
         - "Billing_API"
         - "Advisor_API"
-        
+
       budgets_monitoring:
         - "Budget_API"
         - "Cost_Alerts"
@@ -406,7 +406,7 @@ cost_management:
 
   # Reporting and Analytics
   reporting_framework:
-    
+
     # Executive Dashboards
     executive_reporting:
       monthly_executive_summary:
@@ -416,15 +416,15 @@ cost_management:
           - "top_cost_drivers"
           - "optimization_achievements"
           - "budget_variance_analysis"
-          
+
       quarterly_business_review:
         content:
           - "project_cost_performance"
           - "roi_analysis"
           - "cost_efficiency_metrics"
           - "strategic_recommendations"
-          
-    # Operational Dashboards  
+
+    # Operational Dashboards
     operational_reporting:
       real_time_cost_dashboard:
         metrics:
@@ -432,14 +432,14 @@ cost_management:
           - "budget_burn_rate"
           - "cost_per_service"
           - "utilization_metrics"
-          
+
       weekly_cost_review:
         content:
           - "week_over_week_comparison"
           - "anomaly_detection_results"
           - "optimization_opportunities"
           - "action_items_tracking"
-          
+
     # Financial Reporting
     financial_reporting:
       monthly_financial_close:
@@ -447,7 +447,7 @@ cost_management:
         - "accrual_adjustments"
         - "cost_center_allocations"
         - "variance_explanations"
-        
+
       annual_budget_planning:
         - "historical_trend_analysis"
         - "capacity_planning_inputs"
@@ -456,24 +456,24 @@ cost_management:
 
   # Automation and Workflows
   automation_framework:
-    
+
     # Cost Optimization Workflows
     optimization_workflows:
       daily_optimization_scan:
         - "rightsizing_analysis"
         - "unused_resource_detection"
         - "commitment_utilization_check"
-        
+
       weekly_optimization_review:
         - "recommendation_prioritization"
         - "implementation_planning"
         - "savings_calculation"
-        
+
       monthly_optimization_report:
         - "achieved_savings_summary"
         - "missed_opportunities_analysis"
         - "optimization_roadmap_update"
-        
+
     # Budget Management Workflows
     budget_workflows:
       budget_approval_process:
@@ -482,13 +482,13 @@ cost_management:
           - "finance_team_review"
           - "stakeholder_approval"
           - "budget_activation"
-          
+
       budget_monitoring:
         - "threshold_monitoring"
         - "variance_analysis"
         - "forecast_updates"
         - "alert_generation"
-        
+
       budget_reallocation:
         - "reallocation_request"
         - "impact_analysis"
@@ -497,45 +497,45 @@ cost_management:
 
   # Performance Metrics and KPIs
   performance_metrics:
-    
+
     # Cost Efficiency Metrics
     efficiency_kpis:
       - name: "cost_per_user"
         calculation: "total_cost / active_users"
         target: "< $50/user/month"
-        
+
       - name: "infrastructure_cost_ratio"
         calculation: "infrastructure_cost / total_revenue"
         target: "< 15%"
-        
+
       - name: "cost_optimization_savings"
         calculation: "monthly_savings / baseline_cost"
         target: "> 10%"
-        
+
     # Budget Performance Metrics
     budget_kpis:
       - name: "budget_accuracy"
         calculation: "1 - abs(actual - budget) / budget"
         target: "> 90%"
-        
+
       - name: "forecast_accuracy"
         calculation: "1 - abs(forecast - actual) / actual"
         target: "> 95%"
-        
+
       - name: "budget_utilization"
         calculation: "actual_spend / approved_budget"
         target: "85% - 95%"
-        
+
     # Operational Metrics
     operational_kpis:
       - name: "cost_allocation_coverage"
         calculation: "allocated_costs / total_costs"
         target: "> 95%"
-        
+
       - name: "anomaly_detection_accuracy"
         calculation: "true_positives / total_alerts"
         target: "> 80%"
-        
+
       - name: "optimization_implementation_rate"
         calculation: "implemented_recommendations / total_recommendations"
         target: "> 75%"
@@ -549,21 +549,21 @@ implementation:
         - "Basic cost tracking setup"
         - "Budget framework implementation"
         - "Alert configuration"
-        
+
     phase_2:
       duration: "Month 3-4"
       scope:
         - "Cost allocation implementation"
         - "Optimization engine deployment"
         - "Reporting framework"
-        
+
     phase_3:
       duration: "Month 5-6"
       scope:
         - "Advanced analytics"
         - "Automation workflows"
         - "Chargeback system"
-        
+
   success_criteria:
     - "Cost visibility improvement: 100% of resources tagged"
     - "Budget accuracy improvement: >90% forecast accuracy"

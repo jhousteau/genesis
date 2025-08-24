@@ -138,27 +138,27 @@ bootstrap deploy run --project my-app --env prod --require-approval
 project:
   name: my-app
   type: web-app
-  
+
 environments:
   dev:
     gcp_project: my-app-dev
     region: us-central1
     auto_deploy: true
     validation_level: basic
-    
+
   test:
     gcp_project: my-app-test
     region: us-central1
     auto_deploy: true
     validation_level: standard
-    
+
   stage:
     gcp_project: my-app-stage
     region: us-central1
     auto_deploy: false
     validation_level: comprehensive
     require_approval: true
-    
+
   prod:
     gcp_project: my-app-prod
     region: us-central1
@@ -232,7 +232,7 @@ bootstrap deploy rollback --project my-app --env prod --previous
 
 ### CLI Integration
 - **bootstrap deploy**: Main deployment command
-- **bootstrap rollback**: Rollback operations  
+- **bootstrap rollback**: Rollback operations
 - **bootstrap monitor**: Deployment monitoring
 - **bootstrap validate**: Pre-deploy validation
 
@@ -279,7 +279,7 @@ Jenkins pipeline definition for self-hosted CI/CD.
 
 ### Pipeline Design
 1. **Fail fast**: Put fastest checks first
-2. **Parallel execution**: Run independent checks in parallel  
+2. **Parallel execution**: Run independent checks in parallel
 3. **Cache dependencies**: Speed up pipeline execution
 4. **Clear error messages**: Make failures easy to understand
 5. **Audit everything**: Log all deployment activities

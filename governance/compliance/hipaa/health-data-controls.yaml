@@ -7,10 +7,10 @@ hipaa_compliance:
   regulation_reference: "45 CFR Parts 160, 162, and 164"
   last_updated: "2024-08-20"
   covered_entity_type: "healthcare_technology_provider"
-  
+
   # Security Rule (45 CFR § 164.300-318)
   security_rule:
-    
+
     # Administrative Safeguards
     administrative_safeguards:
       164_308_a_1: # Security Officer
@@ -33,7 +33,7 @@ hipaa_compliance:
           - "Security officer appointment documentation"
           - "Job description with security responsibilities"
           - "Performance evaluation records"
-          
+
       164_308_a_2: # Workforce Access Management
         title: "Workforce Access Management"
         description: "Implement procedures to ensure workforce access to PHI is appropriate"
@@ -53,7 +53,7 @@ hipaa_compliance:
           - "User access review reports"
           - "Access violation logs"
           - "Privileged access audit trails"
-          
+
       164_308_a_3: # Information Access Management
         title: "Information Access Management"
         description: "Authorize access to PHI that is consistent with applicable requirements"
@@ -73,7 +73,7 @@ hipaa_compliance:
           - "Access control matrices"
           - "Emergency access logs"
           - "Authorization decision records"
-          
+
       164_308_a_4: # Information System Activity Review
         title: "Information System Activity Review"
         description: "Implement procedures to review information system activity"
@@ -97,7 +97,7 @@ hipaa_compliance:
           - "Review reports"
           - "Incident investigation records"
           - "Compliance assessment reports"
-          
+
       164_308_a_5: # Security Awareness and Training
         title: "Security Awareness and Training"
         description: "Implement security awareness and training program"
@@ -123,7 +123,7 @@ hipaa_compliance:
           - "Training completion records"
           - "Assessment scores"
           - "Training effectiveness metrics"
-          
+
       164_308_a_6: # Security Incident Procedures
         title: "Security Incident Procedures"
         description: "Implement procedures to address security incidents"
@@ -150,7 +150,7 @@ hipaa_compliance:
           - "Incident reports and investigations"
           - "Response time metrics"
           - "Lesson learned documentation"
-          
+
       164_308_a_7: # Contingency Plan
         title: "Contingency Plan"
         description: "Establish procedures for responding to emergencies"
@@ -174,7 +174,7 @@ hipaa_compliance:
           - "Backup and recovery test results"
           - "Emergency response records"
           - "Plan effectiveness assessments"
-          
+
       164_308_a_8: # Periodic Evaluation
         title: "Periodic Evaluation"
         description: "Conduct periodic technical and non-technical evaluation"
@@ -199,7 +199,7 @@ hipaa_compliance:
           - "Control testing results"
           - "Risk assessment updates"
           - "Remediation tracking"
-    
+
     # Physical Safeguards
     physical_safeguards:
       164_310_a_1: # Facility Access Controls
@@ -226,7 +226,7 @@ hipaa_compliance:
           - "Security system reports"
           - "Visitor management records"
           - "Physical security assessments"
-          
+
       164_310_a_2: # Workstation Use
         title: "Workstation Use"
         description: "Implement controls for workstations that access PHI"
@@ -251,7 +251,7 @@ hipaa_compliance:
           - "Configuration compliance reports"
           - "Usage monitoring logs"
           - "Security assessment results"
-          
+
       164_310_d_1: # Device and Media Controls
         title: "Device and Media Controls"
         description: "Implement controls for receipt and removal of hardware and media"
@@ -276,7 +276,7 @@ hipaa_compliance:
           - "Sanitization certificates"
           - "Inventory tracking logs"
           - "Chain of custody documentation"
-    
+
     # Technical Safeguards
     technical_safeguards:
       164_312_a_1: # Access Control
@@ -311,7 +311,7 @@ hipaa_compliance:
           - "Access control configurations"
           - "Emergency access logs"
           - "Encryption compliance reports"
-          
+
       164_312_b: # Audit Controls
         title: "Audit Controls"
         description: "Implement hardware, software, and procedural mechanisms for recording access"
@@ -343,7 +343,7 @@ hipaa_compliance:
           - "Log analysis reports"
           - "Monitoring system configurations"
           - "Compliance assessment results"
-          
+
       164_312_c_1: # Integrity
         title: "Integrity"
         description: "Protect PHI from improper alteration or destruction"
@@ -368,7 +368,7 @@ hipaa_compliance:
           - "Change tracking records"
           - "Validation results"
           - "Corruption incident reports"
-          
+
       164_312_d: # Transmission Security
         title: "Transmission Security"
         description: "Guard against unauthorized access to PHI being transmitted"
@@ -397,7 +397,7 @@ hipaa_compliance:
 
   # Privacy Rule (45 CFR § 164.500-534)
   privacy_rule:
-    
+
     # Individual Rights
     individual_rights:
       164_524: # Right of Access
@@ -423,7 +423,7 @@ hipaa_compliance:
           - "Response time metrics"
           - "Identity verification records"
           - "Delivery confirmation"
-          
+
       164_526: # Right to Request Amendment
         title: "Right to Request Amendment of PHI"
         description: "Individual's right to request amendment of PHI"
@@ -446,7 +446,7 @@ hipaa_compliance:
           - "Review decision documentation"
           - "Notification delivery records"
           - "Record modification logs"
-          
+
       164_528: # Right to Accounting of Disclosures
         title: "Right to an Accounting of Disclosures"
         description: "Individual's right to receive accounting of disclosures of PHI"
@@ -471,7 +471,7 @@ hipaa_compliance:
           - "Accounting reports"
           - "Request response records"
           - "System audit trails"
-    
+
     # Uses and Disclosures
     uses_disclosures:
       164_506: # Permitted Uses and Disclosures
@@ -501,7 +501,7 @@ hipaa_compliance:
           - "Access control logs"
           - "Compliance monitoring reports"
           - "Business justification records"
-          
+
       164_508: # Uses and Disclosures with Authorization
         title: "Uses and Disclosures Requiring Authorization"
         description: "Requirements for authorized uses and disclosures"
@@ -548,7 +548,7 @@ hipaa_compliance:
         - "Data mapping updates"
         - "Inventory maintenance"
         - "Discovery reporting"
-        
+
     request_processing:
       workflow_automation:
         intake:
@@ -584,7 +584,7 @@ hipaa_compliance:
         - "User behavior analytics"
         - "Data loss prevention"
         - "Network traffic analysis"
-        
+
     response_procedures:
       immediate_response:
         timeframe: "within_1_hour"
@@ -633,7 +633,7 @@ hipaa_compliance:
         - "Compliance monitoring"
         - "Renewal tracking"
         - "Performance assessment"
-        
+
     ongoing_oversight:
       monitoring_activities:
         - "Security assessment reviews"
@@ -658,7 +658,7 @@ hipaa_compliance:
         - "Binary Authorization"
         - "Private Google Access"
         - "Customer-managed encryption keys"
-        
+
     automation_tools:
       - "Terraform for infrastructure compliance"
       - "Cloud Build for secure deployments"
@@ -666,7 +666,7 @@ hipaa_compliance:
       - "Pub/Sub for secure messaging"
       - "Cloud Logging for audit trails"
       - "Cloud Monitoring for compliance metrics"
-      
+
     integration_points:
       - "EHR system integrations"
       - "HIE connectivity"
@@ -683,20 +683,20 @@ compliance_monitoring:
       - "Violation detection and alerting"
       - "Trend analysis"
       - "Risk score updates"
-      
+
   reporting_framework:
     executive_reports:
       - "HIPAA compliance dashboard"
       - "Risk assessment summaries"
       - "Incident response metrics"
       - "Audit readiness status"
-      
+
     operational_reports:
       - "Control implementation status"
       - "Vulnerability assessments"
       - "Training completion rates"
       - "Business associate compliance"
-      
+
     audit_packages:
       - "Control testing evidence"
       - "Risk management documentation"
@@ -709,12 +709,12 @@ framework_integration:
     - "Financial reporting controls"
     - "IT general controls"
     - "Change management"
-    
+
   iso27001_mapping:
     - "Information security management"
     - "Risk management processes"
     - "Business continuity planning"
-    
+
   nist_cybersecurity_framework:
     - "Identify function alignment"
     - "Protect function controls"

@@ -111,7 +111,7 @@ variable "allowed_policy_member_customer_ids" {
 # Local values for policy configuration
 locals {
   enforcement_action = var.enforce_policies ? "enforce" : "dryRun"
-  
+
   # Standard security policies that should be applied
   base_policies = {
     # Compute Engine policies
@@ -133,9 +133,9 @@ locals {
     }
     "compute.disableVmExternalIpAccess" = {
       constraint = "constraints/compute.vmExternalIpAccess"
-      enforce    = false  # Often too restrictive, enable per project
+      enforce    = false # Often too restrictive, enable per project
     }
-    
+
     # IAM policies
     "iam.disableServiceAccountKeyCreation" = {
       constraint = "constraints/iam.disableServiceAccountKeyCreation"
@@ -149,7 +149,7 @@ locals {
       constraint = "constraints/iam.automaticIamGrantsForDefaultServiceAccounts"
       enforce    = var.disable_default_service_account
     }
-    
+
     # Storage policies
     "storage.uniformBucketLevelAccess" = {
       constraint = "constraints/storage.uniformBucketLevelAccess"
@@ -159,7 +159,7 @@ locals {
       constraint = "constraints/storage.publicAccessPrevention"
       enforce    = true
     }
-    
+
     # SQL policies
     "sql.restrictAuthorizedNetworks" = {
       constraint = "constraints/sql.restrictAuthorizedNetworks"
@@ -170,7 +170,7 @@ locals {
       enforce    = true
     }
   }
-  
+
   # Policies that require specific values
   list_constraint_policies = {
     "compute.restrictLoadBalancerCreationForTypes" = {
@@ -186,13 +186,13 @@ locals {
       enforce    = length(var.blocked_services) > 0
     }
   }
-  
+
   # Location-based policies
   location_policies = {
     "gcp.resourceLocations" = {
-      constraint  = "constraints/gcp.resourceLocations"
-      allow_list  = var.allowed_regions
-      enforce     = length(var.allowed_regions) > 0
+      constraint = "constraints/gcp.resourceLocations"
+      allow_list = var.allowed_regions
+      enforce    = length(var.allowed_regions) > 0
     }
   }
 }
@@ -202,10 +202,10 @@ resource "google_organization_policy" "boolean_constraints" {
   for_each = {
     for k, v in local.base_policies : k => v if v.enforce
   }
-  
+
   org_id     = var.organization_id
   constraint = each.value.constraint
-  
+
   boolean_policy {
     enforced = true
   }
@@ -216,10 +216,10 @@ resource "google_organization_policy" "list_deny_constraints" {
   for_each = {
     for k, v in local.list_constraint_policies : k => v if v.enforce && length(v.deny_list) > 0
   }
-  
+
   org_id     = var.organization_id
   constraint = each.value.constraint
-  
+
   list_policy {
     deny {
       values = each.value.deny_list
@@ -232,10 +232,10 @@ resource "google_organization_policy" "list_allow_constraints" {
   for_each = {
     for k, v in local.location_policies : k => v if v.enforce && length(v.allow_list) > 0
   }
-  
+
   org_id     = var.organization_id
   constraint = each.value.constraint
-  
+
   list_policy {
     allow {
       values = each.value.allow_list
@@ -246,10 +246,10 @@ resource "google_organization_policy" "list_allow_constraints" {
 # IAM policy member restriction (if customer IDs provided)
 resource "google_organization_policy" "iam_allowed_policy_member_domains" {
   count = length(var.allowed_policy_member_customer_ids) > 0 ? 1 : 0
-  
+
   org_id     = var.organization_id
   constraint = "constraints/iam.allowedPolicyMemberDomains"
-  
+
   list_policy {
     allow {
       values = formatlist("C%s", var.allowed_policy_member_customer_ids)
@@ -264,10 +264,10 @@ resource "google_organization_policy" "dev_overrides" {
     "constraints/compute.vmExternalIpAccess",
     "constraints/iam.disableServiceAccountKeyCreation"
   ]) : toset([])
-  
+
   org_id     = var.organization_id
   constraint = each.key
-  
+
   # More permissive for development
   restore_policy {
     default = true
@@ -287,16 +287,18 @@ output "enforced_policies" {
 output "policy_summary" {
   description = "Summary of organization policy configuration"
   value = {
-    total_policies_configured = length(google_organization_policy.boolean_constraints) + 
-                               length(google_organization_policy.list_deny_constraints) + 
-                               length(google_organization_policy.list_allow_constraints)
-    enforcement_mode         = local.enforcement_action
-    environment             = var.environment
-    allowed_regions         = var.allowed_regions
-    blocked_services        = var.blocked_services
-    require_shielded_vms    = var.require_shielded_vms
-    require_os_login        = var.require_os_login
-    disable_sa_keys         = var.disable_service_account_key_creation
+    total_policies_configured = (
+      length(google_organization_policy.boolean_constraints) +
+      length(google_organization_policy.list_deny_constraints) +
+      length(google_organization_policy.list_allow_constraints)
+    )
+    enforcement_mode     = local.enforcement_action
+    environment          = var.environment
+    allowed_regions      = var.allowed_regions
+    blocked_services     = var.blocked_services
+    require_shielded_vms = var.require_shielded_vms
+    require_os_login     = var.require_os_login
+    disable_sa_keys      = var.disable_service_account_key_creation
   }
 }
 
@@ -304,11 +306,11 @@ output "policy_summary" {
 data "google_organization_policy" "existing_policies" {
   for_each = toset([
     "constraints/compute.requireShieldedVm",
-    "constraints/compute.requireOsLogin", 
+    "constraints/compute.requireOsLogin",
     "constraints/iam.disableServiceAccountKeyCreation",
     "constraints/storage.uniformBucketLevelAccess"
   ])
-  
+
   org_id     = var.organization_id
   constraint = each.key
 }
@@ -317,36 +319,36 @@ data "google_organization_policy" "existing_policies" {
 resource "local_file" "policy_documentation" {
   filename = "${path.module}/applied-policies.json"
   content = jsonencode({
-    timestamp = timestamp()
+    timestamp       = timestamp()
     organization_id = var.organization_id
-    environment = var.environment
+    environment     = var.environment
     enforced_policies = concat(
       [for k, v in local.base_policies : {
-        name = k
+        name       = k
         constraint = v.constraint
-        enforced = v.enforce
-        type = "boolean"
+        enforced   = v.enforce
+        type       = "boolean"
       } if v.enforce],
       [for k, v in local.list_constraint_policies : {
-        name = k
+        name       = k
         constraint = v.constraint
-        enforced = v.enforce
-        type = "list_deny"
-        values = v.deny_list
+        enforced   = v.enforce
+        type       = "list_deny"
+        values     = v.deny_list
       } if v.enforce],
       [for k, v in local.location_policies : {
-        name = k
+        name       = k
         constraint = v.constraint
-        enforced = v.enforce
-        type = "list_allow"
-        values = v.allow_list
+        enforced   = v.enforce
+        type       = "list_allow"
+        values     = v.allow_list
       } if v.enforce]
     )
     configuration_metadata = {
       terraform_version = ">=1.0"
-      provider_version = ">=4.0"
-      applied_by = "universal-project-platform"
-      agent = "agent-5-isolation-layer"
+      provider_version  = ">=4.0"
+      applied_by        = "universal-project-platform"
+      agent             = "agent-5-isolation-layer"
     }
   })
 }
@@ -354,17 +356,17 @@ resource "local_file" "policy_documentation" {
 # Validation rules
 check "policy_validation" {
   assert {
-    condition = var.organization_id != ""
+    condition     = var.organization_id != ""
     error_message = "Organization ID must be provided"
   }
-  
+
   assert {
-    condition = length(var.allowed_regions) > 0
+    condition     = length(var.allowed_regions) > 0
     error_message = "At least one allowed region must be specified"
   }
-  
+
   assert {
-    condition = contains(["dev", "test", "staging", "prod"], var.environment)
+    condition     = contains(["dev", "test", "staging", "prod"], var.environment)
     error_message = "Environment must be one of: dev, test, staging, prod"
   }
 }

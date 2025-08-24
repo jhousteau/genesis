@@ -7,7 +7,7 @@ The monitoring layer provides comprehensive observability infrastructure for all
 ```
 monitoring/
 ├── metrics/          # Unified metrics collection
-├── logging/          # Structured logging infrastructure  
+├── logging/          # Structured logging infrastructure
 ├── tracing/          # Distributed tracing system
 ├── alerts/           # Alert management framework
 ├── dashboards/       # Dashboard templates and tools

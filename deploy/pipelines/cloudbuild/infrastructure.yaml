@@ -14,7 +14,7 @@ options:
   machineType: 'E2_HIGHCPU_8'
   diskSizeGb: 100
   logging: CLOUD_LOGGING_ONLY
-  
+
   # Environment variables
   env:
     - 'TF_IN_AUTOMATION=true'
@@ -31,7 +31,7 @@ steps:
       - '-c'
       - |
         echo "🔧 Setting up infrastructure deployment environment..."
-        
+
         # Determine environment based on branch
         case "$BRANCH_NAME" in
           main)
@@ -55,18 +55,18 @@ steps:
             echo "true" > /workspace/auto_approve.txt
             ;;
         esac
-        
+
         ENVIRONMENT=$(cat /workspace/environment.txt)
         WORKING_DIR=$(cat /workspace/working_dir.txt)
         AUTO_APPROVE=$(cat /workspace/auto_approve.txt)
-        
+
         echo "Environment: $ENVIRONMENT"
         echo "Working Directory: $WORKING_DIR"
         echo "Auto Approve: $AUTO_APPROVE"
         echo "Project: ${PROJECT_ID}"
         echo "Branch: $BRANCH_NAME"
         echo "Commit: $COMMIT_SHA"
-        
+
         # Create deployment metadata
         cat > /workspace/deployment-metadata.json << EOF
         {
@@ -81,13 +81,13 @@ steps:
           "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
         }
         EOF
-        
+
         # Ensure working directory exists
         if [[ ! -d "$WORKING_DIR" ]]; then
           echo "❌ Working directory $WORKING_DIR does not exist"
           exit 1
         fi
-        
+
         echo "✅ Environment setup completed"
 
   # Step 2: Cache Restoration
@@ -98,10 +98,10 @@ steps:
       - '-c'
       - |
         echo "📦 Restoring Terraform cache..."
-        
+
         # Create plugin cache directory
         mkdir -p /workspace/.terraform.d/plugin-cache
-        
+
         # Restore Terraform plugin cache
         if gsutil -q stat gs://${_CACHE_BUCKET}/terraform-plugins-cache.tar.gz; then
           echo "Restoring Terraform plugin cache..."
@@ -110,7 +110,7 @@ steps:
         else
           echo "No Terraform plugin cache found"
         fi
-        
+
         echo "✅ Cache restoration completed"
 
   # Step 3: Terraform Format Check
@@ -121,14 +121,14 @@ steps:
       - '-c'
       - |
         echo "📋 Checking Terraform formatting..."
-        
+
         terraform fmt -check -recursive -diff
         if [ $? -ne 0 ]; then
           echo "❌ Terraform files are not properly formatted"
           echo "Run 'terraform fmt -recursive' to fix formatting issues"
           exit 1
         fi
-        
+
         echo "✅ All Terraform files are properly formatted"
 
   # Step 4: Terraform Validation
@@ -139,7 +139,7 @@ steps:
       - '-c'
       - |
         echo "🔍 Validating Terraform configuration..."
-        
+
         # Validate each environment
         for env_dir in environments/*/; do
           if [ -f "$env_dir/main.tf" ]; then
@@ -150,7 +150,7 @@ steps:
             cd /workspace
           fi
         done
-        
+
         # Validate modules
         for module_dir in modules/*/; do
           if [ -f "$module_dir/main.tf" ]; then
@@ -161,7 +161,7 @@ steps:
             cd /workspace
           fi
         done
-        
+
         echo "✅ Terraform validation completed"
 
   # Step 5: Security Scanning with tfsec
@@ -172,25 +172,25 @@ steps:
       - '-c'
       - |
         echo "🔒 Running tfsec security scan..."
-        
+
         # Install tfsec
         apk add --no-cache curl
         curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | sh
-        
+
         # Run tfsec
         /usr/local/bin/tfsec . --format json --out /workspace/tfsec-results.json || true
-        
+
         # Parse results
         if [ -f "/workspace/tfsec-results.json" ]; then
           HIGH_ISSUES=$(cat /workspace/tfsec-results.json | grep -o '"severity":"HIGH"' | wc -l)
           MEDIUM_ISSUES=$(cat /workspace/tfsec-results.json | grep -o '"severity":"MEDIUM"' | wc -l)
           LOW_ISSUES=$(cat /workspace/tfsec-results.json | grep -o '"severity":"LOW"' | wc -l)
-          
+
           echo "📊 Security scan results:"
           echo "  High:   $HIGH_ISSUES"
           echo "  Medium: $MEDIUM_ISSUES"
           echo "  Low:    $LOW_ISSUES"
-          
+
           if [ $HIGH_ISSUES -gt 0 ]; then
             echo "❌ High severity security issues found"
             exit 1
@@ -199,7 +199,7 @@ steps:
             exit 1
           fi
         fi
-        
+
         echo "✅ Security scan completed"
 
   # Step 6: Security Scanning with Checkov
@@ -210,16 +210,16 @@ steps:
       - '-c'
       - |
         echo "🔒 Running Checkov security scan..."
-        
+
         # Install Checkov
         pip install checkov
-        
+
         # Run Checkov
         checkov -d . --framework terraform \
           --output cli --output json \
           --output-file-path console,/workspace/checkov-results.json \
           --soft-fail || true
-        
+
         echo "✅ Checkov scan completed"
 
   # Step 7: Cost Estimation with Infracost
@@ -230,22 +230,22 @@ steps:
       - '-c'
       - |
         echo "💰 Running infrastructure cost estimation..."
-        
+
         # Check if Infracost API key is available
         if [ -n "${_INFRACOST_API_KEY}" ]; then
           export INFRACOST_API_KEY=${_INFRACOST_API_KEY}
-          
+
           WORKING_DIR=$(cat /workspace/working_dir.txt)
-          
+
           # Generate cost estimate
           infracost breakdown --path $WORKING_DIR \
             --format json \
             --out-file /workspace/infracost-base.json
-          
+
           # Generate table output
           infracost output --path /workspace/infracost-base.json \
             --format table
-          
+
           echo "✅ Cost estimation completed"
         else
           echo "⚠️ INFRACOST_API_KEY not set, skipping cost estimation"
@@ -259,31 +259,31 @@ steps:
       - '-c'
       - |
         echo "📋 Running Terraform plan..."
-        
+
         WORKING_DIR=$(cat /workspace/working_dir.txt)
         ENVIRONMENT=$(cat /workspace/environment.txt)
         DEPLOYMENT_ID=$(cat /workspace/deployment-metadata.json | grep -o '"deploymentId":"[^"]*"' | cut -d'"' -f4)
-        
+
         echo "Working in: $WORKING_DIR"
         echo "Environment: $ENVIRONMENT"
         echo "Deployment ID: $DEPLOYMENT_ID"
-        
+
         cd $WORKING_DIR
-        
+
         # Initialize Terraform
         terraform init \
           -backend-config="bucket=${_STATE_BUCKET}-$ENVIRONMENT" \
           -backend-config="prefix=terraform/state"
-        
+
         # Create or select workspace
         terraform workspace select $ENVIRONMENT || terraform workspace new $ENVIRONMENT
-        
+
         # Create terraform.tfvars if it doesn't exist
         if [ ! -f "terraform.tfvars" ] && [ -f "terraform.tfvars.example" ]; then
           cp terraform.tfvars.example terraform.tfvars
           sed -i "s/PROJECT_ID_PLACEHOLDER/${PROJECT_ID}/g" terraform.tfvars
         fi
-        
+
         # Run terraform plan
         terraform plan \
           -detailed-exitcode \
@@ -291,19 +291,19 @@ steps:
           -var="project_id=${PROJECT_ID}" \
           -var="environment=$ENVIRONMENT" \
           -var="deployment_id=$DEPLOYMENT_ID"
-        
+
         PLAN_EXIT_CODE=$?
-        
+
         # Save plan output for review
         terraform show -no-color "/workspace/tfplan-$DEPLOYMENT_ID" > /workspace/plan-output.txt
-        
+
         if [ $PLAN_EXIT_CODE -eq 2 ]; then
           echo "✅ Terraform plan completed with changes"
           echo "true" > /workspace/has_changes.txt
-          
+
           # Generate plan summary
           terraform show -json "/workspace/tfplan-$DEPLOYMENT_ID" > /workspace/plan.json
-          
+
         elif [ $PLAN_EXIT_CODE -eq 0 ]; then
           echo "ℹ️ Terraform plan completed with no changes"
           echo "false" > /workspace/has_changes.txt
@@ -322,18 +322,18 @@ steps:
         AUTO_APPROVE=$(cat /workspace/auto_approve.txt)
         HAS_CHANGES=$(cat /workspace/has_changes.txt)
         ENVIRONMENT=$(cat /workspace/environment.txt)
-        
+
         if [ "$HAS_CHANGES" = "true" ]; then
           if [ "$AUTO_APPROVE" = "false" ]; then
             echo "⚠️ Manual approval required for $ENVIRONMENT environment"
             echo "📋 Please review the plan output and approve the deployment"
             echo "Plan summary available in build logs"
-            
+
             # In a real implementation, you might:
             # 1. Send notification to approval team
             # 2. Wait for approval webhook
             # 3. Implement approval logic
-            
+
             echo "✅ Approval gate passed (simulated)"
           else
             echo "✅ Auto-approval enabled for $ENVIRONMENT environment"
@@ -350,29 +350,29 @@ steps:
       - '-c'
       - |
         HAS_CHANGES=$(cat /workspace/has_changes.txt)
-        
+
         if [ "$HAS_CHANGES" = "true" ]; then
           echo "🚀 Applying Terraform changes..."
-          
+
           WORKING_DIR=$(cat /workspace/working_dir.txt)
           ENVIRONMENT=$(cat /workspace/environment.txt)
           DEPLOYMENT_ID=$(cat /workspace/deployment-metadata.json | grep -o '"deploymentId":"[^"]*"' | cut -d'"' -f4)
-          
+
           cd $WORKING_DIR
-          
+
           # Re-initialize (in case of workspace issues)
           terraform init \
             -backend-config="bucket=${_STATE_BUCKET}-$ENVIRONMENT" \
             -backend-config="prefix=terraform/state"
-          
+
           terraform workspace select $ENVIRONMENT
-          
+
           # Apply the plan
           terraform apply -auto-approve "/workspace/tfplan-$DEPLOYMENT_ID"
-          
+
           # Save outputs
           terraform output -json > /workspace/terraform-outputs.json
-          
+
           echo "✅ Terraform apply completed successfully"
         else
           echo "ℹ️ No changes to apply, skipping terraform apply"
@@ -387,9 +387,9 @@ steps:
       - '-c'
       - |
         echo "🔍 Verifying infrastructure deployment..."
-        
+
         ENVIRONMENT=$(cat /workspace/environment.txt)
-        
+
         # Check project status
         PROJECT_STATE=$(gcloud projects describe ${PROJECT_ID} --format="value(lifecycleState)")
         if [ "$PROJECT_STATE" = "ACTIVE" ]; then
@@ -398,11 +398,11 @@ steps:
           echo "❌ Project ${PROJECT_ID} is not active: $PROJECT_STATE"
           exit 1
         fi
-        
+
         # Check essential APIs
         echo "🔍 Checking enabled APIs..."
         REQUIRED_APIS="compute.googleapis.com container.googleapis.com cloudbuild.googleapis.com storage.googleapis.com"
-        
+
         for api in $REQUIRED_APIS; do
           if gcloud services list --enabled --filter="name:$api" --format="value(name)" | grep -q "$api"; then
             echo "✅ API $api is enabled"
@@ -410,12 +410,12 @@ steps:
             echo "⚠️ API $api is not enabled"
           fi
         done
-        
+
         # Check resource quotas
         echo "📊 Checking resource quotas..."
         gcloud compute project-info describe --format="table(quotas.metric,quotas.limit,quotas.usage)" \
           --filter="quotas.metric:CPUS OR quotas.metric:DISKS_TOTAL_GB" || true
-        
+
         echo "✅ Infrastructure verification completed"
 
   # Step 12: Compliance Check
@@ -426,22 +426,22 @@ steps:
       - '-c'
       - |
         echo "📋 Running compliance checks..."
-        
+
         ENVIRONMENT=$(cat /workspace/environment.txt)
-        
+
         # Check organization policies
         echo "🏛️ Organization policies:"
         gcloud resource-manager org-policies list --project=${PROJECT_ID} \
           --format="table(constraint,listPolicy.allValues)" || echo "No organization policies found"
-        
+
         # Check IAM policies
         echo "🔐 IAM policy summary:"
         gcloud projects get-iam-policy ${PROJECT_ID} \
           --format="table(bindings.role,bindings.members.flatten())" | head -20
-        
+
         # Check for public resources
         echo "🌐 Checking for public resources..."
-        
+
         # Check for public storage buckets
         if gsutil ls -p ${PROJECT_ID} 2>/dev/null | head -5 | while read bucket; do
           if gsutil iam get "$bucket" 2>/dev/null | grep -q "allUsers"; then
@@ -450,12 +450,12 @@ steps:
         done; then
           echo "Bucket check completed"
         fi
-        
+
         # Check for instances with public IPs
         gcloud compute instances list \
           --format="table(name,zone,status,networkInterfaces[0].accessConfigs[0].natIP)" \
           --filter="status:RUNNING" || true
-        
+
         echo "✅ Compliance check completed"
 
   # Step 13: Cache Saving
@@ -466,7 +466,7 @@ steps:
       - '-c'
       - |
         echo "💾 Saving Terraform cache..."
-        
+
         # Save Terraform plugin cache
         if [ -d "/workspace/.terraform.d/plugin-cache" ]; then
           echo "Saving Terraform plugin cache..."
@@ -474,7 +474,7 @@ steps:
           tar -czf /workspace/terraform-plugins-cache.tar.gz . || true
           gsutil cp /workspace/terraform-plugins-cache.tar.gz gs://${_CACHE_BUCKET}/ || echo "Failed to save cache"
         fi
-        
+
         echo "✅ Cache saving completed"
 
   # Step 14: Deployment Summary and Notification
@@ -486,11 +486,11 @@ steps:
       - |
         echo "📋 Infrastructure Deployment Summary"
         echo "===================================="
-        
+
         ENVIRONMENT=$(cat /workspace/environment.txt)
         HAS_CHANGES=$(cat /workspace/has_changes.txt)
         DEPLOYMENT_ID=$(cat /workspace/deployment-metadata.json | grep -o '"deploymentId":"[^"]*"' | cut -d'"' -f4)
-        
+
         echo "Project: ${PROJECT_ID}"
         echo "Environment: $ENVIRONMENT"
         echo "Branch: $BRANCH_NAME"
@@ -499,7 +499,7 @@ steps:
         echo "Deployment ID: $DEPLOYMENT_ID"
         echo "Has Changes: $HAS_CHANGES"
         echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-        
+
         # Create final deployment record
         cat > /workspace/deployment-summary.json << EOF
         {
@@ -514,17 +514,17 @@ steps:
           "status": "success"
         }
         EOF
-        
+
         # Upload deployment record
         gsutil cp /workspace/deployment-summary.json gs://${_CACHE_BUCKET}/deployments/
-        
+
         # Display summary of created resources (if outputs available)
         if [ -f "/workspace/terraform-outputs.json" ] && [ -s "/workspace/terraform-outputs.json" ]; then
           echo ""
           echo "📊 Terraform Outputs:"
           cat /workspace/terraform-outputs.json | head -20
         fi
-        
+
         echo ""
         echo "✅ Infrastructure deployment completed successfully!"
 

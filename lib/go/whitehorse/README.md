@@ -28,7 +28,7 @@ package main
 import (
     "context"
     "log"
-    
+
     "github.com/whitehorse/bootstrapper/lib/go/whitehorse"
 )
 
@@ -73,7 +73,7 @@ func main() {
 
 func runApplication(client *whitehorse.Client) error {
     logger := client.Logger()
-    
+
     // Performance logging
     perfLogger := logger.StartOperation("process_request")
     defer func() {
@@ -86,7 +86,7 @@ func runApplication(client *whitehorse.Client) error {
 
     // Your business logic
     logger.Info("Processing request", "user_id", "123")
-    
+
     return nil
 }
 ```
@@ -511,36 +511,36 @@ import (
 func main() {
     client, _ := whitehorse.NewClient(opts)
     middleware := client.NewMiddleware()
-    
+
     r := chi.NewRouter()
-    
+
     // Correlation ID middleware
     r.Use(middleware.WithCorrelationID(func(ctx context.Context) error {
         // Request processing
         return nil
     }))
-    
+
     // Metrics middleware
     r.Use(middleware.WithMetrics("http_request", func(ctx context.Context) error {
         // Request processing
         return nil
     }))
-    
+
     // Logging middleware
     r.Use(middleware.WithLogging("http_request", func(ctx context.Context) error {
         // Request processing
         return nil
     }))
-    
+
     r.Get("/api/users", handleUsers)
 }
 
 func handleUsers(w http.ResponseWriter, r *http.Request) {
     client := whitehorse.MustFromContext(r.Context())
     logger := client.Logger().WithContext(r.Context())
-    
+
     logger.Info("Handling user request")
-    
+
     // Your handler logic
 }
 ```
@@ -552,16 +552,16 @@ func LoggingMiddleware(logger *logging.Logger) func(http.Handler) http.Handler {
     return func(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             start := time.Now()
-            
+
             // Add correlation ID
             ctx, correlationID := logging.GetOrGenerateCorrelationID(r.Context())
             r = r.WithContext(ctx)
-            
+
             // Wrap response writer to capture status
             ww := &responseWriter{ResponseWriter: w, status: 200}
-            
+
             next.ServeHTTP(ww, r)
-            
+
             duration := time.Since(start)
             logger.WithCorrelationID(correlationID).LogHTTPRequest(
                 r.Method, r.URL.Path, r.UserAgent(), r.RemoteAddr,
@@ -592,28 +592,28 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    
+
     ctx := context.Background()
     if err := client.Start(ctx); err != nil {
         log.Fatal(err)
     }
-    
+
     // Setup graceful shutdown
     graceful := client.NewGraceful()
-    
+
     // Handle shutdown signals
     c := make(chan os.Signal, 1)
     signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-    
+
     go func() {
         <-c
         graceful.Shutdown()
     }()
-    
+
     // Wait for shutdown
     shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
-    
+
     if err := graceful.Wait(shutdownCtx); err != nil {
         log.Printf("Graceful shutdown failed: %v", err)
     }
@@ -648,19 +648,19 @@ if err != nil {
 func MonitoredFunction(client *whitehorse.Client) error {
     logger := client.Logger()
     metrics := client.Metrics()
-    
+
     // Start performance monitoring
     perfLogger := logger.StartOperation("process_data")
     timer := time.Now()
-    
+
     defer func() {
         duration := time.Since(timer)
-        
+
         // Record metrics
         metrics.RecordDuration("operation_duration", duration, map[string]string{
             "operation": "process_data",
         })
-        
+
         // Log performance
         if err := recover(); err != nil {
             perfLogger.Error(fmt.Errorf("panic: %v", err))
@@ -668,10 +668,10 @@ func MonitoredFunction(client *whitehorse.Client) error {
             perfLogger.Success()
         }
     }()
-    
+
     // Your operation logic
     time.Sleep(100 * time.Millisecond)
-    
+
     return nil
 }
 ```
@@ -686,16 +686,16 @@ func TestWhitehorseClient(t *testing.T) {
         ServiceName: "test-service",
         LogLevel:    "debug",
     }
-    
+
     client, err := whitehorse.NewClient(opts)
     require.NoError(t, err)
     require.NotNil(t, client)
-    
+
     ctx := context.Background()
     err = client.Start(ctx)
     require.NoError(t, err)
     defer client.Stop(ctx)
-    
+
     // Test health check
     health, err := client.Health(ctx)
     require.NoError(t, err)
@@ -704,20 +704,20 @@ func TestWhitehorseClient(t *testing.T) {
 
 func TestLogging(t *testing.T) {
     var buf bytes.Buffer
-    
+
     logger, err := logging.New(&logging.Options{
         Level:  "debug",
         Format: "json",
         Output: &buf,
     })
     require.NoError(t, err)
-    
+
     logger.Info("test message")
-    
+
     var logEntry map[string]interface{}
     err = json.Unmarshal(buf.Bytes(), &logEntry)
     require.NoError(t, err)
-    
+
     assert.Equal(t, "test message", logEntry["message"])
     assert.Equal(t, "info", logEntry["level"])
 }
@@ -730,25 +730,25 @@ func TestGCPIntegration(t *testing.T) {
     if testing.Short() {
         t.Skip("Skipping integration test")
     }
-    
+
     opts := &whitehorse.Options{
         ServiceName: "integration-test",
         GCPProject:  os.Getenv("GCP_PROJECT"),
         EnableGCP:   true,
     }
-    
+
     client, err := whitehorse.NewClient(opts)
     require.NoError(t, err)
-    
+
     ctx := context.Background()
     err = client.Start(ctx)
     require.NoError(t, err)
     defer client.Stop(ctx)
-    
+
     // Test GCP logging
     logger := client.Logger()
     logger.Info("Integration test log message")
-    
+
     // Allow time for log to be sent
     time.Sleep(2 * time.Second)
 }
@@ -763,7 +763,7 @@ func BenchmarkLogging(b *testing.B) {
         Format: "json",
         Output: io.Discard,
     })
-    
+
     b.ResetTimer()
     b.RunParallel(func(pb *testing.PB) {
         for pb.Next() {
@@ -776,7 +776,7 @@ func BenchmarkMetrics(b *testing.B) {
     collector, _ := metrics.New(&metrics.Options{
         ServiceName: "benchmark",
     })
-    
+
     b.ResetTimer()
     b.RunParallel(func(pb *testing.PB) {
         for pb.Next() {

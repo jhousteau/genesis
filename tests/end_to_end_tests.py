@@ -324,7 +324,7 @@ services:
       - FLASK_ENV=development
     depends_on:
       - db
-  
+
   db:
     image: postgres:13
     environment:
@@ -558,15 +558,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python 3.9
       uses: actions/setup-python@v3
       with:
         python-version: 3.9
-    
+
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
@@ -574,25 +574,25 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
+
     - name: Run linting
       run: |
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    
+
     - name: Run tests
       run: |
         pytest tests/ -v --tb=short
-    
+
     - name: Build Docker image
       run: |
         docker build -t test-app:latest .
-    
+
     - name: Test Docker image
       run: |
         docker run -d -p 5000:5000 --name test-container test-app:latest

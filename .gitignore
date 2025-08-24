@@ -134,3 +134,17 @@ pids
 # Build outputs
 dist/
 build/
+
+# Additional project clutter prevention
+coverage*.json
+*-analysis.json
+demo-*.md
+*.backup
+
+# Temp directory for all temporary files
+temp/
+
+# Test reports and coverage
+htmlcov/
+.coverage*
+coverage*.xml

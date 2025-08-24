@@ -5,14 +5,14 @@ variables:
   # Project configuration
   PROJECT_NAME: "${CI_PROJECT_NAME}"
   REGISTRY_REGION: "us-central1"
-  
+
   # Docker configuration
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
-  
+
   # Node.js configuration
   NODE_VERSION: "18"
-  
+
   # GCP configuration
   GCLOUD_VERSION: "latest"
 
@@ -61,11 +61,11 @@ setup:
         echo "ENVIRONMENT=dev" >> deploy.env
         echo "GCP_PROJECT_ID=${PROJECT_NAME}-dev" >> deploy.env
       fi
-      
+
       # Set build configuration
       echo "BUILD_VERSION=${CI_COMMIT_SHA:0:8}-$(date +%Y%m%d%H%M%S)" >> deploy.env
       echo "SHOULD_DEPLOY=true" >> deploy.env
-      
+
       # Framework detection
       if [[ -f "package.json" ]]; then
         if grep -q "react" package.json; then
@@ -90,7 +90,7 @@ setup:
         echo "BUILD_COMMAND=echo 'No build required'" >> deploy.env
         echo "BUILD_OUTPUT=." >> deploy.env
       fi
-      
+
       cat deploy.env
   artifacts:
     reports:
@@ -110,27 +110,27 @@ lint:
       if [[ -f "package.json" ]]; then
         echo "📋 Installing dependencies..."
         npm ci --prefer-offline --no-audit
-        
+
         echo "🔍 Running linting..."
-        
+
         # ESLint
         if npm list eslint > /dev/null 2>&1; then
           echo "Running ESLint..."
           npx eslint . --ext .js,.jsx,.ts,.tsx --format junit --output-file eslint-report.xml || true
         fi
-        
+
         # Prettier
         if npm list prettier > /dev/null 2>&1; then
           echo "Running Prettier check..."
           npx prettier --check . || echo "⚠️ Formatting issues found"
         fi
-        
+
         # TypeScript check
         if [[ -f "tsconfig.json" ]]; then
           echo "Running TypeScript check..."
           npx tsc --noEmit || echo "⚠️ TypeScript issues found"
         fi
-        
+
         # Stylelint for CSS/SCSS
         if npm list stylelint > /dev/null 2>&1; then
           echo "Running Stylelint..."
@@ -163,7 +163,7 @@ test:
       if [[ -f "package.json" ]]; then
         echo "🧪 Running tests..."
         npm ci --prefer-offline --no-audit
-        
+
         # Run tests with coverage
         if npm run test:coverage > /dev/null 2>&1; then
           npm run test:coverage
@@ -174,7 +174,7 @@ test:
         else
           echo "No test runner found"
         fi
-        
+
         # Generate test report
         echo "Test completed at $(date)" > test-summary.txt
       else
@@ -211,39 +211,39 @@ e2e_tests:
       if [[ -f "package.json" ]] && npm list @playwright/test > /dev/null 2>&1; then
         echo "🎭 Running E2E tests with Playwright..."
         npm ci --prefer-offline --no-audit
-        
+
         # Install Playwright browsers
         npx playwright install --with-deps
-        
+
         # Start dev server in background
         npm run dev &
         DEV_PID=$!
-        
+
         # Wait for server to be ready
         timeout 60 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 2; done' || {
           echo "❌ Dev server failed to start"
           exit 1
         }
-        
+
         # Run E2E tests
         npx playwright test --reporter=junit
-        
+
         # Cleanup
         kill $DEV_PID || true
       elif [[ -f "cypress.config.js" ]] || [[ -f "cypress.json" ]]; then
         echo "🌲 Running E2E tests with Cypress..."
         npm ci --prefer-offline --no-audit
-        
+
         # Start dev server
         npm run dev &
         DEV_PID=$!
-        
+
         # Wait for server
         timeout 60 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
-        
+
         # Run Cypress tests
         npx cypress run --reporter junit --reporter-options "mochaFile=cypress-results.xml"
-        
+
         kill $DEV_PID || true
       else
         echo "No E2E testing framework found, skipping E2E tests"
@@ -279,12 +279,12 @@ security_scan:
   script:
     - |
       echo "🔒 Running security scans..."
-      
+
       if [[ -f "package.json" ]]; then
         # NPM Audit
         echo "Running npm audit..."
         npm audit --audit-level=high --json > npm-audit.json || true
-        
+
         # Snyk scan (if token available)
         if [[ -n "${SNYK_TOKEN}" ]]; then
           echo "Running Snyk scan..."
@@ -293,12 +293,12 @@ security_scan:
           snyk test --json > snyk-report.json || true
           snyk code test --json > snyk-code-report.json || true
         fi
-        
+
         # Check for known vulnerable packages
         echo "Checking for vulnerable dependencies..."
         npm ls --depth=0 | grep -E "(lodash@[^4]|moment@[^2])" && echo "⚠️ Potentially vulnerable packages found" || echo "✅ No known vulnerable packages detected"
       fi
-      
+
       # Git secrets scan
       echo "Checking for exposed secrets..."
       if command -v git > /dev/null; then
@@ -308,7 +308,7 @@ security_scan:
           echo "⚠️ Potential secrets found in commit history"
         fi
       fi
-      
+
       # Dockerfile security scan (if exists)
       if [[ -f "Dockerfile" ]]; then
         echo "Dockerfile found - consider running hadolint for security best practices"
@@ -341,17 +341,17 @@ build:
       echo "Framework: ${FRAMEWORK}"
       echo "Environment: ${ENVIRONMENT}"
       echo "Build version: ${BUILD_VERSION}"
-      
+
       if [[ "${FRAMEWORK}" != "static" ]]; then
         # Install dependencies
         npm ci --prefer-offline --no-audit
-        
+
         # Set environment variables for build
         export NODE_ENV=production
         export REACT_APP_VERSION=${BUILD_VERSION}
         export VUE_APP_VERSION=${BUILD_VERSION}
         export NG_APP_VERSION=${BUILD_VERSION}
-        
+
         # Framework-specific build optimizations
         case "${FRAMEWORK}" in
           react)
@@ -365,23 +365,23 @@ build:
             export NG_BUILD_CACHE=.angular/cache
             ;;
         esac
-        
+
         # Run build
         echo "Running: ${BUILD_COMMAND}"
         eval "${BUILD_COMMAND}"
-        
+
         # Verify build output
         if [[ -d "${BUILD_OUTPUT}" ]]; then
           echo "✅ Build completed successfully"
           echo "Build size: $(du -sh ${BUILD_OUTPUT})"
-          
+
           # List generated assets
           find ${BUILD_OUTPUT} -type f -name "*.js" -o -name "*.css" -o -name "*.html" | head -10
         else
           echo "❌ Build output directory not found: ${BUILD_OUTPUT}"
           exit 1
         fi
-        
+
         # Bundle analysis (if tools available)
         if [[ -f "${BUILD_OUTPUT}/static/js/"*.js ]] && command -v wc > /dev/null; then
           echo "📊 Bundle analysis:"
@@ -394,7 +394,7 @@ build:
       else
         echo "Static site - no build required"
       fi
-      
+
       # Create build info
       cat > ${BUILD_OUTPUT}/build-info.json << EOF
       {
@@ -427,10 +427,10 @@ deploy_firebase:
       echo "🚀 Deploying to Firebase Hosting..."
       echo "Environment: ${ENVIRONMENT}"
       echo "Project: ${GCP_PROJECT_ID}"
-      
+
       # Install Firebase CLI
       npm install -g firebase-tools
-      
+
       # Configure Firebase
       if [[ ! -f "firebase.json" ]]; then
         echo "Creating firebase.json..."
@@ -464,11 +464,11 @@ deploy_firebase:
       }
       EOF
       fi
-      
+
       # Deploy to Firebase
       firebase use ${GCP_PROJECT_ID}
       firebase deploy --only hosting --project ${GCP_PROJECT_ID}
-      
+
       # Get hosting URL
       HOSTING_URL="https://${GCP_PROJECT_ID}.web.app"
       echo "🌐 Deployed to: ${HOSTING_URL}"
@@ -500,27 +500,27 @@ deploy_gcs:
   script:
     - |
       echo "🚀 Deploying to Cloud Storage with CDN..."
-      
+
       BUCKET_NAME="${GCP_PROJECT_ID}-web-${ENVIRONMENT}"
-      
+
       # Create bucket if it doesn't exist
       if ! gsutil ls -b gs://${BUCKET_NAME} > /dev/null 2>&1; then
         echo "Creating bucket: ${BUCKET_NAME}"
         gsutil mb -l ${REGISTRY_REGION} gs://${BUCKET_NAME}
         gsutil web set -m index.html -e 404.html gs://${BUCKET_NAME}
       fi
-      
+
       # Sync files to bucket
       echo "Syncing files to bucket..."
       gsutil -m rsync -r -d ${BUILD_OUTPUT}/ gs://${BUCKET_NAME}/
-      
+
       # Set cache control headers
       gsutil -m setmeta -h "Cache-Control:max-age=31536000" gs://${BUCKET_NAME}/static/**
       gsutil -m setmeta -h "Cache-Control:no-cache" gs://${BUCKET_NAME}/index.html
-      
+
       # Make bucket publicly readable
       gsutil iam ch allUsers:objectViewer gs://${BUCKET_NAME}
-      
+
       # Set up load balancer and CDN (if configured)
       BUCKET_URL="https://storage.googleapis.com/${BUCKET_NAME}/index.html"
       echo "🌐 Deployed to: ${BUCKET_URL}"
@@ -551,7 +551,7 @@ deploy_cloudrun:
   script:
     - |
       echo "🚀 Deploying to Cloud Run..."
-      
+
       # Create Dockerfile if it doesn't exist
       if [[ ! -f "Dockerfile" ]]; then
         echo "Creating Dockerfile for web app..."
@@ -562,7 +562,7 @@ deploy_cloudrun:
       EXPOSE 8080
       CMD ["nginx", "-g", "daemon off;"]
       EOF
-        
+
         # Create nginx config
         cat > nginx.conf << 'EOF'
       events { worker_connections 1024; }
@@ -570,17 +570,17 @@ deploy_cloudrun:
         include /etc/nginx/mime.types;
         sendfile on;
         keepalive_timeout 65;
-        
+
         server {
           listen 8080;
           server_name localhost;
-          
+
           location / {
             root /usr/share/nginx/html;
             index index.html;
             try_files $uri $uri/ /index.html;
           }
-          
+
           location /static/ {
             expires 1y;
             add_header Cache-Control "public, immutable";
@@ -589,14 +589,14 @@ deploy_cloudrun:
       }
       EOF
       fi
-      
+
       # Build and push image
       IMAGE_TAG="${BUILD_VERSION}"
       IMAGE_URL="${REGISTRY_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/containers/${PROJECT_NAME}-web"
-      
+
       docker build -t "${IMAGE_URL}:${IMAGE_TAG}" .
       docker push "${IMAGE_URL}:${IMAGE_TAG}"
-      
+
       # Deploy to Cloud Run
       gcloud run deploy "${PROJECT_NAME}-web" \
         --image="${IMAGE_URL}:${IMAGE_TAG}" \
@@ -609,13 +609,13 @@ deploy_cloudrun:
         --concurrency=100 \
         --max-instances=10 \
         --set-env-vars="ENV=${ENVIRONMENT},VERSION=${BUILD_VERSION}"
-      
+
       # Get service URL
       SERVICE_URL=$(gcloud run services describe "${PROJECT_NAME}-web" \
         --region="${REGISTRY_REGION}" \
         --project="${GCP_PROJECT_ID}" \
         --format="value(status.url)")
-      
+
       echo "🌐 Deployed to: ${SERVICE_URL}"
       echo "DEPLOYMENT_URL=${SERVICE_URL}" >> deploy-result.env
   artifacts:
@@ -638,10 +638,10 @@ verify_deployment:
   script:
     - |
       echo "🔍 Verifying deployment..."
-      
+
       if [[ -n "${DEPLOYMENT_URL}" ]]; then
         echo "Testing deployment at: ${DEPLOYMENT_URL}"
-        
+
         # Health check
         for i in {1..5}; do
           if curl -f "${DEPLOYMENT_URL}" --max-time 10 --silent; then
@@ -656,21 +656,21 @@ verify_deployment:
             sleep 10
           fi
         done
-        
+
         # Performance check
         RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "${DEPLOYMENT_URL}")
         echo "📊 Response time: ${RESPONSE_TIME}s"
-        
+
         if (( $(echo "${RESPONSE_TIME} > 3.0" | bc -l) )); then
           echo "⚠️ Slow response time detected"
         fi
-        
+
         # Check for build info endpoint
         if curl -f "${DEPLOYMENT_URL}/build-info.json" --silent > /dev/null; then
           echo "✅ Build info endpoint accessible"
           curl -s "${DEPLOYMENT_URL}/build-info.json" | head -5
         fi
-        
+
         echo "✅ Deployment verification completed"
       else
         echo "❌ No deployment URL available for verification"

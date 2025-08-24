@@ -55,15 +55,15 @@ print_banner() {
 # Initialize unified credential management
 init_unified_credentials() {
     log_step "Initializing unified credential management..."
-    
+
     mkdir -p "$(dirname "$UNIFIED_CONFIG_FILE")"
     mkdir -p "$(dirname "$CREDENTIAL_INVENTORY_FILE")"
     mkdir -p "$(dirname "$ROTATION_LOG_FILE")"
-    
+
     if [[ ! -f "$UNIFIED_CONFIG_FILE" ]]; then
         create_default_unified_config
     fi
-    
+
     log_success "Unified credential management initialized"
 }
 
@@ -146,36 +146,36 @@ EOF
 # Discover credentials across all cloud providers
 discover_credentials() {
     log_step "Discovering credentials across all cloud providers..."
-    
+
     local credentials_summary='{
         "discovery_timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
         "providers": {}
     }'
-    
+
     # Discover GCP credentials
     if command -v gcloud >/dev/null 2>&1; then
         local gcp_creds
         gcp_creds=$(discover_gcp_credentials)
         credentials_summary=$(echo "$credentials_summary" | jq --argjson gcp "$gcp_creds" '.providers.gcp = $gcp')
     fi
-    
+
     # Discover AWS credentials
     if command -v aws >/dev/null 2>&1; then
         local aws_creds
         aws_creds=$(discover_aws_credentials)
         credentials_summary=$(echo "$credentials_summary" | jq --argjson aws "$aws_creds" '.providers.aws = $aws')
     fi
-    
+
     # Discover Azure credentials
     if command -v az >/dev/null 2>&1; then
         local azure_creds
         azure_creds=$(discover_azure_credentials)
         credentials_summary=$(echo "$credentials_summary" | jq --argjson azure "$azure_creds" '.providers.azure = $azure')
     fi
-    
+
     # Save discovery results
     echo "$credentials_summary" > "$CREDENTIAL_INVENTORY_FILE"
-    
+
     log_success "Credential discovery completed"
     echo "$credentials_summary"
 }
@@ -188,24 +188,24 @@ discover_gcp_credentials() {
         "auth_method": "unknown",
         "credentials": []
     }'
-    
+
     # Check for active gcloud authentication
     if ACTIVE_ACCOUNT=$(gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>/dev/null) && [[ -n "$ACTIVE_ACCOUNT" ]]; then
         gcp_discovery=$(echo "$gcp_discovery" | jq --arg account "$ACTIVE_ACCOUNT" '.status = "authenticated" | .credentials = [{"type": "user", "account": $account}]')
-        
+
         # Check for service account impersonation
         if IMPERSONATE_SA=$(gcloud config get-value auth/impersonate_service_account 2>/dev/null) && [[ -n "$IMPERSONATE_SA" ]]; then
             gcp_discovery=$(echo "$gcp_discovery" | jq --arg sa "$IMPERSONATE_SA" '.auth_method = "impersonation" | .credentials += [{"type": "service_account", "email": $sa}]')
         else
             gcp_discovery=$(echo "$gcp_discovery" | jq '.auth_method = "user"')
         fi
-        
+
         # Check for WIF configuration
         if [[ -f "${REPO_GCLOUD_HOME:-$HOME/.gcloud}/wif-config.json" ]]; then
             local wif_provider wif_sa
             wif_provider=$(jq -r '.provider // empty' "${REPO_GCLOUD_HOME:-$HOME/.gcloud}/wif-config.json" 2>/dev/null || echo "")
             wif_sa=$(jq -r '.service_account // empty' "${REPO_GCLOUD_HOME:-$HOME/.gcloud}/wif-config.json" 2>/dev/null || echo "")
-            
+
             if [[ -n "$wif_provider" && -n "$wif_sa" ]]; then
                 gcp_discovery=$(echo "$gcp_discovery" | jq --arg provider "$wif_provider" --arg sa "$wif_sa" '.auth_method = "workload_identity" | .credentials += [{"type": "workload_identity", "provider": $provider, "service_account": $sa}]')
             fi
@@ -213,7 +213,7 @@ discover_gcp_credentials() {
     else
         gcp_discovery=$(echo "$gcp_discovery" | jq '.status = "not_authenticated"')
     fi
-    
+
     echo "$gcp_discovery"
 }
 
@@ -225,18 +225,18 @@ discover_aws_credentials() {
         "auth_method": "unknown",
         "credentials": []
     }'
-    
+
     # Check for AWS credentials
     if aws sts get-caller-identity >/dev/null 2>&1; then
         local caller_identity
         caller_identity=$(aws sts get-caller-identity 2>/dev/null || echo '{}')
-        
+
         local account_id user_arn
         account_id=$(echo "$caller_identity" | jq -r '.Account // "unknown"')
         user_arn=$(echo "$caller_identity" | jq -r '.Arn // "unknown"')
-        
+
         aws_discovery=$(echo "$aws_discovery" | jq --arg account "$account_id" --arg arn "$user_arn" '.status = "authenticated" | .credentials = [{"type": "active", "account": $account, "arn": $arn}]')
-        
+
         # Determine auth method
         if [[ -n "${AWS_ROLE_TO_ASSUME:-}" ]]; then
             aws_discovery=$(echo "$aws_discovery" | jq '.auth_method = "oidc"')
@@ -250,7 +250,7 @@ discover_aws_credentials() {
     else
         aws_discovery=$(echo "$aws_discovery" | jq '.status = "not_authenticated"')
     fi
-    
+
     echo "$aws_discovery"
 }
 
@@ -262,19 +262,19 @@ discover_azure_credentials() {
         "auth_method": "unknown",
         "credentials": []
     }'
-    
+
     # Check for Azure authentication
     if az account show >/dev/null 2>&1; then
         local account_info
         account_info=$(az account show 2>/dev/null || echo '{}')
-        
+
         local subscription_id tenant_id user_name
         subscription_id=$(echo "$account_info" | jq -r '.id // "unknown"')
         tenant_id=$(echo "$account_info" | jq -r '.tenantId // "unknown"')
         user_name=$(echo "$account_info" | jq -r '.user.name // "unknown"')
-        
+
         azure_discovery=$(echo "$azure_discovery" | jq --arg sub "$subscription_id" --arg tenant "$tenant_id" --arg user "$user_name" '.status = "authenticated" | .credentials = [{"type": "active", "subscription": $sub, "tenant": $tenant, "user": $user}]')
-        
+
         # Determine auth method
         if [[ -n "${AZURE_CLIENT_ID:-}" && -n "${AZURE_CLIENT_SECRET:-}" ]]; then
             azure_discovery=$(echo "$azure_discovery" | jq '.auth_method = "service_principal"')
@@ -288,22 +288,22 @@ discover_azure_credentials() {
     else
         azure_discovery=$(echo "$azure_discovery" | jq '.status = "not_authenticated"')
     fi
-    
+
     echo "$azure_discovery"
 }
 
 # Validate credentials across all providers
 validate_all_credentials() {
     log_step "Validating credentials across all cloud providers..."
-    
+
     local validation_results='{
         "validation_timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
         "overall_status": "unknown",
         "provider_results": {}
     }'
-    
+
     local overall_success=true
-    
+
     # Validate GCP credentials
     local gcp_result
     if validate_gcp_credentials; then
@@ -313,7 +313,7 @@ validate_all_credentials() {
         overall_success=false
     fi
     validation_results=$(echo "$validation_results" | jq --argjson gcp "$gcp_result" '.provider_results.gcp = $gcp')
-    
+
     # Validate AWS credentials
     local aws_result
     if validate_aws_credentials; then
@@ -323,7 +323,7 @@ validate_all_credentials() {
         overall_success=false
     fi
     validation_results=$(echo "$validation_results" | jq --argjson aws "$aws_result" '.provider_results.aws = $aws')
-    
+
     # Validate Azure credentials
     local azure_result
     if validate_azure_credentials; then
@@ -333,7 +333,7 @@ validate_all_credentials() {
         overall_success=false
     fi
     validation_results=$(echo "$validation_results" | jq --argjson azure "$azure_result" '.provider_results.azure = $azure')
-    
+
     # Set overall status
     if [[ "$overall_success" == "true" ]]; then
         validation_results=$(echo "$validation_results" | jq '.overall_status = "valid"')
@@ -342,7 +342,7 @@ validate_all_credentials() {
         validation_results=$(echo "$validation_results" | jq '.overall_status = "invalid"')
         log_warning "Some credential validations failed"
     fi
-    
+
     echo "$validation_results"
 }
 
@@ -376,13 +376,13 @@ validate_azure_credentials() {
 # Rotate credentials across all providers
 rotate_all_credentials() {
     log_step "Starting credential rotation across all providers..."
-    
+
     local rotation_results='{
         "rotation_timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
         "rotation_id": "'$(uuidgen 2>/dev/null || date +%s)'",
         "provider_results": {}
     }'
-    
+
     # Rotate GCP credentials
     log_info "Rotating GCP credentials..."
     local gcp_result
@@ -392,7 +392,7 @@ rotate_all_credentials() {
         gcp_result='{"status": "failed", "message": "GCP credential rotation failed"}'
     fi
     rotation_results=$(echo "$rotation_results" | jq --argjson gcp "$gcp_result" '.provider_results.gcp = $gcp')
-    
+
     # Rotate AWS credentials
     log_info "Rotating AWS credentials..."
     local aws_result
@@ -402,7 +402,7 @@ rotate_all_credentials() {
         aws_result='{"status": "failed", "message": "AWS credential rotation failed"}'
     fi
     rotation_results=$(echo "$rotation_results" | jq --argjson aws "$aws_result" '.provider_results.aws = $aws')
-    
+
     # Rotate Azure credentials
     log_info "Rotating Azure credentials..."
     local azure_result
@@ -412,10 +412,10 @@ rotate_all_credentials() {
         azure_result='{"status": "failed", "message": "Azure credential rotation failed"}'
     fi
     rotation_results=$(echo "$rotation_results" | jq --argjson azure "$azure_result" '.provider_results.azure = $azure')
-    
+
     # Log rotation results
     echo "$rotation_results" >> "$ROTATION_LOG_FILE"
-    
+
     log_success "Credential rotation completed"
     echo "$rotation_results"
 }
@@ -450,22 +450,22 @@ rotate_azure_credentials() {
 show_unified_dashboard() {
     echo -e "${CYAN}═══ UNIFIED CREDENTIAL DASHBOARD ═══${NC}"
     echo ""
-    
+
     # Load configuration
     if [[ -f "$UNIFIED_CONFIG_FILE" ]]; then
         local project_id environment
         project_id=$(jq -r '.project_id // "unknown"' "$UNIFIED_CONFIG_FILE")
         environment=$(jq -r '.environment // "unknown"' "$UNIFIED_CONFIG_FILE")
-        
+
         echo -e "${WHITE}Project: $project_id${NC}"
         echo -e "${WHITE}Environment: $environment${NC}"
         echo ""
     fi
-    
+
     # Show provider status
     echo -e "${WHITE}Cloud Provider Status:${NC}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    
+
     # Check GCP
     if validate_gcp_credentials; then
         local gcp_account
@@ -474,7 +474,7 @@ show_unified_dashboard() {
     else
         echo -e "${RED}❌ GCP${NC} - Not authenticated"
     fi
-    
+
     # Check AWS
     if validate_aws_credentials; then
         local aws_identity
@@ -483,7 +483,7 @@ show_unified_dashboard() {
     else
         echo -e "${RED}❌ AWS${NC} - Not authenticated"
     fi
-    
+
     # Check Azure
     if validate_azure_credentials; then
         local azure_user
@@ -492,20 +492,20 @@ show_unified_dashboard() {
     else
         echo -e "${RED}❌ Azure${NC} - Not authenticated"
     fi
-    
+
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    
+
     # Show recent operations
     if [[ -f "$ROTATION_LOG_FILE" ]]; then
         echo -e "${WHITE}Recent Operations:${NC}"
         tail -n 3 "$ROTATION_LOG_FILE" | jq -r '.rotation_timestamp + " - " + (.provider_results | to_entries | map(.key + ":" + .value.status) | join(", "))' 2>/dev/null || echo "No recent operations"
         echo ""
     fi
-    
+
     echo -e "${WHITE}Available Commands:${NC}"
     echo "• unified-credential-manager discover"
-    echo "• unified-credential-manager validate" 
+    echo "• unified-credential-manager validate"
     echo "• unified-credential-manager rotate-all"
     echo "• unified-credential-manager status <provider>"
 }
@@ -513,7 +513,7 @@ show_unified_dashboard() {
 # Main function
 main() {
     local command="${1:-dashboard}"
-    
+
     case "$command" in
         "init")
             init_unified_credentials

@@ -36,7 +36,7 @@ variable "routing_mode" {
   description = "Network routing mode (REGIONAL or GLOBAL)"
   type        = string
   default     = "REGIONAL"
-  
+
   validation {
     condition     = contains(["REGIONAL", "GLOBAL"], var.routing_mode)
     error_message = "Routing mode must be either REGIONAL or GLOBAL."
@@ -53,7 +53,7 @@ variable "mtu" {
   description = "Maximum Transmission Unit in bytes"
   type        = number
   default     = 1460
-  
+
   validation {
     condition     = var.mtu >= 1460 && var.mtu <= 1500
     error_message = "MTU must be between 1460 and 1500."
@@ -70,22 +70,22 @@ variable "enable_ipv6" {
 variable "subnets" {
   description = "List of subnets to create"
   type = list(object({
-    name                     = string
-    region                   = string
-    ip_cidr_range           = string
-    private_google_access   = optional(bool, true)
-    stack_type              = optional(string, "IPV4_ONLY")
-    ipv6_access_type        = optional(string)
-    purpose                 = optional(string)
-    role                    = optional(string)
-    enable_flow_logs        = optional(bool)
-    flow_logs_interval      = optional(string, "INTERVAL_5_SEC")
-    flow_logs_sampling      = optional(number, 0.5)
-    flow_logs_metadata      = optional(string, "INCLUDE_ALL_METADATA")
-    flow_logs_filter_expr   = optional(string)
+    name                  = string
+    region                = string
+    ip_cidr_range         = string
+    private_google_access = optional(bool, true)
+    stack_type            = optional(string, "IPV4_ONLY")
+    ipv6_access_type      = optional(string)
+    purpose               = optional(string)
+    role                  = optional(string)
+    enable_flow_logs      = optional(bool)
+    flow_logs_interval    = optional(string, "INTERVAL_5_SEC")
+    flow_logs_sampling    = optional(number, 0.5)
+    flow_logs_metadata    = optional(string, "INCLUDE_ALL_METADATA")
+    flow_logs_filter_expr = optional(string)
     secondary_ranges = optional(list(object({
-      range_name      = string
-      ip_cidr_range   = string
+      range_name    = string
+      ip_cidr_range = string
     })), [])
   }))
   default = []
@@ -102,7 +102,7 @@ variable "bgp_asn" {
   description = "BGP ASN for Cloud Router"
   type        = number
   default     = 64512
-  
+
   validation {
     condition     = var.bgp_asn >= 64512 && var.bgp_asn <= 65534
     error_message = "BGP ASN must be a private ASN between 64512 and 65534."
@@ -113,7 +113,7 @@ variable "bgp_advertise_mode" {
   description = "BGP advertise mode (DEFAULT or CUSTOM)"
   type        = string
   default     = null
-  
+
   validation {
     condition     = var.bgp_advertise_mode == null || contains(["DEFAULT", "CUSTOM"], var.bgp_advertise_mode)
     error_message = "BGP advertise mode must be DEFAULT or CUSTOM."
@@ -130,22 +130,22 @@ variable "bgp_advertised_groups" {
 variable "nat_gateways" {
   description = "NAT gateway configurations"
   type = list(object({
-    name                                 = string
-    region                              = string
-    nat_ip_allocate_option              = optional(string, "AUTO_ONLY")
-    source_subnetwork_ip_ranges_to_nat  = optional(string, "ALL_SUBNETWORKS_ALL_IP_RANGES")
-    nat_ips                             = optional(list(string), [])
-    min_ports_per_vm                    = optional(number, 64)
-    max_ports_per_vm                    = optional(number, 65536)
+    name                               = string
+    region                             = string
+    nat_ip_allocate_option             = optional(string, "AUTO_ONLY")
+    source_subnetwork_ip_ranges_to_nat = optional(string, "ALL_SUBNETWORKS_ALL_IP_RANGES")
+    nat_ips                            = optional(list(string), [])
+    min_ports_per_vm                   = optional(number, 64)
+    max_ports_per_vm                   = optional(number, 65536)
     udp_idle_timeout_sec               = optional(number, 30)
-    tcp_established_idle_timeout_sec    = optional(number, 1200)
-    tcp_transitory_idle_timeout_sec     = optional(number, 30)
+    tcp_established_idle_timeout_sec   = optional(number, 1200)
+    tcp_transitory_idle_timeout_sec    = optional(number, 30)
     icmp_idle_timeout_sec              = optional(number, 30)
-    enable_logging                      = optional(bool, true)
+    enable_logging                     = optional(bool, true)
     log_filter                         = optional(string, "ERRORS_ONLY")
     subnetworks = optional(list(object({
-      name                    = string
-      source_ip_ranges_to_nat = list(string)
+      name                     = string
+      source_ip_ranges_to_nat  = list(string)
       secondary_ip_range_names = optional(list(string), [])
     })), [])
   }))
@@ -157,17 +157,17 @@ variable "firewall_rules" {
   description = "List of firewall rules"
   type = list(object({
     name                    = string
-    description            = optional(string)
-    direction              = optional(string, "INGRESS")
-    priority               = optional(number, 1000)
-    source_ranges          = optional(list(string))
-    destination_ranges     = optional(list(string))
-    source_tags            = optional(list(string))
-    target_tags            = optional(list(string))
+    description             = optional(string)
+    direction               = optional(string, "INGRESS")
+    priority                = optional(number, 1000)
+    source_ranges           = optional(list(string))
+    destination_ranges      = optional(list(string))
+    source_tags             = optional(list(string))
+    target_tags             = optional(list(string))
     source_service_accounts = optional(list(string))
     target_service_accounts = optional(list(string))
-    enable_logging         = optional(bool, false)
-    log_metadata           = optional(string, "INCLUDE_ALL_METADATA")
+    enable_logging          = optional(bool, false)
+    log_metadata            = optional(string, "INCLUDE_ALL_METADATA")
     allow = optional(list(object({
       protocol = string
       ports    = optional(list(string))
@@ -184,12 +184,12 @@ variable "firewall_rules" {
 variable "dns_zones" {
   description = "DNS zones to create"
   type = list(object({
-    name        = string
-    dns_name    = string
-    description = optional(string)
-    visibility  = optional(string, "public")
-    enable_logging = optional(bool, false)
-    enable_dnssec  = optional(bool, false)
+    name                 = string
+    dns_name             = string
+    description          = optional(string)
+    visibility           = optional(string, "public")
+    enable_logging       = optional(bool, false)
+    enable_dnssec        = optional(bool, false)
     dnssec_non_existence = optional(string, "nsec3")
     dnssec_key_specs = optional(list(object({
       algorithm  = string
@@ -214,7 +214,7 @@ variable "dns_zones" {
 variable "dns_records" {
   description = "DNS records to create"
   type = list(object({
-    zone    = string  # References zone name from dns_zones
+    zone    = string # References zone name from dns_zones
     name    = string
     type    = string
     ttl     = optional(number, 300)
@@ -228,9 +228,9 @@ variable "load_balancers" {
   description = "Load balancer configurations"
   type = list(object({
     name             = string
-    type             = optional(string, "external")  # external, internal
-    region           = optional(string)              # Required for internal LBs
-    subnetwork       = optional(string)              # For internal LBs
+    type             = optional(string, "external") # external, internal
+    region           = optional(string)             # Required for internal LBs
+    subnetwork       = optional(string)             # For internal LBs
     create_static_ip = optional(bool, false)
     ip_version       = optional(string, "IPV4")
   }))
@@ -246,8 +246,8 @@ variable "vpn_gateways" {
     tunnels = optional(list(object({
       name                    = string
       peer_ip                 = string
-      shared_secret          = string
-      ike_version            = optional(number, 2)
+      shared_secret           = string
+      ike_version             = optional(number, 2)
       local_traffic_selector  = optional(list(string), ["0.0.0.0/0"])
       remote_traffic_selector = optional(list(string), ["0.0.0.0/0"])
       routes = optional(list(object({
@@ -265,9 +265,9 @@ variable "network_peerings" {
   type = list(object({
     name                                = string
     peer_network                        = string
-    auto_create_routes                 = optional(bool, true)
-    import_custom_routes               = optional(bool, false)
-    export_custom_routes               = optional(bool, false)
+    auto_create_routes                  = optional(bool, true)
+    import_custom_routes                = optional(bool, false)
+    export_custom_routes                = optional(bool, false)
     import_subnet_routes_with_public_ip = optional(bool, false)
     export_subnet_routes_with_public_ip = optional(bool, false)
   }))
@@ -304,9 +304,9 @@ variable "preemptible_instances" {
 variable "multi_region_config" {
   description = "Multi-region configuration for high availability"
   type = object({
-    enabled          = bool
-    primary_region   = optional(string)
-    secondary_region = optional(string)
+    enabled                = bool
+    primary_region         = optional(string)
+    secondary_region       = optional(string)
     enable_cross_region_lb = optional(bool, false)
   })
   default = {
@@ -324,8 +324,8 @@ variable "enable_monitoring" {
 variable "monitoring_config" {
   description = "Monitoring configuration"
   type = object({
-    enable_uptime_checks = optional(bool, true)
-    enable_log_metrics   = optional(bool, true)
+    enable_uptime_checks  = optional(bool, true)
+    enable_log_metrics    = optional(bool, true)
     notification_channels = optional(list(string), [])
   })
   default = {}

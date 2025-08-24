@@ -19,7 +19,7 @@
         }
       ]
     },
-    
+
     "EnforceEncryption": {
       "Version": "2012-10-17",
       "Statement": [
@@ -54,7 +54,7 @@
         }
       ]
     },
-    
+
     "RestrictRegions": {
       "Version": "2012-10-17",
       "Statement": [
@@ -81,7 +81,7 @@
         }
       ]
     },
-    
+
     "RequireMFA": {
       "Version": "2012-10-17",
       "Statement": [
@@ -105,7 +105,7 @@
         }
       ]
     },
-    
+
     "PreventPrivilegeEscalation": {
       "Version": "2012-10-17",
       "Statement": [
@@ -134,7 +134,7 @@
         }
       ]
     },
-    
+
     "RequireResourceTags": {
       "Version": "2012-10-17",
       "Statement": [
@@ -188,7 +188,7 @@
         }
       ]
     },
-    
+
     "RestrictInstanceTypes": {
       "Version": "2012-10-17",
       "Statement": [
@@ -214,7 +214,7 @@
         }
       ]
     },
-    
+
     "PreventPublicAccess": {
       "Version": "2012-10-17",
       "Statement": [
@@ -248,7 +248,7 @@
         }
       ]
     },
-    
+
     "RequireSecureTransport": {
       "Version": "2012-10-17",
       "Statement": [
@@ -265,7 +265,7 @@
         }
       ]
     },
-    
+
     "CostControl": {
       "Version": "2012-10-17",
       "Statement": [
@@ -290,7 +290,7 @@
       ]
     }
   },
-  
+
   "policy_sets": {
     "production": [
       "DenyRootAccess",

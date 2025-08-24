@@ -142,7 +142,7 @@ Discovered services include comprehensive metadata:
 ### Supported Components
 
 - **Prometheus**: Automatic scrape configuration generation
-- **Alertmanager**: Team-based alert routing configuration  
+- **Alertmanager**: Team-based alert routing configuration
 - **Grafana**: Datasource and dashboard provisioning
 - **Jaeger**: Tracing configuration management
 - **Loki**: Log aggregation configuration
@@ -456,7 +456,7 @@ Structured JSON logging with correlation IDs:
    ```bash
    # Check Kubernetes permissions
    kubectl auth can-i list services --as=system:serviceaccount:default:monitoring-orchestrator
-   
+
    # Verify Prometheus connectivity
    curl http://prometheus:9090/api/v1/targets
    ```
@@ -465,7 +465,7 @@ Structured JSON logging with correlation IDs:
    ```bash
    # Check file permissions
    ls -la /etc/prometheus/prometheus.yml
-   
+
    # Test configuration syntax
    promtool check config /etc/prometheus/prometheus.yml
    ```
@@ -474,7 +474,7 @@ Structured JSON logging with correlation IDs:
    ```bash
    # Check logs
    docker logs monitoring-orchestrator
-   
+
    # Verify configuration
    python orchestrator.py --config orchestrator-config.yaml --status
    ```
@@ -528,7 +528,7 @@ class CustomAutomation:
     async def analyze_custom_metrics(self):
         # Custom analysis logic
         pass
-        
+
     async def optimize_custom_resources(self):
         # Custom optimization logic
         pass
