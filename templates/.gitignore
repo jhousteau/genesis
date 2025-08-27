@@ -1,0 +1,51 @@
+# Genesis Standard .gitignore Template
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# TypeScript/Node
+node_modules/
+npm-debug.log*
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Environment & Secrets
+.env*
+*.key
+*.pem
+credentials.json
+secrets.yaml
+
+# Terraform
+*.tfstate*
+.terraform/
+*.tfvars
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Genesis specific
+sparse-checkouts/
+ai-sessions/
