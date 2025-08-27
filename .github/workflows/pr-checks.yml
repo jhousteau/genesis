@@ -1,0 +1,120 @@
+name: PR Quality Checks
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need full history for proper diff analysis
+          fetch-depth: 0
+      
+      - name: Validate PR title and description
+        run: |
+          # Check if PR has a meaningful title
+          if [[ ${#PR_TITLE} -lt 10 ]]; then
+            echo "❌ PR title too short. Please provide a descriptive title."
+            exit 1
+          fi
+          
+          # Check if PR has description
+          if [[ -z "$PR_BODY" ]] || [[ ${#PR_BODY} -lt 20 ]]; then
+            echo "❌ PR description too short. Please describe what changes were made."
+            exit 1
+          fi
+          
+          echo "✓ PR title and description validation passed"
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+
+      - name: Check for breaking changes
+        run: |
+          # Look for potential breaking changes in the diff
+          git diff origin/main...HEAD --name-only | while read file; do
+            if [[ "$file" == "pyproject.toml" ]] || [[ "$file" == "package.json" ]] || [[ "$file" == "Makefile" ]]; then
+              echo "⚠️  Potential breaking change detected in $file"
+              echo "Please ensure this change is backwards compatible or properly documented."
+            fi
+          done
+
+      - name: Enforce conventional commits
+        run: |
+          # Check commit messages follow conventional commit format
+          git log --format="%s" origin/main..HEAD | while read commit_msg; do
+            if ! echo "$commit_msg" | grep -E "^(feat|fix|docs|style|refactor|test|chore|ci|build|perf)(\(.+\))?: .{10,}"; then
+              echo "❌ Commit message doesn't follow conventional commits: $commit_msg"
+              echo "Format: type(scope): description"
+              echo "Types: feat, fix, docs, style, refactor, test, chore, ci, build, perf"
+              exit 1
+            fi
+          done
+          echo "✓ All commit messages follow conventional commits format"
+
+      - name: Check file size limits
+        run: |
+          # Check for large files that might impact AI safety
+          find . -type f -not -path './.git/*' -size +100k | while read large_file; do
+            echo "⚠️  Large file detected: $large_file"
+            echo "Consider if this file is necessary or if it should be in .gitignore"
+          done
+
+      - name: Validate component boundaries
+        run: |
+          # Ensure changes respect component isolation
+          changed_dirs=$(git diff --name-only origin/main...HEAD | cut -d'/' -f1 | sort -u)
+          component_count=$(echo "$changed_dirs" | wc -l)
+          
+          if [ $component_count -gt 3 ]; then
+            echo "❌ Changes span too many components ($component_count)"
+            echo "Consider breaking this PR into smaller, focused changes."
+            echo "Changed directories: $changed_dirs"
+            exit 1
+          fi
+          
+          echo "✓ Changes are appropriately scoped"
+
+  lint-check:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black ruff mypy
+          
+      - name: Run Python linters
+        if: hashFiles('**/*.py') != ''
+        run: |
+          echo "Running black..."
+          black --check --diff .
+          echo "Running ruff..."
+          ruff check .
+          echo "Running mypy..."
+          mypy . --ignore-missing-imports || true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+        if: hashFiles('**/*.{ts,tsx,js,jsx}') != ''
+          
+      - name: Run TypeScript linters
+        if: hashFiles('**/*.{ts,tsx,js,jsx}') != ''
+        run: |
+          npm install -g prettier eslint
+          echo "Running prettier..."
+          prettier --check "**/*.{ts,tsx,js,jsx,json,md}" || true
+          echo "Running eslint..."
+          eslint "**/*.{ts,tsx,js,jsx}" --max-warnings 0 || true
