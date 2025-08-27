@@ -1,140 +1,93 @@
 #!/usr/bin/env bash
-# Genesis Smart Commit System
-# Extracted and refined from old Genesis - quality gates before commits
+# Genesis Smart Commit System - Quality gates before commits
+# Extracted and simplified from old Genesis (225→95 lines)
 
 set -euo pipefail
 
-# Color codes
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+# Colors and configuration
+RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
+MIN_MSG_LENGTH=10; MAX_MSG_LENGTH=72
 
-# Configuration
-MAX_COMMIT_MSG_LENGTH=72
-MIN_COMMIT_MSG_LENGTH=10
+log() { echo -e "${2:-$BLUE}$1${NC}"; }
+error_exit() { log "❌ $1" "$RED" >&2; exit 1; }
 
-log_error() { echo -e "${RED}❌ $1${NC}" >&2; }
-log_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
-log_success() { echo -e "${GREEN}✅ $1${NC}"; }
-log_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
-
-echo -e "${BLUE}🎯 Genesis Smart Commit${NC}"
-echo "========================"
+log "🎯 Genesis Smart Commit" "$BLUE"
+log "======================"
 
 # 1. Check for uncommitted changes
-if [[ -z $(git status --porcelain) ]]; then
-    log_error "No changes to commit"
-    exit 1
-fi
+[[ -z $(git status --porcelain) ]] && error_exit "No changes to commit"
 
-# 2. Run pre-commit hooks
-log_info "Running pre-commit checks..."
+# 2. Run pre-commit hooks if available
 if [[ -f .pre-commit-config.yaml ]]; then
-    if ! pre-commit run --all-files; then
-        log_error "Pre-commit checks failed. Fix issues and try again."
-        exit 1
-    fi
-    log_success "Pre-commit checks passed"
-else
-    log_warning "No pre-commit configuration found"
+    log "ℹ️ Running pre-commit checks..."
+    pre-commit run --all-files || error_exit "Pre-commit checks failed"
+    log "✅ Pre-commit checks passed" "$GREEN"
 fi
 
-# 3. Run tests
-log_info "Running tests..."
-if command -v pytest &> /dev/null && [[ -d tests/ ]]; then
-    if pytest tests/ -v; then
-        log_success "Tests passed"
+# 3. Run tests with continue option
+log "ℹ️ Running tests..."
+test_cmd=""
+if [[ -d tests/ ]] && command -v pytest &>/dev/null; then
+    test_cmd="pytest tests/ -q"
+elif [[ -f Makefile ]] && make -n test &>/dev/null; then
+    test_cmd="make test"
+fi
+
+if [[ -n $test_cmd ]]; then
+    if $test_cmd &>/dev/null; then
+        log "✅ Tests passed" "$GREEN"
     else
-        log_error "Tests failed"
-        read -p "Tests failed. Continue anyway? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
-        fi
-    fi
-elif make test > /dev/null 2>&1; then
-    log_success "Tests passed"
-else
-    log_warning "No test framework detected"
-fi
-
-# 4. Run linting
-log_info "Running linters..."
-linting_passed=true
-
-if command -v ruff &> /dev/null; then
-    if ! ruff check .; then
-        linting_passed=false
+        log "⚠️ Tests failed" "$YELLOW"
+        read -p "Continue anyway? (y/N): " -n 1 -r
+        echo; [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
     fi
 fi
 
-if command -v black &> /dev/null; then
-    if ! black --check .; then
-        log_info "Running black formatter..."
-        black .
-    fi
+# 4. Run linting with auto-fix
+log "ℹ️ Running linters..."
+if command -v ruff &>/dev/null; then
+    ruff check --fix . || error_exit "Ruff linting failed"
+fi
+if command -v black &>/dev/null; then
+    black . &>/dev/null || true
+fi
+log "✅ Code quality checks passed" "$GREEN"
+
+# 5. Basic secret detection
+log "ℹ️ Scanning for secrets..."
+if grep -rE "(sk-[a-zA-Z0-9]{48}|ghp_[a-zA-Z0-9]{36})" --include="*.py" --include="*.js" --include="*.ts" . 2>/dev/null | grep -v test; then
+    error_exit "Potential secrets detected! Remove before committing"
 fi
 
-if ! $linting_passed; then
-    log_error "Linting failed. Issues should be auto-fixed. Please review."
-    exit 1
-fi
-
-log_success "Code quality checks passed"
-
-# 5. Check for secrets (basic)
-log_info "Scanning for common secrets..."
-if grep -r "sk-" --include="*.py" --include="*.js" --include="*.ts" . 2>/dev/null | grep -v ".git" | grep -v "test"; then
-    log_error "Potential API key detected! Remove secrets before committing."
-    exit 1
-fi
-
-# 6. Get commit message
+# 6. Interactive commit message
 echo ""
-echo "Commit types:"
-echo "  feat     - New feature"
-echo "  fix      - Bug fix"
-echo "  docs     - Documentation"
-echo "  refactor - Code refactoring"
-echo "  test     - Adding tests"
-echo "  chore    - Maintenance"
+PS3="Select commit type: "
+select type in "feat" "fix" "docs" "refactor" "test" "chore"; do
+    [[ -n $type ]] && break
+done
 
-read -p "Enter commit type: " TYPE
-read -p "Enter commit description: " DESCRIPTION
+read -p "Enter description: " desc
+commit_msg="$type: $desc"
 
-# Validate commit message
-COMMIT_MSG="${TYPE}: ${DESCRIPTION}"
+# Validate message length
+[[ ${#commit_msg} -lt $MIN_MSG_LENGTH ]] && error_exit "Message too short (min $MIN_MSG_LENGTH chars)"
+[[ ${#commit_msg} -gt $MAX_MSG_LENGTH ]] && error_exit "Message too long (max $MAX_MSG_LENGTH chars)"
 
-if [[ ${#COMMIT_MSG} -lt $MIN_COMMIT_MSG_LENGTH ]]; then
-    log_error "Commit message too short (minimum $MIN_COMMIT_MSG_LENGTH characters)"
-    exit 1
-fi
-
-if [[ ${#COMMIT_MSG} -gt $MAX_COMMIT_MSG_LENGTH ]]; then
-    log_error "Commit message too long (maximum $MAX_COMMIT_MSG_LENGTH characters)"
-    exit 1
-fi
-
-# 7. Show what will be committed
+# 7. Show preview and confirm
 echo ""
-log_info "Changes to be committed:"
+log "📝 Changes to commit:"
 git status --short
 echo ""
-log_info "Commit message: $COMMIT_MSG"
+log "💬 Message: $commit_msg"
+echo ""
 
-# 8. Confirm and commit
 read -p "Proceed with commit? (Y/n): " -n 1 -r
 echo
-if [[ $REPLY =~ ^[Nn]$ ]]; then
-    log_info "Commit cancelled"
-    exit 0
-fi
+[[ $REPLY =~ ^[Nn]$ ]] && { log "Cancelled" "$YELLOW"; exit 0; }
 
-# Create the commit
+# 8. Create commit
 git add .
-git commit -m "$COMMIT_MSG"
+git commit -m "$commit_msg"
 
-log_success "Commit created successfully: $COMMIT_MSG"
-log_info "Use 'git push' to push to remote repository"
+log "✅ Commit created: $commit_msg" "$GREEN"
+log "ℹ️ Next: git push to publish changes"

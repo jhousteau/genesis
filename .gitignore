@@ -1,3 +1,6 @@
+# Old bloated code (reference only, not tracked)
+old-bloated-code-read-only/
+
 # Environment files (protect secrets)
 .env
 .env.local
