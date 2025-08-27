@@ -1,9 +1,0 @@
-# Backend Configuration for Development Environment
-# Copy this file to backend.tf after bootstrap is complete
-
-terraform {
-  backend "gcs" {
-    bucket = "tf-state-123456789012-bootstrap"  # Replace with your bootstrap state bucket
-    prefix = "dev/terraform/state"
-  }
-}
