@@ -21,7 +21,7 @@ from .manager import (
 
 __all__ = [
     "RequestContext",
-    "TraceContext", 
+    "TraceContext",
     "ContextManager",
     "get_context",
     "set_context",

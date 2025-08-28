@@ -19,6 +19,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 class ErrorSeverity(Enum):
     """Error severity levels for logging and alerting."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -28,6 +29,7 @@ class ErrorSeverity(Enum):
 
 class ErrorCategory(Enum):
     """Error categories for classification and handling."""
+
     INFRASTRUCTURE = "infrastructure"
     APPLICATION = "application"
     NETWORK = "network"
@@ -47,7 +49,7 @@ class ErrorCategory(Enum):
 @dataclass
 class ErrorContext:
     """Context information attached to errors for tracing and debugging."""
-    
+
     correlation_id: str
     timestamp: datetime
     service: str
@@ -73,21 +75,24 @@ class ErrorContext:
         }
 
     @classmethod
-    def create_default(cls, service: Optional[str] = None, environment: Optional[str] = None) -> "ErrorContext":
+    def create_default(
+        cls, service: Optional[str] = None, environment: Optional[str] = None
+    ) -> "ErrorContext":
         """Create a default error context."""
         import os
+
         return cls(
             correlation_id=str(uuid.uuid4()),
             timestamp=datetime.utcnow(),
             service=service or os.environ.get("GENESIS_SERVICE", "genesis"),
-            environment=environment or os.environ.get("GENESIS_ENV", "development")
+            environment=environment or os.environ.get("GENESIS_ENV", "development"),
         )
 
 
 class GenesisError(Exception):
     """
     Base exception class for all Genesis errors.
-    
+
     Provides structured error information including category, severity,
     context, and automatic correlation ID generation.
     """
@@ -119,9 +124,10 @@ class GenesisError(Exception):
     def _create_default_context(self) -> ErrorContext:
         """Create default error context from environment."""
         import os
+
         return ErrorContext.create_default(
             service=os.environ.get("GENESIS_SERVICE", "genesis"),
-            environment=os.environ.get("GENESIS_ENV", "development")
+            environment=os.environ.get("GENESIS_ENV", "development"),
         )
 
     def _capture_stack_trace(self) -> List[str]:
@@ -154,7 +160,9 @@ class GenesisError(Exception):
 
         # Include stack trace for errors and critical issues
         if self.severity in [ErrorSeverity.ERROR, ErrorSeverity.CRITICAL]:
-            error_dict["error"]["stack_trace"] = self.stack_trace[-10:]  # Last 10 frames
+            error_dict["error"]["stack_trace"] = self.stack_trace[
+                -10:
+            ]  # Last 10 frames
 
         return error_dict
 
@@ -166,32 +174,32 @@ class GenesisError(Exception):
 # Specific error classes for different categories
 class InfrastructureError(GenesisError):
     """Infrastructure and platform-related errors."""
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
             code="INFRASTRUCTURE_ERROR",
             category=ErrorCategory.INFRASTRUCTURE,
-            **kwargs
+            **kwargs,
         )
 
 
 class NetworkError(GenesisError):
     """Network connectivity and communication errors."""
+
     def __init__(self, message: str, endpoint: Optional[str] = None, **kwargs):
         details = kwargs.get("details", {})
         if endpoint:
             details["endpoint"] = endpoint
         kwargs["details"] = details
         super().__init__(
-            message,
-            code="NETWORK_ERROR", 
-            category=ErrorCategory.NETWORK,
-            **kwargs
+            message, code="NETWORK_ERROR", category=ErrorCategory.NETWORK, **kwargs
         )
 
 
 class ValidationError(GenesisError):
     """Data validation and format errors."""
+
     def __init__(self, message: str, field: Optional[str] = None, **kwargs):
         details = kwargs.get("details", {})
         if field:
@@ -202,24 +210,26 @@ class ValidationError(GenesisError):
             code="VALIDATION_ERROR",
             category=ErrorCategory.VALIDATION,
             severity=ErrorSeverity.WARNING,
-            **kwargs
+            **kwargs,
         )
 
 
 class AuthenticationError(GenesisError):
     """Authentication failures."""
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
             code="AUTHENTICATION_ERROR",
             category=ErrorCategory.AUTHENTICATION,
             recoverable=False,
-            **kwargs
+            **kwargs,
         )
 
 
 class AuthorizationError(GenesisError):
     """Authorization and permission errors."""
+
     def __init__(self, message: str, resource: Optional[str] = None, **kwargs):
         details = kwargs.get("details", {})
         if resource:
@@ -230,39 +240,41 @@ class AuthorizationError(GenesisError):
             code="AUTHORIZATION_ERROR",
             category=ErrorCategory.AUTHORIZATION,
             recoverable=False,
-            **kwargs
+            **kwargs,
         )
 
 
 class GenesisTimeoutError(GenesisError):
     """Timeout and deadline exceeded errors."""
-    def __init__(self, message: str, timeout_duration: Optional[float] = None, **kwargs):
+
+    def __init__(
+        self, message: str, timeout_duration: Optional[float] = None, **kwargs
+    ):
         details = kwargs.get("details", {})
         if timeout_duration:
             details["timeout_duration"] = timeout_duration
         kwargs["details"] = details
         super().__init__(
-            message,
-            code="TIMEOUT_ERROR",
-            category=ErrorCategory.TIMEOUT,
-            **kwargs
+            message, code="TIMEOUT_ERROR", category=ErrorCategory.TIMEOUT, **kwargs
         )
 
 
 class RateLimitError(GenesisError):
     """Rate limiting and throttling errors."""
+
     def __init__(self, message: str, retry_after: Optional[int] = None, **kwargs):
         super().__init__(
             message,
             code="RATE_LIMIT_ERROR",
             category=ErrorCategory.RATE_LIMIT,
             retry_after=retry_after,
-            **kwargs
+            **kwargs,
         )
 
 
 class ExternalServiceError(GenesisError):
     """External service and API errors."""
+
     def __init__(self, message: str, service_name: Optional[str] = None, **kwargs):
         details = kwargs.get("details", {})
         if service_name:
@@ -272,29 +284,27 @@ class ExternalServiceError(GenesisError):
             message,
             code="EXTERNAL_SERVICE_ERROR",
             category=ErrorCategory.EXTERNAL_SERVICE,
-            **kwargs
+            **kwargs,
         )
 
 
 class ResourceError(GenesisError):
     """Resource not found or access errors."""
+
     def __init__(self, message: str, resource_type: Optional[str] = None, **kwargs):
         details = kwargs.get("details", {})
         if resource_type:
             details["resource_type"] = resource_type
         kwargs["details"] = details
         super().__init__(
-            message,
-            code="RESOURCE_ERROR",
-            category=ErrorCategory.RESOURCE,
-            **kwargs
+            message, code="RESOURCE_ERROR", category=ErrorCategory.RESOURCE, **kwargs
         )
 
 
 class ErrorHandler:
     """
     Central error handler for processing and converting exceptions.
-    
+
     Manages error processing, categorization, and context enrichment.
     """
 
@@ -304,17 +314,15 @@ class ErrorHandler:
         self.handlers: List[Callable[[GenesisError], None]] = []
 
     def handle(
-        self, 
-        error: Exception, 
-        context: Optional[ErrorContext] = None
+        self, error: Exception, context: Optional[ErrorContext] = None
     ) -> GenesisError:
         """
         Handle any error and convert to GenesisError with enriched context.
-        
+
         Args:
             error: The error to handle
             context: Optional error context to attach
-            
+
         Returns:
             GenesisError instance with proper categorization
         """
@@ -338,12 +346,10 @@ class ErrorHandler:
         return genesis_error
 
     def _convert_to_genesis_error(
-        self, 
-        error: Exception, 
-        context: Optional[ErrorContext] = None
+        self, error: Exception, context: Optional[ErrorContext] = None
     ) -> GenesisError:
         """Convert standard exception to appropriate GenesisError subclass."""
-        
+
         # Mapping of standard exceptions to Genesis error types
         error_mappings = {
             ConnectionError: NetworkError,
@@ -365,15 +371,10 @@ class ErrorHandler:
         # Create context if not provided
         if context is None:
             context = ErrorContext.create_default(
-                service=self.service_name,
-                environment=self.environment
+                service=self.service_name, environment=self.environment
             )
 
-        return genesis_error_class(
-            message=str(error),
-            context=context,
-            cause=error
-        )
+        return genesis_error_class(message=str(error), context=context, cause=error)
 
     def add_handler(self, handler: Callable[[GenesisError], None]) -> None:
         """Add a handler function to process errors."""
@@ -389,24 +390,24 @@ def get_error_handler() -> ErrorHandler:
     global _error_handler
     if _error_handler is None:
         import os
+
         _error_handler = ErrorHandler(
             service_name=os.environ.get("GENESIS_SERVICE", "genesis"),
-            environment=os.environ.get("GENESIS_ENV", "development")
+            environment=os.environ.get("GENESIS_ENV", "development"),
         )
     return _error_handler
 
 
 def handle_error(
-    error: Exception, 
-    context: Optional[ErrorContext] = None
+    error: Exception, context: Optional[ErrorContext] = None
 ) -> GenesisError:
     """
     Convenience function to handle errors with the global handler.
-    
+
     Args:
         error: The error to handle
         context: Optional error context
-        
+
     Returns:
         GenesisError instance with proper categorization and context
     """

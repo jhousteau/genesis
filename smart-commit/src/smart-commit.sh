@@ -43,13 +43,36 @@ if [[ -n $test_cmd ]]; then
     fi
 fi
 
-# 4. Run linting with auto-fix
-log "ℹ️ Running linters..."
-if command -v ruff &>/dev/null; then
-    ruff check --fix . || error_exit "Ruff linting failed"
-fi
-if command -v black &>/dev/null; then
-    black . &>/dev/null || true
+# 4. Run autofix system with convergent fixing
+log "ℹ️ Running Genesis AutoFixer..."
+if command -v python &>/dev/null && python -c "from genesis.core.autofix import AutoFixer" 2>/dev/null; then
+    # Use Genesis autofix system
+    python -c "
+from genesis.core.autofix import AutoFixer
+import sys
+
+try:
+    fixer = AutoFixer()
+    result = fixer.run()
+
+    if not result.success:
+        print(f'❌ AutoFixer failed: {result.error or \"Unknown error\"}')
+        sys.exit(1)
+
+    print('✅ Genesis AutoFixer completed successfully')
+except Exception as e:
+    print(f'❌ AutoFixer error: {e}')
+    sys.exit(1)
+" || error_exit "Genesis AutoFixer failed"
+else
+    # Fallback to basic linting
+    log "⚠️ Genesis AutoFixer not available, using basic linting..." "$YELLOW"
+    if command -v ruff &>/dev/null; then
+        ruff check --fix . || error_exit "Ruff linting failed"
+    fi
+    if command -v black &>/dev/null; then
+        black . &>/dev/null || true
+    fi
 fi
 log "✅ Code quality checks passed" "$GREEN"
 

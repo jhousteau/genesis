@@ -38,7 +38,7 @@ Production-ready setup with service accounts and GitHub Actions.
 Based on analyzing the old bloated code, we found most projects need:
 
 - **90%** need: project + state bucket
-- **60%** need: service accounts  
+- **60%** need: service accounts
 - **40%** need: GitHub Actions integration
 - **10%** need: complex multi-region setups
 

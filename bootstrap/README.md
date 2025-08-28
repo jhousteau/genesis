@@ -104,7 +104,7 @@ Each bootstrapped project includes these targets:
 ## Development (AI-Safe Sparse Worktree)
 
 ```bash
-# Work on bootstrap component in isolation  
+# Work on bootstrap component in isolation
 git worktree add ../bootstrap-work feature/bootstrap-improvements
 cd ../bootstrap-work
 git sparse-checkout set bootstrap/

@@ -8,7 +8,7 @@ Analysis of the old Genesis codebase (250,000+ lines) reveals massive duplicatio
 
 ### Smart Commit Systems (3 Versions, 1,874 lines total)
 - **agent-cage**: 749 lines - "Universal Adaptive Smart-Commit System"
-- **claude-talk**: 527 lines - "Universal smart commit system"  
+- **claude-talk**: 527 lines - "Universal smart commit system"
 - **genesis-old**: 598 lines - "Smart Commit System"
 - **Problem**: Same functionality implemented 3 times, each slightly different
 
@@ -125,7 +125,7 @@ Analysis of the old Genesis codebase (250,000+ lines) reveals massive duplicatio
 - **Example**: "Universal Adaptive Smart-Commit System" (749 lines)
 - **Solution**: Build for specific needs, not imaginary flexibility
 
-### 2. The "Every Strategy" Syndrome  
+### 2. The "Every Strategy" Syndrome
 - **Problem**: Implementing every possible approach
 - **Example**: 6 deployment strategies when you only use 1
 - **Solution**: YAGNI - You Aren't Gonna Need It
@@ -194,7 +194,7 @@ Based on this analysis, the new Genesis should follow:
 
 ### Phase 2: Remove Complexity (TORCH)
 1. Delete all deployment strategies except basic
-2. Remove VM orchestration complexity  
+2. Remove VM orchestration complexity
 3. Eliminate duplicate implementations
 4. Consolidate configuration
 

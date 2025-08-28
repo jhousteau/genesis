@@ -16,7 +16,7 @@ exclude_dirs:
 
 # Skip specific test IDs that are not relevant for Genesis
 # B101: assert_used - OK to use assert in tests and development tools
-# B603: subprocess_without_shell_equals_true - We need subprocess for CLI tooling  
+# B603: subprocess_without_shell_equals_true - We need subprocess for CLI tooling
 # B607: start_process_with_partial_path - CLI tools often use partial paths
 # B404: import subprocess - We need subprocess for legitimate tooling
 # B311: random module - OK for non-security-critical randomness like IDs

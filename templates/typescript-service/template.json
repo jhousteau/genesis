@@ -1,10 +1,10 @@
 {
-  "name": "TypeScript Service", 
+  "name": "TypeScript Service",
   "description": "Express-based TypeScript service with testing and build pipeline",
   "variables": {
     "project_name": "string",
     "project_description": "string",
-    "author_name": "string", 
+    "author_name": "string",
     "author_email": "string",
     "node_version": "18"
   },
@@ -15,7 +15,7 @@
       "substitute": true
     },
     {
-      "src": "tsconfig.json.template", 
+      "src": "tsconfig.json.template",
       "dest": "tsconfig.json",
       "substitute": true
     },
@@ -26,7 +26,7 @@
     },
     {
       "src": "src/app.ts.template",
-      "dest": "src/app.ts", 
+      "dest": "src/app.ts",
       "substitute": true
     },
     {
@@ -46,7 +46,7 @@
     },
     {
       "src": ".env.example.template",
-      "dest": ".env.example", 
+      "dest": ".env.example",
       "substitute": true
     },
     {

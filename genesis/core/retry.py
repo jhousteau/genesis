@@ -67,6 +67,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 @dataclass
 class RetryConfig:
     """Configuration for retry behavior."""
+
     max_attempts: int = 3
     initial_delay: float = 1.0
     max_delay: float = 60.0
@@ -77,16 +78,16 @@ class RetryConfig:
 
 def retry(config: Optional[RetryConfig] = None) -> Callable:
     """Retry decorator with exponential backoff.
-    
+
     Args:
         config: RetryConfig instance. Defaults to basic configuration.
-        
+
     Usage:
         @retry()
         def unreliable_function():
             # May fail, will be retried
             pass
-            
+
         @retry(RetryConfig(max_attempts=5, initial_delay=0.5))
         async def async_function():
             # Async functions supported
@@ -94,13 +95,13 @@ def retry(config: Optional[RetryConfig] = None) -> Callable:
     """
     if config is None:
         config = RetryConfig()
-    
+
     def decorator(func: Callable) -> Callable:
         if asyncio.iscoroutinefunction(func):
             return _async_retry_wrapper(func, config)
         else:
             return _sync_retry_wrapper(func, config)
-    
+
     return decorator
 
 
@@ -108,7 +109,7 @@ def _sync_retry_wrapper(func: Callable, config: RetryConfig) -> Callable:
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> Any:
         last_exception = None
-        
+
         for attempt in range(config.max_attempts):
             try:
                 return func(*args, **kwargs)
@@ -116,18 +117,18 @@ def _sync_retry_wrapper(func: Callable, config: RetryConfig) -> Callable:
                 last_exception = e
                 if attempt == config.max_attempts - 1:
                     break
-                
+
                 delay = min(
-                    config.initial_delay * (config.exponential_base ** attempt),
-                    config.max_delay
+                    config.initial_delay * (config.exponential_base**attempt),
+                    config.max_delay,
                 )
                 if config.jitter:
                     delay *= random.uniform(0.5, 1.5)
-                
+
                 time.sleep(delay)
-        
+
         raise last_exception
-    
+
     return wrapper
 
 
@@ -135,7 +136,7 @@ def _async_retry_wrapper(func: Callable, config: RetryConfig) -> Callable:
     @functools.wraps(func)
     async def wrapper(*args, **kwargs) -> Any:
         last_exception = None
-        
+
         for attempt in range(config.max_attempts):
             try:
                 return await func(*args, **kwargs)
@@ -143,24 +144,25 @@ def _async_retry_wrapper(func: Callable, config: RetryConfig) -> Callable:
                 last_exception = e
                 if attempt == config.max_attempts - 1:
                     break
-                
+
                 delay = min(
-                    config.initial_delay * (config.exponential_base ** attempt),
-                    config.max_delay
+                    config.initial_delay * (config.exponential_base**attempt),
+                    config.max_delay,
                 )
                 if config.jitter:
                     delay *= random.uniform(0.5, 1.5)
-                
+
                 await asyncio.sleep(delay)
-        
+
         raise last_exception
-    
+
     return wrapper
 
 
 # Circuit Breaker Implementation
 class CircuitBreakerState(Enum):
     """Circuit breaker states."""
+
     CLOSED = "closed"  # Normal operation, requests pass through
     OPEN = "open"  # Circuit tripped, requests fail fast
     HALF_OPEN = "half_open"  # Testing if service recovered
@@ -186,6 +188,7 @@ class CircuitBreakerError(GenesisError):
 @dataclass
 class CircuitBreakerMetrics:
     """Metrics tracked by the circuit breaker."""
+
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0
@@ -213,6 +216,7 @@ class CircuitBreakerMetrics:
 @dataclass
 class CircuitBreakerConfig:
     """Configuration for circuit breaker behavior."""
+
     failure_threshold: int = 5
     timeout: float = 60.0
     half_open_max_calls: int = 5
@@ -235,7 +239,7 @@ class CircuitBreaker:
     def __init__(self, config: Optional[CircuitBreakerConfig] = None):
         if config is None:
             config = CircuitBreakerConfig()
-        
+
         # Configuration
         self.failure_threshold = config.failure_threshold
         self.timeout = config.timeout
@@ -338,7 +342,10 @@ class CircuitBreaker:
                 # Count recent failures
                 recent_failures = sum(1 for result in self._call_results if not result)
 
-                if self.failure_threshold > 0 and recent_failures >= self.failure_threshold:
+                if (
+                    self.failure_threshold > 0
+                    and recent_failures >= self.failure_threshold
+                ):
                     self._transition_to_state(CircuitBreakerState.OPEN)
 
             elif self._state == CircuitBreakerState.HALF_OPEN:
@@ -402,14 +409,18 @@ class CircuitBreaker:
     def decorator(self, func: F) -> F:
         """Decorator for wrapping functions with circuit breaker."""
         if inspect.iscoroutinefunction(func):
+
             @functools.wraps(func)
             async def async_wrapper(*args, **kwargs):
                 return await self.call_async(func, *args, **kwargs)
+
             return async_wrapper
         else:
+
             @functools.wraps(func)
             def sync_wrapper(*args, **kwargs):
                 return self.call(func, *args, **kwargs)
+
             return sync_wrapper
 
     def reset(self) -> None:
@@ -455,23 +466,23 @@ def circuit_breaker(config: Optional[CircuitBreakerConfig] = None) -> Callable:
 # Integration: Retry + Circuit Breaker
 def resilient_call(
     retry_config: Optional[RetryConfig] = None,
-    circuit_config: Optional[CircuitBreakerConfig] = None
+    circuit_config: Optional[CircuitBreakerConfig] = None,
 ) -> Callable:
     """
     Combined retry and circuit breaker decorator.
-    
+
     Circuit breaker wraps retry - if circuit is open, no retry attempts are made.
     This prevents retry storms against failing services.
-    
+
     Args:
         retry_config: Configuration for retry behavior
         circuit_config: Configuration for circuit breaker
-        
+
     Usage:
         @resilient_call()
         def external_api_call():
             return requests.get('https://api.example.com')
-            
+
         @resilient_call(
             retry_config=RetryConfig(max_attempts=3, initial_delay=1.0),
             circuit_config=CircuitBreakerConfig(failure_threshold=5, timeout=60)
@@ -479,14 +490,15 @@ def resilient_call(
         def database_call():
             return db.query("SELECT * FROM table")
     """
+
     def decorator(func: Callable) -> Callable:
         # Apply retry decorator first
         retried_func = retry(retry_config)(func)
-        
+
         # Then wrap with circuit breaker
         cb = CircuitBreaker(circuit_config)
         return cb.decorator(retried_func)
-    
+
     return decorator
 
 
@@ -495,11 +507,11 @@ def resilient_external_service(
     max_attempts: int = 3,
     failure_threshold: int = 5,
     timeout: float = 60.0,
-    name: str = "ExternalService"
+    name: str = "ExternalService",
 ) -> Callable:
     """
     Pre-configured resilient decorator for external service calls.
-    
+
     Optimized for typical external service patterns:
     - More aggressive retry (3 attempts with exponential backoff)
     - Lower failure threshold (5 failures opens circuit)
@@ -520,7 +532,7 @@ def resilient_external_service(
             success_threshold=1,
             sliding_window_size=10,
             name=name,
-        )
+        ),
     )
 
 
@@ -528,11 +540,11 @@ def resilient_database(
     max_attempts: int = 2,
     failure_threshold: int = 3,
     timeout: float = 30.0,
-    name: str = "Database"
+    name: str = "Database",
 ) -> Callable:
     """
     Pre-configured resilient decorator for database calls.
-    
+
     Optimized for database patterns:
     - Conservative retry (2 attempts to avoid long delays)
     - Aggressive circuit breaker (3 failures opens circuit)
@@ -553,5 +565,5 @@ def resilient_database(
             success_threshold=2,
             sliding_window_size=5,
             name=name,
-        )
+        ),
     )

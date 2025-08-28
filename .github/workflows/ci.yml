@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Check file count for AI safety
         run: |
           count=$(find . -type f -not -path './.git/*' | wc -l)
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Validate component structure
         run: |
           if [ -f "./validate-components.sh" ]; then
@@ -43,11 +43,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
       - uses: pre-commit/action@v3.0.1
 
   python-tests:
@@ -56,25 +56,25 @@ jobs:
     if: hashFiles('pyproject.toml') != ''
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           version: latest
           virtualenvs-create: true
           virtualenvs-in-project: true
-          
+
       - name: Install dependencies
         run: poetry install
-        
+
       - name: Run tests
         run: |
           poetry run pytest tests/ --cov=. --cov-report=xml --cov-report=term-missing
-          
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -87,15 +87,15 @@ jobs:
     if: hashFiles('package.json') != ''
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Run tests
         run: npm test
 
@@ -110,29 +110,29 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       # Secret Detection
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: false
-      
+
       # SAST Analysis with CodeQL
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: python
           queries: security-extended,security-and-quality
-      
+
       - name: Autobuild for CodeQL
         uses: github/codeql-action/autobuild@v3
-      
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:python"
-      
+
       # Python Dependency Security
       - name: Python security scan
         if: hashFiles('pyproject.toml') != ''
@@ -142,7 +142,7 @@ jobs:
           timeout 120 safety scan --output json > safety-report.json 2>&1 || echo "Safety scan completed with warnings"
           echo "🔍 Running Bandit (SAST for Python)..."
           bandit -r . -f json -o bandit-report.json --configfile .bandit || echo "Bandit scan completed with findings"
-          
+
           # Show summaries
           if [ -f safety-report.json ]; then
             echo "📊 Safety Report Summary:"
@@ -160,9 +160,9 @@ except:
     print('Safety report parsing failed - check format')
             " || echo "Safety report analysis failed"
           fi
-          
+
           if [ -f bandit-report.json ]; then
-            echo "📊 Bandit Report Summary:"  
+            echo "📊 Bandit Report Summary:"
             python -c "
 import json
 try:
@@ -179,7 +179,7 @@ except:
     print('Bandit report parsing failed')
             " || echo "Bandit report analysis failed"
           fi
-        
+
       # Node.js Security
       - name: Node.js security scan
         if: hashFiles('package.json') != ''
@@ -190,7 +190,7 @@ except:
             echo "📊 NPM Audit Summary:"
             node -e "const data=require('./npm-audit.json'); console.log(\`Vulnerabilities: \${Object.keys(data.vulnerabilities || {}).length}\`);" || echo "No npm audit issues found"
           fi
-      
+
       # Upload security artifacts
       - name: Upload security reports
         uses: actions/upload-artifact@v4
@@ -202,7 +202,7 @@ except:
             bandit-report.json
             npm-audit.json
           retention-days: 30
-      
+
       # Security Summary
       - name: Security Scan Summary
         if: always()

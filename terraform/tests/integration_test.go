@@ -32,7 +32,7 @@ func TestStateBackendModule(t *testing.T) {
 
 	// Run `terraform output` to get the bucket name
 	bucketName := terraform.Output(t, terraformOptions, "bucket_name")
-	
+
 	// Verify the bucket name follows expected format
 	assert.Contains(t, bucketName, "test-project-")
 	assert.Contains(t, bucketName, "-terraform-state")

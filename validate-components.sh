@@ -20,23 +20,23 @@ for component in "${components[@]}"; do
     if [ -d "$component" ]; then
         file_count=$(find "$component" -type f | wc -l | tr -d ' ')
         total_components=$((total_components + 1))
-        
+
         echo "📁 $component: $file_count files"
-        
+
         if [ "$file_count" -le "$max_files" ]; then
             echo "  ✅ SAFE for AI development"
             valid_components=$((valid_components + 1))
         else
             echo "  ❌ EXCEEDS AI safety limit ($max_files files)"
         fi
-        
+
         # Check for README
         if [ -f "$component/README.md" ]; then
             echo "  📖 README.md present"
         else
             echo "  ⚠️  Missing README.md"
         fi
-        
+
         echo
     fi
 done

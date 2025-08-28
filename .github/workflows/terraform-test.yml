@@ -14,46 +14,46 @@ jobs:
   terraform-validate:
     name: Terraform Validation
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: ~1.0
-        
+
     - name: Run Terraform validation tests
       run: |
         cd terraform/tests
         chmod +x validate.sh
         ./validate.sh
-        
+
   terraform-security:
     name: Security Scan
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
     - name: Run Checkov
       uses: bridgecrewio/checkov-action@master
       with:
         directory: terraform/
         quiet: true
         soft_fail: true
-        
+
   terraform-docs:
     name: Documentation Check
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
     - name: Generate terraform docs
       uses: terraform-docs/gh-actions@v1
       with:
@@ -63,7 +63,7 @@ jobs:
         output-file: README.md
         output-method: inject
         git-push: false
-        
+
     - name: Check for docs changes
       run: |
         if [[ `git status --porcelain` ]]; then
