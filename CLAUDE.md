@@ -7,9 +7,8 @@ Genesis is a development toolkit we are creating. This document prevents confusi
 ## Context Detection Rules
 
 ### You're BUILDING Genesis if:
-- The project root contains `EXTRACTION_PLAN.md`
-- You see `old-bloated-code-read-only/` directory
-- Tasks involve extracting from old code
+- The project root contains `EXTRACTION_PLAN.md`  
+- Tasks involve creating Genesis components
 - You're creating the genesis-cli tool itself
 - Working in a project directory named "genesis"
 
@@ -25,9 +24,9 @@ Genesis is a development toolkit we are creating. This document prevents confusi
 |--------------------------------------|-------------------------------------------|
 | Creating smart-commit.sh             | Running smart-commit.sh                   |
 | Building genesis CLI tool            | Running `genesis bootstrap <project>`     |
-| Making shared-python/ libraries     | Importing from shared-python libraries   |
-| Extracting from old-bloated-code/   | Using clean Genesis tools                 |
-| Setting up Genesis worktrees        | Using Genesis to create project worktrees|
+| Making shared libraries              | Importing from shared libraries           |
+| Creating Genesis components          | Using clean Genesis tools                 |
+| Setting up Genesis worktrees         | Using Genesis to create project worktrees|
 | Implementing file count validation   | Benefiting from automatic file limits    |
 
 ## 🎯 Core Building Principle: "Build Generic, Use Everywhere"
@@ -104,6 +103,30 @@ AI-generated code
 - **NOW**: Creating the bootstrap.sh script and templates
 - **FUTURE**: Running `genesis bootstrap` to create new projects
 
+## Standard Project Structure
+
+Genesis enforces a consistent folder structure across all projects:
+
+```
+project/
+├── src/              # Source code
+├── tests/            # Test files
+├── docs/             # Documentation
+│   ├── api/          # API documentation and references
+│   ├── guides/       # How-to guides and tutorials
+│   └── architecture/ # System design and architecture decisions
+├── scripts/          # Utility scripts (executable, self-documenting)
+├── scratch/          # Temporary files (git-ignored)
+├── .gitignore        # Includes scratch/ by default
+├── Makefile          # Standard automation targets
+└── README.md         # Project overview
+```
+
+### Folder Guidelines
+- **scratch/**: Temporary workspace, always git-ignored
+- **scripts/**: Executable utilities with `--help`, named `action-target.sh`
+- **docs/**: Organized by type (api, guides, architecture)
+
 ## Current Genesis Components (Being Built)
 
 ### Phase 0: Foundation
@@ -112,6 +135,7 @@ AI-generated code
 - Comprehensive ignore files
 - Dependency management (Poetry, npm)
 - Root Makefile for automation
+- Standard project structure (docs/, scripts/, scratch/)
 
 ### Phase 1: Structure
 - Component-based directories

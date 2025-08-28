@@ -30,7 +30,7 @@ EOF
 
 create_project() {
     log "📁 Creating $PROJECT_TYPE project..."
-    mkdir -p "$PROJECT_PATH"/{src,tests,docs}
+    mkdir -p "$PROJECT_PATH"/{src,tests,docs/{api,guides,architecture},scripts,scratch}
     command -v git &>/dev/null || error_exit "Git is required"
 
     case "$PROJECT_TYPE" in
@@ -107,6 +107,7 @@ build/
 coverage/
 .env
 .env.local
+scratch/
 EOF
 
     cat > "$PROJECT_PATH/Makefile" << 'EOF'

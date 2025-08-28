@@ -11,7 +11,7 @@ NC='\033[0m'
 echo "🔍 Validating Genesis component structure for AI safety..."
 echo
 
-components=("genesis-cli" "smart-commit" "bootstrap" "shared-python" "worktree-tools" "testing")
+components=("genesis" "smart-commit" "bootstrap" "shared-typescript" "worktree-tools" "testing" "templates" "terraform")
 max_files=30
 total_components=0
 valid_components=0
