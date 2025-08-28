@@ -21,10 +21,6 @@ setup: ## Install all dependencies and set up development environment
 		echo "$(BLUE)Installing Node.js dependencies...$(NC)"; \
 		npm install; \
 	fi
-	@if [ -f "go.mod" ]; then \
-		echo "$(BLUE)Installing Go dependencies...$(NC)"; \
-		go mod download; \
-	fi
 	@if [ -f ".pre-commit-config.yaml" ]; then \
 		echo "$(BLUE)Installing pre-commit hooks...$(NC)"; \
 		pre-commit install; \
@@ -60,10 +56,6 @@ test: ## Run all tests with coverage
 		echo "$(BLUE)Running Node.js tests...$(NC)"; \
 		npm test; \
 	fi
-	@if [ -f "go.mod" ]; then \
-		echo "$(BLUE)Running Go tests...$(NC)"; \
-		go test ./...; \
-	fi
 
 lint: ## Run all linters and formatters
 	@echo "$(BLUE)Running linters for $(PROJECT_NAME)...$(NC)"
@@ -87,11 +79,6 @@ lint: ## Run all linters and formatters
 			npx eslint src/**/*.ts; \
 		fi; \
 	fi
-	@if [ -f "go.mod" ]; then \
-		echo "$(BLUE)Running go fmt and go vet...$(NC)"; \
-		go fmt ./...; \
-		go vet ./...; \
-	fi
 
 format: ## Auto-format all code
 	@echo "$(BLUE)Formatting code for $(PROJECT_NAME)...$(NC)"
@@ -111,10 +98,6 @@ format: ## Auto-format all code
 			npx prettier --write src/**/*.ts; \
 		fi; \
 	fi
-	@if [ -f "go.mod" ]; then \
-		echo "$(BLUE)Formatting Go code...$(NC)"; \
-		go fmt ./...; \
-	fi
 
 build: ## Build the project
 	@echo "$(BLUE)Building $(PROJECT_NAME)...$(NC)"
@@ -125,10 +108,6 @@ build: ## Build the project
 	@if [ -f "package.json" ]; then \
 		echo "$(BLUE)Building TypeScript...$(NC)"; \
 		npm run build; \
-	fi
-	@if [ -f "go.mod" ]; then \
-		echo "$(BLUE)Building Go binary...$(NC)"; \
-		go build -o bin/$(PROJECT_NAME) .; \
 	fi
 
 clean: ## Clean build artifacts and caches
@@ -195,9 +174,6 @@ version: ## Show project version information
 	fi
 	@if [ -f "package.json" ]; then \
 		echo "Node.js: $$(node -p "require('./package.json').version" 2>/dev/null || echo 'unknown')"; \
-	fi
-	@if [ -f "go.mod" ]; then \
-		echo "Go: $$(go list -m 2>/dev/null || echo 'unknown')"; \
 	fi
 
 genesis-cli: ## Install Genesis CLI for development
