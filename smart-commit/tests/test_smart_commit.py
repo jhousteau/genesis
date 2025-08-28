@@ -50,7 +50,7 @@ class TestSmartCommit:
 
         # Mock user input for commit type and description
         with patch("builtins.input", side_effect=["1", "add test file", "y"]):
-            result = subprocess.run(
+            subprocess.run(
                 ["bash", str(smart_commit_path)],
                 capture_output=True,
                 text=True,

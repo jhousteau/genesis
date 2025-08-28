@@ -6,18 +6,18 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 
 # Import version from package
 from genesis import __version__
+from genesis.commands.version import version
 
 from .core.errors import handle_error
 
 
 # Genesis root detection
-def find_genesis_root() -> Optional[Path]:
+def find_genesis_root() -> Path | None:
     """Find Genesis project root by looking for CLAUDE.md."""
     current = Path.cwd()
     for parent in [current] + list(current.parents):
@@ -26,7 +26,7 @@ def find_genesis_root() -> Optional[Path]:
     return None
 
 
-def get_component_path(component: str) -> Optional[Path]:
+def get_component_path(component: str) -> Path | None:
     """Get path to a Genesis component."""
     genesis_root = find_genesis_root()
     if not genesis_root:
@@ -60,7 +60,7 @@ def cli(ctx):
 @click.option("--skip-git", is_flag=True, help="Skip Git initialization")
 @click.pass_context
 def bootstrap(
-    ctx, name: str, project_type: str, target_path: Optional[str], skip_git: bool
+    ctx, name: str, project_type: str, target_path: str | None, skip_git: bool
 ):
     """Create new project with Genesis patterns and tooling."""
     from genesis.commands.bootstrap import bootstrap_command
@@ -78,7 +78,7 @@ def bootstrap(
 )
 @click.option("--verify", is_flag=True, help="Verify safety after creation")
 @click.pass_context
-def worktree(ctx, name: str, focus_path: str, max_files: Optional[int], verify: bool):
+def worktree(ctx, name: str, focus_path: str, max_files: int | None, verify: bool):
     """Create AI-safe sparse worktree with file limits."""
     from genesis.core.constants import AILimits
 
@@ -108,7 +108,7 @@ def worktree(ctx, name: str, focus_path: str, max_files: Optional[int], verify: 
         cmd.append("--verify")
 
     try:
-        result = subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True)
         click.echo(f"✅ Sparse worktree '{name}' created successfully!")
     except Exception as e:
         handled_error = handle_error(e)
@@ -119,7 +119,7 @@ def worktree(ctx, name: str, focus_path: str, max_files: Optional[int], verify: 
 @cli.command()
 @click.option("--message", "-m", help="Commit message")
 @click.pass_context
-def commit(ctx, message: Optional[str]):
+def commit(ctx, message: str | None):
     """Smart commit with quality gates and pre-commit hooks."""
     genesis_root = ctx.obj.get("genesis_root")
     if not genesis_root:
@@ -141,7 +141,7 @@ def commit(ctx, message: Optional[str]):
         os.environ["COMMIT_MESSAGE"] = message
 
     try:
-        result = subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True)
         click.echo("✅ Smart commit completed!")
     except Exception as e:
         handled_error = handle_error(e)
@@ -292,9 +292,6 @@ def sync(ctx):
 
     click.echo("✅ Sync complete!")
 
-
-# Add version management commands
-from genesis.commands.version import version
 
 cli.add_command(version)
 

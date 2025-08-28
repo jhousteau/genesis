@@ -19,7 +19,7 @@ class TestComponentIntegration:
     def test_bootstrap_to_worktree_workflow(self, temp_dir):
         """Test workflow: bootstrap project -> create worktree."""
         # Mock Genesis project
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         with patch_subprocess_run()[0] as mock_run:
             # Mock bootstrap script execution
@@ -62,7 +62,7 @@ class TestComponentIntegration:
     @pytest.mark.integration
     def test_cli_status_with_all_components(self, temp_dir):
         """Test CLI status command with all components present."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         # Import real CLI
         import sys
@@ -96,7 +96,7 @@ class TestComponentIntegration:
     @pytest.mark.integration
     def test_smart_commit_integration(self, temp_dir):
         """Test smart commit integration with CLI."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         import sys
 
@@ -122,7 +122,7 @@ class TestComponentIntegration:
     @pytest.mark.integration
     def test_shared_python_utilities_integration(self, temp_dir):
         """Test that shared Python utilities work together."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
         shared_python_path = temp_dir / "shared-python" / "src"
 
         # Add real shared_core package to path
@@ -146,7 +146,7 @@ class TestComponentIntegration:
     @pytest.mark.integration
     def test_component_script_discovery(self, temp_dir):
         """Test that CLI can discover all component scripts."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         # Test script discovery
         bootstrap_script = temp_dir / "bootstrap" / "src" / "bootstrap.sh"
@@ -171,7 +171,7 @@ class TestEndToEndWorkflows:
     @pytest.mark.e2e
     def test_complete_development_workflow(self, temp_dir):
         """Test complete workflow: bootstrap -> develop -> commit."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         import sys
 
@@ -220,7 +220,7 @@ class TestEndToEndWorkflows:
     @pytest.mark.ai_safety
     def test_ai_safety_throughout_workflow(self, temp_dir):
         """Test that AI safety is maintained throughout workflow."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         from testing.utilities import AISafetyChecker
 
@@ -260,7 +260,7 @@ class TestErrorHandlingIntegration:
     @pytest.mark.integration
     def test_cli_error_propagation(self, temp_dir):
         """Test that errors from scripts propagate correctly through CLI."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         import sys
 

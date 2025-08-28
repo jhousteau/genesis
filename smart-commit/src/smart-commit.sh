@@ -4,6 +4,13 @@
 
 set -euo pipefail
 
+# Load environment configuration if available
+if [[ -f ".envrc" ]]; then
+    source .envrc
+elif [[ -f "../.envrc" ]]; then
+    source ../.envrc
+fi
+
 # Colors and configuration
 RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 MIN_MSG_LENGTH=10; MAX_MSG_LENGTH=72

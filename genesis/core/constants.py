@@ -113,7 +113,7 @@ class AILimits:
                 raise ValueError("MAX_WORKTREE_FILES must be between 1-100")
             return value
         except ValueError as e:
-            raise ValueError(f"Invalid MAX_WORKTREE_FILES '{value_str}': {e}")
+            raise ValueError(f"Invalid MAX_WORKTREE_FILES '{value_str}': {e}") from e
 
     @staticmethod
     def get_max_project_files() -> int:
@@ -127,7 +127,7 @@ class AILimits:
                 raise ValueError("MAX_PROJECT_FILES must be between 1-1000")
             return value
         except ValueError as e:
-            raise ValueError(f"Invalid MAX_PROJECT_FILES '{value_str}': {e}")
+            raise ValueError(f"Invalid MAX_PROJECT_FILES '{value_str}': {e}") from e
 
     @staticmethod
     def get_max_component_files() -> int:
@@ -141,7 +141,7 @@ class AILimits:
                 raise ValueError("MAX_COMPONENT_FILES must be between 1-100")
             return value
         except ValueError as e:
-            raise ValueError(f"Invalid MAX_COMPONENT_FILES '{value_str}': {e}")
+            raise ValueError(f"Invalid MAX_COMPONENT_FILES '{value_str}': {e}") from e
 
 
 class RetryDefaults:
@@ -315,7 +315,7 @@ def get_genesis_components() -> dict[str, str]:
         try:
             return json.loads(components_json)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid COMPONENTS JSON: {e}")
+            raise ValueError(f"Invalid COMPONENTS JSON: {e}") from e
 
     # Try individual environment variables
     component_vars = {
@@ -363,7 +363,7 @@ def get_component_scripts() -> dict[str, str]:
         try:
             return json.loads(scripts_json)
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid COMPONENT_SCRIPTS JSON: {e}")
+            raise ValueError(f"Invalid COMPONENT_SCRIPTS JSON: {e}") from e
 
     # Try individual environment variables
     script_vars = {
@@ -427,8 +427,8 @@ def get_git_author_info() -> tuple[str, str]:
 
         return name, email
 
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
         raise ValueError(
             "Git author information not configured. "
             "Run: git config user.name 'Your Name' && git config user.email 'you@example.com'"
-        )
+        ) from e

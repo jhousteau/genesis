@@ -19,12 +19,12 @@ from genesis.core.constants import get_environment, get_service_name
 _current_context: ContextVar[Optional["RequestContext"]] = ContextVar(
     "current_context", default=None
 )
-_correlation_id: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
-_request_id: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
-_trace_id: ContextVar[Optional[str]] = ContextVar("trace_id", default=None)
-_span_id: ContextVar[Optional[str]] = ContextVar("span_id", default=None)
-_user_id: ContextVar[Optional[str]] = ContextVar("user_id", default=None)
-_metadata: ContextVar[Optional[dict[str, Any]]] = ContextVar("metadata", default=None)
+_correlation_id: ContextVar[str | None] = ContextVar("correlation_id", default=None)
+_request_id: ContextVar[str | None] = ContextVar("request_id", default=None)
+_trace_id: ContextVar[str | None] = ContextVar("trace_id", default=None)
+_span_id: ContextVar[str | None] = ContextVar("span_id", default=None)
+_user_id: ContextVar[str | None] = ContextVar("user_id", default=None)
+_metadata: ContextVar[dict[str, Any] | None] = ContextVar("metadata", default=None)
 
 
 @dataclass
@@ -33,7 +33,7 @@ class TraceContext:
 
     trace_id: str
     span_id: str
-    parent_span_id: Optional[str] = None
+    parent_span_id: str | None = None
     baggage: dict[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -62,8 +62,8 @@ class RequestContext:
     correlation_id: str
     request_id: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    user_id: Optional[str] = None
-    trace_context: Optional[TraceContext] = None
+    user_id: str | None = None
+    trace_context: TraceContext | None = None
     service: str = field(default_factory=lambda: get_service_name())
     environment: str = field(default_factory=lambda: get_environment())
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -106,8 +106,8 @@ class RequestContext:
     @classmethod
     def create_new(
         cls,
-        user_id: Optional[str] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        user_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> "RequestContext":
         """Create a new request context with generated IDs."""
         return cls(
@@ -163,14 +163,14 @@ class ContextManager:
     @classmethod
     def default(cls) -> "ContextManager":
         """Create ContextManager with values from environment variables."""
-        from genesis.core.constants import get_service_name, get_environment
+        from genesis.core.constants import get_environment, get_service_name
 
         return cls(
             service_name=get_service_name(),
             environment=get_environment(),
         )
 
-    def get_current_context(self) -> Optional[RequestContext]:
+    def get_current_context(self) -> RequestContext | None:
         """Get the current request context."""
         return _current_context.get()
 
@@ -199,11 +199,11 @@ class ContextManager:
 
     def create_context(
         self,
-        correlation_id: Optional[str] = None,
-        request_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        trace_context: Optional[TraceContext] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        correlation_id: str | None = None,
+        request_id: str | None = None,
+        user_id: str | None = None,
+        trace_context: TraceContext | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> RequestContext:
         """Create a new request context."""
         return RequestContext(
@@ -237,7 +237,7 @@ class ContextManager:
 
 
 # Global context manager instance
-_context_manager: Optional[ContextManager] = None
+_context_manager: ContextManager | None = None
 
 
 def get_context_manager() -> ContextManager:
@@ -252,7 +252,7 @@ def get_context_manager() -> ContextManager:
 
 
 # Convenience functions for direct context access
-def get_context() -> Optional[RequestContext]:
+def get_context() -> RequestContext | None:
     """Get the current request context."""
     return get_context_manager().get_current_context()
 
@@ -275,7 +275,7 @@ def context_span(context: RequestContext) -> Generator[RequestContext, None, Non
 
 
 # Individual context variable accessors
-def get_correlation_id() -> Optional[str]:
+def get_correlation_id() -> str | None:
     """Get current correlation ID."""
     context = get_context()
     if context:
@@ -292,7 +292,7 @@ def set_correlation_id(correlation_id: str) -> None:
         context.correlation_id = correlation_id
 
 
-def get_request_id() -> Optional[str]:
+def get_request_id() -> str | None:
     """Get current request ID."""
     context = get_context()
     if context:
@@ -300,7 +300,7 @@ def get_request_id() -> Optional[str]:
     return _request_id.get()
 
 
-def get_trace_id() -> Optional[str]:
+def get_trace_id() -> str | None:
     """Get current trace ID."""
     context = get_context()
     if context and context.trace_context:
@@ -308,7 +308,7 @@ def get_trace_id() -> Optional[str]:
     return _trace_id.get()
 
 
-def get_user_id() -> Optional[str]:
+def get_user_id() -> str | None:
     """Get current user ID."""
     context = get_context()
     if context:

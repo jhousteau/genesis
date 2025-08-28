@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -23,7 +22,7 @@ from ..core.logger import get_logger
 logger = get_logger(__name__)
 
 
-def find_genesis_root() -> Optional[Path]:
+def find_genesis_root() -> Path | None:
     """Find Genesis project root by looking for CLAUDE.md."""
     current = Path.cwd()
     for parent in [current] + list(current.parents):
@@ -32,7 +31,7 @@ def find_genesis_root() -> Optional[Path]:
     return None
 
 
-def get_template_path(project_type: str) -> Optional[Path]:
+def get_template_path(project_type: str) -> Path | None:
     """Get path to project template."""
     genesis_root = find_genesis_root()
     if not genesis_root:
@@ -70,7 +69,9 @@ def create_project_directory(project_path: Path) -> None:
         project_path.mkdir(parents=True, exist_ok=False)
         logger.info(f"Created project directory: {project_path}")
     except OSError as e:
-        raise InfrastructureError(f"Failed to create directory {project_path}: {e}")
+        raise InfrastructureError(
+            f"Failed to create directory {project_path}: {e}"
+        ) from e
 
 
 def process_template_file(
@@ -93,7 +94,9 @@ def process_template_file(
         logger.debug(f"Processed template: {template_file} -> {target_file}")
 
     except Exception as e:
-        raise InfrastructureError(f"Failed to process template {template_file}: {e}")
+        raise InfrastructureError(
+            f"Failed to process template {template_file}: {e}"
+        ) from e
 
 
 def copy_template_structure(
@@ -106,11 +109,11 @@ def copy_template_structure(
 
     # Get dynamic values - fail fast if not available
     try:
-        python_version = get_python_version()
+        get_python_version()
         author_name, author_email = get_git_author_info()
     except ValueError as e:
         logger.error(f"Configuration error: {e}")
-        raise click.ClickException(f"Bootstrap failed: {e}")
+        raise click.ClickException(f"Bootstrap failed: {e}") from e
 
     # Create substitution map supporting multiple template formats
     # Create Python-safe module name (replace hyphens with underscores)
@@ -201,7 +204,7 @@ def initialize_git_repo(project_path: Path, skip_git: bool) -> None:
 def bootstrap_project(
     name: str,
     project_type: str,
-    target_path: Optional[str] = None,
+    target_path: str | None = None,
     skip_git: bool = False,
 ) -> Path:
     """Bootstrap a new project with Genesis patterns."""
@@ -249,12 +252,12 @@ def bootstrap_project(
             except Exception:
                 pass  # Best effort cleanup
         handled_error = handle_error(e)
-        raise InfrastructureError(f"Bootstrap failed: {handled_error.message}")
+        raise InfrastructureError(f"Bootstrap failed: {handled_error.message}") from e
 
 
 # CLI command integration
 def bootstrap_command(
-    name: str, project_type: str, target_path: Optional[str], skip_git: bool
+    name: str, project_type: str, target_path: str | None, skip_git: bool
 ) -> None:
     """Bootstrap command implementation for CLI integration."""
     try:

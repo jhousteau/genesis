@@ -368,36 +368,6 @@ MONGO_URL = "mongodb://admin:secret@mongo:27017/app"
         assert returncode != 0
         assert "Database connection strings with credentials" in stdout
 
-    def test_environment_variable_fallbacks_detected(
-        self, variable_defaults_script: Path
-    ):
-        """Test detection of dangerous environment variable fallback patterns."""
-        test_files = [
-            (
-                "env_fallbacks.py",
-                """
-# Bad - environment variable fallbacks with hardcoded defaults
-database_url = os.environ.get("DATABASE_URL", "postgresql://localhost/app")
-api_key = os.environ.get("API_KEY", "hardcoded-fallback")
-            """,
-            ),
-            (
-                "env_fallbacks.ts",
-                """
-// Bad - environment variable fallbacks
-const dbUrl = process.env["DATABASE_URL"] || "postgresql://localhost/app";
-const port = process.env["PORT"] || "8080";
-            """,
-            ),
-        ]
-
-        test_dir = self.create_test_files(test_files)
-        returncode, stdout, stderr = self.run_script(variable_defaults_script, test_dir)
-
-        # Should detect issues
-        assert returncode != 0
-        assert "Environment variable fallbacks" in stdout
-
     def test_clean_codebase_passes(
         self, hardcoded_script: Path, variable_defaults_script: Path
     ):

@@ -623,7 +623,7 @@ class TestEdgeCases:
             for _ in range(10):
                 try:
                     cb.call(lambda: "success")
-                except:
+                except Exception:
                     pass
 
         threads = [threading.Thread(target=worker) for _ in range(10)]

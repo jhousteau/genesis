@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from genesis.core.logger import get_logger
 
@@ -30,7 +29,7 @@ class StageResult:
     stage_type: StageType
     success: bool
     convergence_results: list[ConvergenceResult]
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class Stage(ABC):
@@ -304,7 +303,7 @@ class ValidationStage(Stage):
 class StageOrchestrator:
     """Orchestrates running multiple stages."""
 
-    def __init__(self, stages: Optional[list[Stage]] = None):
+    def __init__(self, stages: list[Stage] | None = None):
         """Initialize stage orchestrator.
 
         Args:

@@ -20,7 +20,7 @@ class TestAISafetyValidation:
     def test_validate_file_limits_safe_project(self, temp_dir):
         """Test validation of a safe project."""
         # Create small project
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         result = validate_ai_safety_limits(temp_dir, max_files=100)
 
@@ -41,7 +41,7 @@ class TestAISafetyValidation:
 
     def test_component_isolation_validation(self, temp_dir):
         """Test component isolation validation."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         # Test valid component
         bootstrap_path = temp_dir / "bootstrap"
@@ -57,7 +57,7 @@ class TestAISafetyValidation:
     def test_ai_safety_checker_class(self, temp_dir):
         """Test AISafetyChecker class functionality."""
         checker = AISafetyChecker(max_total_files=50, max_component_files=20)
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         # Test project check
         result = checker.check_project(temp_dir)
@@ -159,7 +159,7 @@ class TestFileCountReporting:
 
     def test_file_count_report_generation(self, temp_dir):
         """Test generation of detailed file count reports."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         # get_file_count_report already imported at top
         report = get_file_count_report(temp_dir)
@@ -188,7 +188,7 @@ class TestFileCountReporting:
 
     def test_print_ai_safety_report(self, temp_dir, capsys):
         """Test printing of AI safety report."""
-        fs = create_genesis_project_structure(temp_dir)
+        create_genesis_project_structure(temp_dir)
 
         # print_ai_safety_report already imported at top
         print_ai_safety_report(temp_dir)

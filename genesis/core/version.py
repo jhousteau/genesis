@@ -7,7 +7,6 @@ Provides utilities for version synchronization across project files.
 
 import tomllib
 from pathlib import Path
-from typing import Optional
 
 
 def get_version() -> str:
@@ -32,11 +31,13 @@ def get_version() -> str:
 
     try:
         return data["tool"]["poetry"]["version"]
-    except KeyError:
-        raise KeyError("Version not found in pyproject.toml at tool.poetry.version")
+    except KeyError as e:
+        raise KeyError(
+            "Version not found in pyproject.toml at tool.poetry.version"
+        ) from e
 
 
-def get_project_version(project_path: Optional[Path] = None) -> str:
+def get_project_version(project_path: Path | None = None) -> str:
     """
     Get version from any project's pyproject.toml.
 
@@ -139,7 +140,7 @@ def sync_version_to_files(project_path: Path, version: str) -> dict[str, bool]:
     return results
 
 
-def bump_version(current_version: str, bump_type: Optional[str] = None) -> str:
+def bump_version(current_version: str, bump_type: str | None = None) -> str:
     """
     Bump version according to semantic versioning.
 

@@ -3,7 +3,6 @@
 import json
 import tomllib
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -22,7 +21,7 @@ def version():
 
 @version.command("show")
 @click.option("--project", "-p", help="Project path (default: current directory)")
-def show_version(project: Optional[str]):
+def show_version(project: str | None):
     """Show current project version."""
     project_path = Path(project) if project else Path.cwd()
 
@@ -40,7 +39,7 @@ def show_version(project: Optional[str]):
 @version.command("sync")
 @click.option("--project", "-p", help="Project path (default: current directory)")
 @click.option("--dry-run", is_flag=True, help="Show what would be synced")
-def sync_version(project: Optional[str], dry_run: bool):
+def sync_version(project: str | None, dry_run: bool):
     """Synchronize version across all project files."""
     project_path = Path(project) if project else Path.cwd()
 
@@ -91,7 +90,7 @@ def sync_version(project: Optional[str], dry_run: bool):
     "--sync", is_flag=True, help="Auto-sync to other files (default: enabled)"
 )
 @click.option("--dry-run", is_flag=True, help="Show what version would be bumped to")
-def bump_version_cmd(bump_type: str, project: Optional[str], sync: bool, dry_run: bool):
+def bump_version_cmd(bump_type: str, project: str | None, sync: bool, dry_run: bool):
     """Bump version and optionally sync to other files."""
     project_path = Path(project) if project else Path.cwd()
     pyproject_path = project_path / "pyproject.toml"
@@ -156,7 +155,7 @@ def bump_version_cmd(bump_type: str, project: Optional[str], sync: bool, dry_run
 
 @version.command("check")
 @click.option("--project", "-p", help="Project path (default: current directory)")
-def check_version_consistency(project: Optional[str]):
+def check_version_consistency(project: str | None):
     """Check version consistency across project files."""
     project_path = Path(project) if project else Path.cwd()
 

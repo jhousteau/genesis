@@ -1,6 +1,6 @@
 """Mock command execution for testing scripts and CLI operations."""
 
-from typing import Any, Optional, Union
+from typing import Any
 from unittest.mock import Mock, patch
 
 
@@ -18,7 +18,7 @@ class MockCommandRunner:
         returncode: int = 0,
         stdout: str = "",
         stderr: str = "",
-        side_effect: Optional[Exception] = None,
+        side_effect: Exception | None = None,
     ):
         """Configure response for a specific command."""
         self.commands[command] = {
@@ -28,7 +28,7 @@ class MockCommandRunner:
             "side_effect": side_effect,
         }
 
-    def mock_run(self, cmd: Union[str, list[str]], **kwargs):
+    def mock_run(self, cmd: str | list[str], **kwargs):
         """Mock subprocess.run with configurable responses."""
         cmd_str = " ".join(cmd) if isinstance(cmd, list) else cmd
         self.call_history.append(
