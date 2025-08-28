@@ -11,7 +11,7 @@ from typing import Optional
 import click
 
 # Version info
-__version__ = "0.1.0"
+__version__ = "2.0.0-dev"
 
 # Genesis root detection
 def find_genesis_root() -> Optional[Path]:
@@ -51,29 +51,8 @@ def cli(ctx):
 @click.pass_context
 def bootstrap(ctx, name: str, project_type: str, target_path: Optional[str], skip_git: bool):
     """Create new project with Genesis patterns and tooling."""
-    genesis_root = ctx.obj.get('genesis_root')
-    if not genesis_root:
-        click.echo("❌ Not in a Genesis project. Run from Genesis directory.", err=True)
-        sys.exit(1)
-    
-    bootstrap_script = genesis_root / "bootstrap" / "src" / "bootstrap.sh"
-    if not bootstrap_script.exists():
-        click.echo("❌ Bootstrap script not found. Genesis may be incomplete.", err=True)
-        sys.exit(1)
-    
-    # Build command arguments
-    cmd = [str(bootstrap_script), name, "--type", project_type]
-    if target_path:
-        cmd.extend(["--path", target_path])
-    if skip_git:
-        cmd.append("--skip-git")
-    
-    try:
-        result = subprocess.run(cmd, check=True)
-        click.echo(f"✅ Project '{name}' created successfully!")
-    except subprocess.CalledProcessError as e:
-        click.echo(f"❌ Bootstrap failed: {e}", err=True)
-        sys.exit(1)
+    from genesis.commands.bootstrap import bootstrap_command
+    bootstrap_command(name, project_type, target_path, skip_git)
 
 @cli.command()
 @click.argument('name')
