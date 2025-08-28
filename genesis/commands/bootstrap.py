@@ -97,11 +97,24 @@ def copy_template_structure(
     """Copy and process template structure."""
     logger.info(f"Processing template from {template_path}")
     
-    # Create substitution map
+    # Create substitution map supporting multiple template formats
+    # Create Python-safe module name (replace hyphens with underscores)
+    module_name = project_name.replace('-', '_')
     substitutions = {
+        # Double underscore format (for filenames/directories)
         "__project_name__": project_name,
         "__PROJECT_NAME__": project_name.upper().replace('-', '_'),
-        "__project-name__": project_name
+        "__project-name__": project_name,
+        "__module_name__": module_name,
+        # Mustache format (for content)
+        "{{project_name}}": project_name,
+        "{{PROJECT_NAME}}": project_name.upper().replace('-', '_'),
+        "{{project-name}}": project_name,
+        "{{module_name}}": module_name,
+        "{{project_description}}": f"A {project_name} project created with Genesis",
+        "{{python_version}}": "3.11",
+        "{{author_name}}": "Developer",
+        "{{author_email}}": "developer@example.com"
     }
     
     # Process all template files

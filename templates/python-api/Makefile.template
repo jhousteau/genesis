@@ -43,7 +43,7 @@ clean: ## Clean build artifacts
 	rm -rf .mypy_cache/
 
 run: ## Run the development server
-	poetry run uvicorn {{project_name}}.main:app --reload
+	poetry run uvicorn {{module_name}}.main:app --reload
 
 build: ## Build the package
 	poetry build
