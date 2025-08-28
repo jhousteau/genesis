@@ -1,8 +1,7 @@
 """Mock command execution for testing scripts and CLI operations."""
 
+from typing import Any, Optional, Union
 from unittest.mock import Mock, patch
-from typing import Dict, List, Any, Optional, Union
-import subprocess
 
 
 class MockCommandRunner:
@@ -29,7 +28,7 @@ class MockCommandRunner:
             "side_effect": side_effect,
         }
 
-    def mock_run(self, cmd: Union[str, List[str]], **kwargs):
+    def mock_run(self, cmd: Union[str, list[str]], **kwargs):
         """Mock subprocess.run with configurable responses."""
         cmd_str = " ".join(cmd) if isinstance(cmd, list) else cmd
         self.call_history.append(
@@ -63,7 +62,7 @@ class MockCommandRunner:
         """Check if a command matching pattern was called."""
         return any(command_pattern in call["command"] for call in self.call_history)
 
-    def get_calls_matching(self, command_pattern: str) -> List[Dict[str, Any]]:
+    def get_calls_matching(self, command_pattern: str) -> list[dict[str, Any]]:
         """Get all calls matching a command pattern."""
         return [
             call for call in self.call_history if command_pattern in call["command"]
@@ -162,7 +161,7 @@ class MockScriptEnvironment:
         """Set working directory."""
         self.working_dir = path
 
-    def run_script(self, script_path: str, args: List[str] = None):
+    def run_script(self, script_path: str, args: list[str] = None):
         """Mock running a script."""
         args = args or []
         cmd = f"{script_path} {' '.join(args)}"

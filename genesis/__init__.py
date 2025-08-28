@@ -15,12 +15,13 @@ Usage:
 
 # Import version dynamically from pyproject.toml - fail fast if not available
 from genesis.core.version import get_version
+
 __version__ = get_version()
 __author__ = "Genesis Team"
 
 # Core exports for convenience
-from genesis.core.logger import get_logger
 from genesis.core.config import ConfigLoader
 from genesis.core.health import HealthCheck
+from genesis.core.logger import get_logger
 
 __all__ = ["get_logger", "ConfigLoader", "HealthCheck", "__version__"]

@@ -59,7 +59,7 @@ await contextSpan(context, async () => {
 ## Core Modules
 
 ### Configuration (`config`)
-- YAML file loading with environment variable overrides  
+- YAML file loading with environment variable overrides
 - Type-safe configuration classes
 - Predefined configuration presets
 
@@ -109,7 +109,7 @@ const summary = await health.getSummary();
 
 ### Retry & Circuit Breaker (`retry`)
 - Exponential backoff with jitter
-- Circuit breaker pattern for failing services  
+- Circuit breaker pattern for failing services
 - Decorator and function-based APIs
 - Pre-configured patterns for external services and databases
 
@@ -147,24 +147,24 @@ try {
   // risky operation
 } catch (error) {
   const genesisError = handleError(error);
-  logger.error('Operation failed', { 
-    error: genesisError.toJSON() 
+  logger.error('Operation failed', {
+    error: genesisError.toJSON()
   });
 }
 ```
 
-### Context Management (`context`)  
+### Context Management (`context`)
 - Request correlation across async operations
 - Distributed tracing support
 - Automatic context propagation
 - Express middleware integration
 
 ```typescript
-import { 
-  contextSpan, 
-  createRequestContext, 
+import {
+  contextSpan,
+  createRequestContext,
   getCorrelationId,
-  createContextMiddleware 
+  createContextMiddleware
 } from '@genesis/shared';
 
 // Create and use context
@@ -187,7 +187,7 @@ All modules are written in TypeScript with full type definitions. The library pr
 
 - Complete type safety for all APIs
 - Generic configuration classes
-- Typed health check results  
+- Typed health check results
 - Type-safe error handling
 
 ## Usage Patterns
@@ -197,7 +197,7 @@ All modules are written in TypeScript with full type definitions. The library pr
 ```typescript
 import {
   getLogger,
-  loadConfig, 
+  loadConfig,
   HealthCheck,
   HealthChecks,
   createContextMiddleware
@@ -233,16 +233,16 @@ class ExternalApiClient {
   @resilientExternalService(3, 5, 60000, 'PaymentAPI')
   async processPayment(data: PaymentData) {
     this.logger.info('Processing payment', { amount: data.amount });
-    
+
     const response = await fetch('/api/payments', {
       method: 'POST',
       body: JSON.stringify(data)
     });
-    
+
     if (!response.ok) {
       throw new Error(`Payment failed: ${response.statusText}`);
     }
-    
+
     return response.json();
   }
 }
@@ -252,8 +252,8 @@ class ExternalApiClient {
 
 Common environment variables used by the library:
 
-- `GENESIS_SERVICE` - Service name for context and logging
-- `GENESIS_ENV` - Environment (development, production, etc.)  
+- `SERVICE` - Service name for context and logging
+- `ENV` - Environment (development, production, etc.)
 - `LOG_LEVEL` - Default log level
 - `APP_*` - Application configuration (when using 'APP_' prefix)
 

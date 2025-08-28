@@ -12,7 +12,7 @@ from .errors import ResourceError, ValidationError, handle_error
 class ConfigLoader:
     """Simple configuration loader supporting YAML files and env var overrides."""
 
-    def __init__(self, env_prefix: str = ""):
+    def __init__(self, env_prefix: str):
         """Initialize config loader.
 
         Args:
@@ -97,7 +97,7 @@ class ConfigLoader:
     def get(self, key: str, default: Any = None) -> Any:
         """Get configuration value by key with optional default."""
         return self._config.get(key, default)
-    
+
     def get_required(self, key: str) -> Any:
         """Get required configuration value - fails fast if missing."""
         if key not in self._config:
@@ -123,7 +123,7 @@ def load_config(
 
     Usage:
         config = load_config("config.yml", env_prefix="APP_")
-        database_url = config.get("database_url", "sqlite:///default.db")
+        database_url = config.get("database_url")
     """
     loader = ConfigLoader(env_prefix)
     return loader.load(file_path, defaults)

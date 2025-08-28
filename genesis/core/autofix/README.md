@@ -22,7 +22,7 @@ result = fixer.run_stage_only(['formatter'])
 - **Prettier**: TypeScript/JavaScript formatting
 - **isort**: Python import sorting
 
-### Stage 2: Linters  
+### Stage 2: Linters
 - **Ruff**: Fast Python linter with auto-fixing
 - **ESLint**: TypeScript/JavaScript linting
 

@@ -29,11 +29,11 @@ export class GenesisConfigLoader implements ConfigLoader {
     try {
       const fileContent = fs.readFileSync(filePath, 'utf8');
       const content = yaml.load(fileContent);
-      
+
       if (content === null || content === undefined) {
         return {};
       }
-      
+
       if (typeof content !== 'object' || Array.isArray(content)) {
         throw new ValidationError(
           `Configuration file must contain a YAML dictionary, got ${typeof content}`
@@ -45,7 +45,7 @@ export class GenesisConfigLoader implements ConfigLoader {
       if (error instanceof ValidationError) {
         throw error;
       }
-      
+
       if (error.name === 'YAMLException') {
         throw new ValidationError(`Invalid YAML in configuration file ${filePath}: ${error.message}`);
       }
@@ -205,53 +205,77 @@ export abstract class TypedConfig<T = Record<string, any>> {
 /**
  * Predefined configuration patterns
  */
+function getRequiredEnvVar(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Environment variable ${name} is required but not set`);
+  }
+  return value;
+}
+
+function getRequiredEnvInt(name: string): number {
+  const value = getRequiredEnvVar(name);
+  const parsed = parseInt(value, 10);
+  if (isNaN(parsed)) {
+    throw new Error(`Environment variable ${name} must be a valid integer, got: ${value}`);
+  }
+  return parsed;
+}
+
+function getRequiredEnvBool(name: string): boolean {
+  const value = getRequiredEnvVar(name);
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`Environment variable ${name} must be 'true' or 'false', got: ${value}`);
+}
+
 export const ConfigPresets = {
   /**
    * Standard application configuration
    */
-  application: (envPrefix: string = 'APP') => ({
-    name: 'app',
-    version: '1.0.0',
-    environment: 'development',
-    port: 3000,
-    logLevel: 'info',
+  application: (envPrefix: string) => ({
+    name: getRequiredEnvVar(`${envPrefix}_NAME`),
+    version: getRequiredEnvVar(`${envPrefix}_VERSION`),
+    environment: getRequiredEnvVar(`${envPrefix}_ENVIRONMENT`),
+    port: getRequiredEnvInt(`${envPrefix}_PORT`),
+    logLevel: getRequiredEnvVar(`${envPrefix}_LOG_LEVEL`),
     database: {
-      host: 'localhost',
-      port: 5432,
-      name: 'app_db',
+      host: getRequiredEnvVar(`${envPrefix}_DB_HOST`),
+      port: getRequiredEnvInt(`${envPrefix}_DB_PORT`),
+      name: getRequiredEnvVar(`${envPrefix}_DB_NAME`),
     },
   }),
 
   /**
    * Service configuration
    */
-  service: (envPrefix: string = 'SERVICE') => ({
-    name: 'service',
-    version: '1.0.0',
-    environment: 'development',
-    port: 8080,
-    logLevel: 'info',
+  service: (envPrefix: string) => ({
+    name: getRequiredEnvVar(`${envPrefix}_NAME`),
+    version: getRequiredEnvVar(`${envPrefix}_VERSION`),
+    environment: getRequiredEnvVar(`${envPrefix}_ENVIRONMENT`),
+    port: getRequiredEnvInt(`${envPrefix}_PORT`),
+    logLevel: getRequiredEnvVar(`${envPrefix}_LOG_LEVEL`),
     health: {
-      enabled: true,
-      endpoint: '/health',
+      enabled: getRequiredEnvBool(`${envPrefix}_HEALTH_ENABLED`),
+      endpoint: getRequiredEnvVar(`${envPrefix}_HEALTH_ENDPOINT`),
     },
     metrics: {
-      enabled: true,
-      endpoint: '/metrics',
+      enabled: getRequiredEnvBool(`${envPrefix}_METRICS_ENABLED`),
+      endpoint: getRequiredEnvVar(`${envPrefix}_METRICS_ENDPOINT`),
     },
   }),
 
   /**
    * Database configuration
    */
-  database: (envPrefix: string = 'DB') => ({
-    host: 'localhost',
-    port: 5432,
-    name: 'postgres',
-    username: 'postgres',
-    password: 'postgres',
-    ssl: false,
-    poolSize: 10,
-    timeout: 30000,
+  database: (envPrefix: string) => ({
+    host: getRequiredEnvVar(`${envPrefix}_HOST`),
+    port: getRequiredEnvInt(`${envPrefix}_PORT`),
+    name: getRequiredEnvVar(`${envPrefix}_NAME`),
+    username: getRequiredEnvVar(`${envPrefix}_USERNAME`),
+    password: getRequiredEnvVar(`${envPrefix}_PASSWORD`),
+    ssl: getRequiredEnvBool(`${envPrefix}_SSL`),
+    poolSize: getRequiredEnvInt(`${envPrefix}_POOL_SIZE`),
+    timeout: getRequiredEnvInt(`${envPrefix}_TIMEOUT`),
   }),
 } as const;

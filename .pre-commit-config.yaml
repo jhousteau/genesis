@@ -60,7 +60,7 @@ repos:
         language: script
         pass_filenames: false
         files: '\.(py|ts|tsx|js|jsx)$'
-        
+
       - id: variable-defaults-check
         name: Check for variable default assignments
         description: Prevents hardcoded variable defaults from being committed

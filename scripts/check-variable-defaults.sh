@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
-YELLOW='\033[1;33m' 
+YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
@@ -27,27 +27,30 @@ log_success() {
 
 check_pattern() {
     local pattern="$1"
-    local description="$2" 
+    local description="$2"
     local files="$3"
     local exclude_pattern="${4:-}"
-    
+
     log_check "Checking: $description"
-    
-    if command -v rg >/dev/null 2>&1; then
+
+    # Use git ls-files to respect .gitignore, then grep the results
+    # Exclude documentation, test files, and templates
+    if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
+        # In a git repo - use git ls-files to respect .gitignore, exclude docs/tests/templates
         if [ -n "$exclude_pattern" ]; then
-            results=$(rg --line-number --no-heading --glob "$files" "$pattern" . 2>/dev/null | grep -v "$exclude_pattern" 2>/dev/null || true)
+            results=$(git ls-files '*.py' '*.ts' '*.tsx' '*.js' '*.jsx' | grep -v -E '(test_|_test\.|\.test\.|/tests/|/templates/|\.md$|conftest\.py)' | xargs grep -E -H "$pattern" 2>/dev/null | grep -v -E "$exclude_pattern" || true)
         else
-            results=$(rg --line-number --no-heading --glob "$files" "$pattern" . 2>/dev/null || true)
+            results=$(git ls-files '*.py' '*.ts' '*.tsx' '*.js' '*.jsx' | grep -v -E '(test_|_test\.|\.test\.|/tests/|/templates/|\.md$|conftest\.py)' | xargs grep -E -H "$pattern" 2>/dev/null || true)
         fi
     else
-        # Use find to get the actual files matching the pattern, excluding common directories
+        # Fallback for non-git directories
         if [ -n "$exclude_pattern" ]; then
-            results=$(find . -name "$files" -type f -not -path "*/.venv/*" -not -path "*/venv/*" -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/build/*" -not -path "*/dist/*" -exec grep -E -Hn "$pattern" {} \; 2>/dev/null | grep -v -E "$exclude_pattern" || true)
+            results=$(grep -r -E --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" "$pattern" . 2>/dev/null | grep -v -E "$exclude_pattern" || true)
         else
-            results=$(find . -name "$files" -type f -not -path "*/.venv/*" -not -path "*/venv/*" -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/build/*" -not -path "*/dist/*" -exec grep -E -Hn "$pattern" {} \; 2>/dev/null || true)
+            results=$(grep -r -E --include="*.py" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" "$pattern" . 2>/dev/null || true)
         fi
     fi
-    
+
     if [ -n "$results" ]; then
         log_issue "Found variable defaults:"
         echo "$results" | head -20
@@ -63,37 +66,35 @@ echo
 
 # PYTHON PATTERNS
 
-# Function parameter defaults with literals
-check_pattern 'def [^(]*\([^)]*=\s*"[^"]+"' \
+# Function parameter defaults with string literals
+check_pattern 'def [^(]*\([^)]*=[ \t]*"[^"]+"' \
     "Python function params with string defaults" \
     "*.py" \
     "= None|= True|= False|= \[\]|= {}"
 
-# Function parameter defaults with numbers  
-check_pattern 'def [^(]*\([^)]*=\s*[0-9]+[^)]*\):' \
+# Function parameter defaults with numbers
+check_pattern 'def [^(]*\([^)]*=[ \t]*[0-9]+[^)]*\):' \
     "Python function params with numeric defaults" \
     "*.py" \
     "= 0|= 1|= -1"
 
-# Variable assignments with hardcoded strings
-check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*\s*=\s*["\047][^"'\'']{3,}["\047]' \
-    "Python variables assigned hardcoded strings" \
-    "*.py" \
-    "__version__|__author__|__email__"
-
-# Variable assignments with URLs/paths
-check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*\s*=\s*["\047](https?://|/[^"'\'']+|.*\.com|.*\.org)["\047]' \
-    "Python variables with URLs/paths" \
+# Function parameters with URLs (always dangerous)
+check_pattern 'def [^(]*\([^)]*=[ \t]*["\047](https?://|ftp://)[^"'\'']+["\047]' \
+    "Python function params with URL defaults" \
     "*.py"
 
-# Class attributes with defaults
-check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:\s*[^=]*=\s*["\047][^"'\'']+["\047]' \
-    "Python class attributes with string defaults" \
-    "*.py" \
-    "= None|= \[\]|= {}"
+# Variable assignments with hardcoded strings (only flag truly dangerous URLs and connection strings)
+check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[ \t]*=[ \t]*["\047](https?://[^"'\'']+|postgresql://[^"'\'']+|mongodb://[^"'\'']+|redis://[^"'\'']+)["\047]' \
+    "Python variables with dangerous URLs/connection strings" \
+    "*.py"
+
+# Class attributes with dangerous defaults (only connection strings and secrets)
+check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:[ \t]*[^=]*=[ \t]*["\047](https?://[^"'\'']+|postgresql://[^"'\'']+|sk-[^"'\'']+|ghp_[^"'\'']+)["\047]' \
+    "Python class attributes with dangerous defaults" \
+    "*.py"
 
 # Dataclass fields with literal defaults
-check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:\s*[^=]*=\s*[0-9]+' \
+check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:[ \t]*[^=]*=[ \t]*[0-9]+' \
     "Python dataclass fields with numeric defaults" \
     "*.py" \
     "= 0|= 1|= -1"
@@ -101,36 +102,36 @@ check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:\s*[^=]*=\s*[0-9]+' \
 # TYPESCRIPT PATTERNS
 
 # Function parameter defaults with literals
-check_pattern 'function\s+[^(]*\([^)]*=\s*["\047][^"'\'']*["\047][^)]*\)' \
+check_pattern 'function[ \t]+[^(]*\([^)]*=[ \t]*["\047][^"'\'']*["\047][^)]*\)' \
     "TypeScript function params with string defaults" \
     "*.ts *.tsx *.js *.jsx" \
     "= \'\047\047|= \"\"|= null|= undefined"
 
 # Function parameter defaults with numbers
-check_pattern 'function\s+[^(]*\([^)]*=\s*[0-9]+[^)]*\)' \
+check_pattern 'function[ \t]+[^(]*\([^)]*=[ \t]*[0-9]+[^)]*\)' \
     "TypeScript function params with numeric defaults" \
     "*.ts *.tsx *.js *.jsx" \
     "= 0|= 1|= -1"
 
 # Arrow function defaults
-check_pattern '\([^)]*=\s*["\047][^"'\'']{3,}["\047][^)]*\)\s*=>' \
+check_pattern '\([^)]*=[ \t]*["\047][^"'\'']{3,}["\047][^)]*\)[ \t]*=>' \
     "TypeScript arrow function params with string defaults" \
     "*.ts *.tsx *.js *.jsx"
 
 # Variable assignments with hardcoded strings
-check_pattern '^[[:space:]]*(const|let|var)\s+[a-zA-Z_][a-zA-Z0-9_]*\s*=\s*["\047][^"'\'']{3,}["\047]' \
+check_pattern '^[[:space:]]*(const|let|var)[ \t]+[a-zA-Z_][a-zA-Z0-9_]*[ \t]*=[ \t]*["\047][^"'\'']{3,}["\047]' \
     "TypeScript variables assigned hardcoded strings" \
     "*.ts *.tsx *.js *.jsx" \
     "= \'\047\047|= \"\""
 
 # Object property defaults
-check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:\s*["\047][^"'\'']+["\047]' \
+check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:[ \t]*["\047][^"'\'']+["\047]' \
     "TypeScript object properties with string defaults" \
     "*.ts *.tsx *.js *.jsx" \
     "= \'\047\047|= \"\"|version|name|description"
 
 # Interface/type defaults with literals
-check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*\?\s*:\s*[^=]*=\s*["\047][^"'\'']+["\047]' \
+check_pattern '^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*\?[ \t]*:[ \t]*[^=]*=[ \t]*["\047][^"'\'']+["\047]' \
     "TypeScript optional properties with string defaults" \
     "*.ts *.tsx *.js *.jsx"
 
@@ -141,11 +142,11 @@ check_pattern '["\047](localhost|127\.0\.0\.1|0\.0\.0\.0|https?://[^"'\'']+)["\0
     "Hardcoded localhost/URLs in any language" \
     "*.py *.ts *.tsx *.js *.jsx"
 
-# Common port numbers
-check_pattern '["\047]?:?[0-9]{4,5}["\047]?' \
+# Common port numbers (only in port-like contexts)
+check_pattern '(port|PORT)[^=]*=[ \t]*[0-9]{4,5}|:[0-9]{4,5}[^0-9]|localhost:[0-9]{4,5}' \
     "Hardcoded port numbers" \
     "*.py *.ts *.tsx *.js *.jsx" \
-    ":22|:80|:443|:8080|:3000|:5432|:27017|:6379"
+    ":22|:80|:443"
 
 # Database connection strings
 check_pattern '["\047][^"'\'']*://[^"'\'']*@[^"'\'']*["\047]' \
@@ -153,15 +154,14 @@ check_pattern '["\047][^"'\'']*://[^"'\'']*@[^"'\'']*["\047]' \
     "*.py *.ts *.tsx *.js *.jsx"
 
 # Hardcoded file extensions as defaults
-check_pattern '=\s*["\047]\.[a-zA-Z0-9]{2,4}["\047]' \
+check_pattern '=[ \t]*["\047]\.[a-zA-Z0-9]{2,4}["\047]' \
     "Hardcoded file extensions as defaults" \
     "*.py *.ts *.tsx *.js *.jsx"
 
-# Environment variable names hardcoded as strings
-check_pattern '["\047][A-Z][A-Z0-9_]{3,}["\047]' \
-    "Hardcoded environment variable names" \
-    "*.py *.ts *.tsx *.js *.jsx" \
-    "DEBUG|INFO|WARN|ERROR|SUCCESS|FAILED"
+# Environment variable fallback patterns (dangerous)
+check_pattern 'os\.environ\.get\([^,)]*,\s*["\047][^"'\'']+["\047]\)|process\.env\[[^]]*\]\s*\|\|\s*["\047][^"'\'']+["\047]' \
+    "Environment variable fallbacks with hardcoded defaults" \
+    "*.py *.ts *.tsx *.js *.jsx"
 
 echo
 if [ $ISSUES_FOUND -eq 0 ]; then

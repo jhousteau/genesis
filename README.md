@@ -8,7 +8,7 @@ Modern development toolkit with AI-safe sparse worktree isolation and intelligen
 - **Smart Worktree Management**: AI-safe sparse worktrees with automatic file limits
 - **Multi-Stage Autofix**: Convergent code fixing with formatters, linters, and quality gates
 - **Error Framework**: Structured error handling with context management and correlation tracking
-- **Circuit Breaker Resilience**: Prevents cascading failures with intelligent retry patterns  
+- **Circuit Breaker Resilience**: Prevents cascading failures with intelligent retry patterns
 - **Infrastructure Automation**: 10 Terraform modules for complete GCP infrastructure
 - **Project Templates**: Bootstrap new projects with Python API, CLI, TypeScript service templates
 - **Quality Gates**: Pre-commit hooks, security scanning, and continuous integration
@@ -74,7 +74,7 @@ pytest tests/ --cov
 # Format code
 make format
 
-# Lint code  
+# Lint code
 make lint
 
 # Run all quality checks
@@ -105,7 +105,7 @@ genesis/
 Genesis follows the **"Build Generic, Use Everywhere"** principle:
 
 1. **Unified Package**: Single `pip install -e .` gets everything
-2. **AI Safety**: Sparse worktrees limit context to <30 files  
+2. **AI Safety**: Sparse worktrees limit context to <30 files
 3. **Quality First**: Autofix convergence ensures code correctness
 4. **Infrastructure Ready**: Terraform modules for production deployment
 5. **Template Driven**: Consistent project bootstrapping
@@ -144,7 +144,7 @@ Multi-stage convergent fixing:
 from genesis.core.autofix import AutoFixer
 
 # Stage 1: Formatters (Black, Prettier)
-# Stage 2: Linters (Ruff, ESLint)  
+# Stage 2: Linters (Ruff, ESLint)
 # Stage 3: Convergent fixing until stable
 fixer = AutoFixer()
 result = fixer.run()  # Runs all stages

@@ -87,8 +87,8 @@ let globalContextManager: ContextManager | undefined;
 function getContextManager(): ContextManager {
   if (!globalContextManager) {
     globalContextManager = new ContextManager(
-      process.env.GENESIS_SERVICE || 'genesis',
-      process.env.GENESIS_ENV || 'development'
+      process.env.SERVICE || 'genesis',
+      process.env.ENV || 'development'
     );
   }
   return globalContextManager;
@@ -183,8 +183,8 @@ export function createRequestContext(options: {
     requestId: generateRequestId(),
     timestamp: new Date(),
     userId: options.userId,
-    service: options.service || process.env.GENESIS_SERVICE || 'genesis',
-    environment: options.environment || process.env.GENESIS_ENV || 'development',
+    service: options.service || process.env.SERVICE || 'genesis',
+    environment: options.environment || process.env.ENV || 'development',
     metadata: options.metadata || {},
   };
 }
@@ -276,17 +276,17 @@ export function createContextMiddleware(options: {
   extractUserId?: (req: any) => string | undefined;
   extractTraceHeaders?: (req: any) => TraceContext | undefined;
 } = {}) {
-  const { 
+  const {
     generateCorrelationId: shouldGenerateId = true,
     extractUserId,
-    extractTraceHeaders 
+    extractTraceHeaders
   } = options;
 
   return (req: any, res: any, next: any) => {
-    const correlationId = shouldGenerateId 
-      ? generateCorrelationId() 
+    const correlationId = shouldGenerateId
+      ? generateCorrelationId()
       : req.headers['x-correlation-id'] || generateCorrelationId();
-    
+
     const userId = extractUserId ? extractUserId(req) : undefined;
     const traceContext = extractTraceHeaders ? extractTraceHeaders(req) : undefined;
 

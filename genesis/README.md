@@ -6,7 +6,7 @@ Core Genesis functionality including CLI, error handling, and utilities.
 
 - `cli.py` - Main CLI interface
 - `core/` - Core utilities (errors, retry, health, config)
-- `commands/` - CLI command implementations  
+- `commands/` - CLI command implementations
 - `testing/` - Testing utilities and AI safety
 
 ## Usage

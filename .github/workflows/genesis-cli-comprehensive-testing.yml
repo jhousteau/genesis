@@ -108,7 +108,7 @@ jobs:
     - name: Configure Test Environment
       run: |
         export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-        export GENESIS_ROOT="$(pwd)"
+        export PROJECT_ROOT="$(pwd)"
         export ENVIRONMENT="ci-test"
 
         # Create test configuration

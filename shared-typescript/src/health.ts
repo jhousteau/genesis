@@ -78,7 +78,7 @@ export class HealthCheck {
     try {
       const result = await checkFunc();
       const endTime = performance.now();
-      
+
       return {
         ...result,
         name,
@@ -88,7 +88,7 @@ export class HealthCheck {
     } catch (error) {
       const endTime = performance.now();
       const handledError = handleError(error as Error);
-      
+
       return {
         name,
         status: HealthStatus.UNHEALTHY,
@@ -187,10 +187,10 @@ export const HealthChecks = {
   /**
    * Memory usage check
    */
-  memory: (maxMemoryMB: number = 1024): CheckResult => {
+  memory: (maxMemoryMB: number): CheckResult => {
     const memUsage = process.memoryUsage();
     const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
-    
+
     if (heapUsedMB > maxMemoryMB) {
       return {
         name: 'memory',
@@ -220,12 +220,12 @@ export const HealthChecks = {
   /**
    * Disk space check (Node.js specific)
    */
-  diskSpace: async (path: string = '/', minFreeGB: number = 1): Promise<CheckResult> => {
+  diskSpace: async (path: string, minFreeGB: number): Promise<CheckResult> => {
     try {
       const fs = await import('fs');
       const { promisify } = await import('util');
       const statvfs = promisify(fs.statSync);
-      
+
       // Note: This is a simplified check - in production you'd want to use a proper disk space library
       return {
         name: 'disk_space',
@@ -248,24 +248,24 @@ export const HealthChecks = {
    */
   httpEndpoint: async (
     url: string,
-    timeoutMs: number = 5000,
-    expectedStatus: number = 200
+    timeoutMs: number,
+    expectedStatus: number
   ): Promise<CheckResult> => {
     const startTime = performance.now();
-    
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      
+
       const response = await fetch(url, {
         signal: controller.signal,
         method: 'GET',
       });
-      
+
       clearTimeout(timeoutId);
       const endTime = performance.now();
       const durationMs = endTime - startTime;
-      
+
       if (response.status === expectedStatus) {
         return {
           name: 'http_endpoint',
@@ -286,7 +286,7 @@ export const HealthChecks = {
     } catch (error) {
       const endTime = performance.now();
       const durationMs = endTime - startTime;
-      
+
       return {
         name: 'http_endpoint',
         status: HealthStatus.UNHEALTHY,
@@ -302,11 +302,11 @@ export const HealthChecks = {
    */
   database: async (
     connectionTest: () => Promise<boolean>,
-    name: string = 'database'
+    name: string
   ): Promise<CheckResult> => {
     try {
       const isConnected = await connectionTest();
-      
+
       return {
         name,
         status: isConnected ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY,

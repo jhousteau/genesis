@@ -83,14 +83,14 @@ function addJitter(delay: number, jitter: boolean): number {
 /**
  * Retry decorator for functions and methods
  */
-export function retry(config: RetryConfig = {}) {
+export function retry(config: Required<RetryConfig>) {
   const {
-    maxAttempts = 3,
-    initialDelay = 1000,
-    maxDelay = 60000,
-    exponentialBase = 2,
-    jitter = true,
-    exceptions = [Error],
+    maxAttempts,
+    initialDelay,
+    maxDelay,
+    exponentialBase,
+    jitter,
+    exceptions,
   } = config;
 
   return function <T extends (...args: any[]) => any>(
@@ -110,12 +110,12 @@ export function retry(config: RetryConfig = {}) {
           return result instanceof Promise ? await result : result;
         } catch (error) {
           lastException = error as Error;
-          
+
           // Check if this exception type should be retried
-          const shouldRetry = exceptions.some(ExceptionType => 
+          const shouldRetry = exceptions.some(ExceptionType =>
             error instanceof ExceptionType
           );
-          
+
           if (!shouldRetry || attempt === maxAttempts - 1) {
             break;
           }
@@ -142,15 +142,15 @@ export function retry(config: RetryConfig = {}) {
  */
 export async function retryFunction<T>(
   fn: () => Promise<T> | T,
-  config: RetryConfig = {}
+  config: Required<RetryConfig>
 ): Promise<T> {
   const {
-    maxAttempts = 3,
-    initialDelay = 1000,
-    maxDelay = 60000,
-    exponentialBase = 2,
-    jitter = true,
-    exceptions = [Error],
+    maxAttempts,
+    initialDelay,
+    maxDelay,
+    exponentialBase,
+    jitter,
+    exceptions,
   } = config;
 
   let lastException: Error | null = null;
@@ -161,11 +161,11 @@ export async function retryFunction<T>(
       return result instanceof Promise ? await result : result;
     } catch (error) {
       lastException = error as Error;
-      
-      const shouldRetry = exceptions.some(ExceptionType => 
+
+      const shouldRetry = exceptions.some(ExceptionType =>
         error instanceof ExceptionType
       );
-      
+
       if (!shouldRetry || attempt === maxAttempts - 1) {
         break;
       }
@@ -207,17 +207,8 @@ export class CircuitBreaker {
     };
   }
 
-  static create(config: CircuitBreakerConfig = {}): CircuitBreaker {
-    const defaultConfig: Required<CircuitBreakerConfig> = {
-      failureThreshold: 5,
-      timeout: 60000,
-      halfOpenMaxCalls: 5,
-      successThreshold: 1,
-      slidingWindowSize: 10,
-      name: 'CircuitBreaker',
-      ...config,
-    };
-    return new CircuitBreaker(defaultConfig);
+  static create(config: Required<CircuitBreakerConfig>): CircuitBreaker {
+    return new CircuitBreaker(config);
   }
 
   getState(): CircuitBreakerState {
@@ -375,7 +366,7 @@ export class CircuitBreaker {
 /**
  * Circuit breaker decorator
  */
-export function circuitBreaker(config: CircuitBreakerConfig = {}) {
+export function circuitBreaker(config: Required<CircuitBreakerConfig>) {
   const cb = CircuitBreaker.create(config);
 
   return function <T extends (...args: any[]) => any>(
@@ -400,8 +391,8 @@ export function circuitBreaker(config: CircuitBreakerConfig = {}) {
  * Combined retry and circuit breaker for resilient calls
  */
 export function resilientCall(
-  retryConfig: RetryConfig = {},
-  circuitConfig: CircuitBreakerConfig = {}
+  retryConfig: Required<RetryConfig>,
+  circuitConfig: Required<CircuitBreakerConfig>
 ) {
   const cb = CircuitBreaker.create(circuitConfig);
 
@@ -429,25 +420,33 @@ export function resilientCall(
  * Pre-configured resilient decorator for external service calls
  */
 export function resilientExternalService(
-  maxAttempts: number = 3,
-  failureThreshold: number = 5,
-  timeout: number = 60000,
-  name: string = 'ExternalService'
+  maxAttempts: number,
+  failureThreshold: number,
+  timeout: number,
+  name: string,
+  initialDelay: number,
+  maxDelay: number,
+  exponentialBase: number,
+  jitter: boolean,
+  halfOpenMaxCalls: number,
+  successThreshold: number,
+  slidingWindowSize: number
 ) {
   return resilientCall(
     {
       maxAttempts,
-      initialDelay: 1000,
-      maxDelay: 30000,
-      exponentialBase: 2,
-      jitter: true,
+      initialDelay,
+      maxDelay,
+      exponentialBase,
+      jitter,
+      exceptions: [Error],
     },
     {
       failureThreshold,
       timeout,
-      halfOpenMaxCalls: 3,
-      successThreshold: 1,
-      slidingWindowSize: 10,
+      halfOpenMaxCalls,
+      successThreshold,
+      slidingWindowSize,
       name,
     }
   );
@@ -457,25 +456,33 @@ export function resilientExternalService(
  * Pre-configured resilient decorator for database calls
  */
 export function resilientDatabase(
-  maxAttempts: number = 2,
-  failureThreshold: number = 3,
-  timeout: number = 30000,
-  name: string = 'Database'
+  maxAttempts: number,
+  failureThreshold: number,
+  timeout: number,
+  name: string,
+  initialDelay: number,
+  maxDelay: number,
+  exponentialBase: number,
+  jitter: boolean,
+  halfOpenMaxCalls: number,
+  successThreshold: number,
+  slidingWindowSize: number
 ) {
   return resilientCall(
     {
       maxAttempts,
-      initialDelay: 500,
-      maxDelay: 10000,
-      exponentialBase: 2,
-      jitter: true,
+      initialDelay,
+      maxDelay,
+      exponentialBase,
+      jitter,
+      exceptions: [Error],
     },
     {
       failureThreshold,
       timeout,
-      halfOpenMaxCalls: 2,
-      successThreshold: 2,
-      slidingWindowSize: 5,
+      halfOpenMaxCalls,
+      successThreshold,
+      slidingWindowSize,
       name,
     }
   );

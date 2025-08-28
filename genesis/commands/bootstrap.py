@@ -4,22 +4,21 @@ Genesis Bootstrap Command
 Project initialization functionality extracted from bootstrap shell script.
 """
 
-import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional
 
 import click
 
-from ..core.logger import get_logger
 from ..core.errors import (
-    ValidationError,
-    ResourceError,
     InfrastructureError,
+    ResourceError,
+    ValidationError,
     handle_error,
 )
+from ..core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -75,7 +74,7 @@ def create_project_directory(project_path: Path) -> None:
 
 
 def process_template_file(
-    template_file: Path, target_file: Path, substitutions: Dict[str, str]
+    template_file: Path, target_file: Path, substitutions: dict[str, str]
 ) -> None:
     """Process a template file with substitutions."""
     try:
@@ -101,8 +100,8 @@ def copy_template_structure(
     template_path: Path, project_path: Path, project_name: str
 ) -> None:
     """Copy and process template structure."""
-    from genesis.core.constants import get_python_version, get_git_author_info
-    
+    from genesis.core.constants import get_git_author_info, get_python_version
+
     logger.info(f"Processing template from {template_path}")
 
     # Get dynamic values - fail fast if not available

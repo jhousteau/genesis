@@ -3,26 +3,25 @@ Comprehensive tests for Genesis error framework.
 """
 
 import json
-import pytest
 from datetime import datetime
 from unittest.mock import patch
 
 from genesis.core.errors import (
-    ErrorCategory,
-    ErrorSeverity,
-    ErrorContext,
-    GenesisError,
-    InfrastructureError,
-    NetworkError,
-    ValidationError,
     AuthenticationError,
     AuthorizationError,
-    GenesisTimeoutError,
-    RateLimitError,
+    ErrorCategory,
+    ErrorContext,
+    ErrorSeverity,
     ExternalServiceError,
+    GenesisError,
+    GenesisTimeoutError,
+    InfrastructureError,
+    NetworkError,
+    RateLimitError,
     ResourceError,
-    handle_error,
+    ValidationError,
     get_error_handler,
+    handle_error,
 )
 
 
@@ -31,9 +30,7 @@ class TestErrorContext:
 
     def test_create_default_context(self):
         """Test creating default error context."""
-        with patch.dict(
-            "os.environ", {"GENESIS_SERVICE": "test-service", "GENESIS_ENV": "test"}
-        ):
+        with patch.dict("os.environ", {"SERVICE": "test-service", "ENV": "test"}):
             context = ErrorContext.create_default()
 
             assert context.service == "test-service"
@@ -73,7 +70,7 @@ class TestGenesisError:
         error = GenesisError("Test error")
 
         assert error.message == "Test error"
-        assert error.code == "GENESIS_ERROR"
+        assert error.code == "SYSTEM_ERROR"
         assert error.category == ErrorCategory.UNKNOWN
         assert error.severity == ErrorSeverity.ERROR
         assert error.recoverable is True

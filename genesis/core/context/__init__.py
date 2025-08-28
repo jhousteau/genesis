@@ -6,17 +6,17 @@ correlation IDs, request tracking, and context propagation.
 """
 
 from .manager import (
+    ContextManager,
     RequestContext,
     TraceContext,
-    ContextManager,
-    get_context,
-    set_context,
     clear_context,
     context_span,
-    get_correlation_id,
-    set_correlation_id,
     generate_correlation_id,
     generate_request_id,
+    get_context,
+    get_correlation_id,
+    set_context,
+    set_correlation_id,
 )
 
 __all__ = [

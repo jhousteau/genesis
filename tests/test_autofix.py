@@ -1,25 +1,23 @@
 """Tests for Genesis autofix system."""
 
-import pytest
 import subprocess
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
+import pytest
 
 from genesis.core.autofix import (
     AutoFixer,
+    ConvergenceError,
+    ConvergentFixer,
     ProjectDetector,
     ProjectType,
     PythonSubtype,
-    ConvergentFixer,
-    StageOrchestrator,
-    AutoFixError,
-    ConvergenceError,
 )
 from genesis.core.autofix.stages import (
     BasicFixesStage,
-    PythonFormatterStage,
     NodeFormatterStage,
-    PythonLinterStage,
+    PythonFormatterStage,
 )
 
 

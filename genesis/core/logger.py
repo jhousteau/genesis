@@ -75,6 +75,7 @@ def get_logger(
     """
     if config is None:
         from genesis.core.constants import LoggerConfig
+
         config = LogConfig(
             level=LoggerConfig.get_level(),
             format_json=LoggerConfig.should_format_json(),

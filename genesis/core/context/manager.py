@@ -5,16 +5,15 @@ Thread-safe context management for distributed applications using contextvars.
 Provides correlation ID tracking, request context, and distributed tracing support.
 """
 
-import os
 import uuid
+from collections.abc import Generator
 from contextlib import contextmanager
-from contextvars import ContextVar, copy_context
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional, Generator
+from typing import Any, Optional
 
-from genesis.core.constants import get_service_name, get_environment
-
+from genesis.core.constants import get_environment, get_service_name
 
 # Context variables for thread-safe and async-safe storage
 _current_context: ContextVar[Optional["RequestContext"]] = ContextVar(
@@ -25,7 +24,7 @@ _request_id: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
 _trace_id: ContextVar[Optional[str]] = ContextVar("trace_id", default=None)
 _span_id: ContextVar[Optional[str]] = ContextVar("span_id", default=None)
 _user_id: ContextVar[Optional[str]] = ContextVar("user_id", default=None)
-_metadata: ContextVar[Optional[Dict[str, Any]]] = ContextVar("metadata", default=None)
+_metadata: ContextVar[Optional[dict[str, Any]]] = ContextVar("metadata", default=None)
 
 
 @dataclass
@@ -35,9 +34,9 @@ class TraceContext:
     trace_id: str
     span_id: str
     parent_span_id: Optional[str] = None
-    baggage: Dict[str, str] = field(default_factory=dict)
+    baggage: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "trace_id": self.trace_id,
@@ -65,15 +64,11 @@ class RequestContext:
     timestamp: datetime = field(default_factory=datetime.utcnow)
     user_id: Optional[str] = None
     trace_context: Optional[TraceContext] = None
-    service: str = field(
-        default_factory=lambda: get_service_name()
-    )
-    environment: str = field(
-        default_factory=lambda: get_environment()
-    )
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    service: str = field(default_factory=lambda: get_service_name())
+    environment: str = field(default_factory=lambda: get_environment())
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         context_dict = {
             "correlation_id": self.correlation_id,
@@ -90,7 +85,7 @@ class RequestContext:
 
         return context_dict
 
-    def get_logger_context(self) -> Dict[str, Any]:
+    def get_logger_context(self) -> dict[str, Any]:
         """Get context data formatted for logger."""
         logger_context = {
             "correlation_id": self.correlation_id,
@@ -112,7 +107,7 @@ class RequestContext:
     def create_new(
         cls,
         user_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> "RequestContext":
         """Create a new request context with generated IDs."""
         return cls(
@@ -161,9 +156,19 @@ class ContextManager:
             raise ValueError("service_name is required and cannot be empty")
         if not environment or not environment.strip():
             raise ValueError("environment is required and cannot be empty")
-            
+
         self.service_name = service_name.strip()
         self.environment = environment.strip()
+
+    @classmethod
+    def default(cls) -> "ContextManager":
+        """Create ContextManager with values from environment variables."""
+        from genesis.core.constants import get_service_name, get_environment
+
+        return cls(
+            service_name=get_service_name(),
+            environment=get_environment(),
+        )
 
     def get_current_context(self) -> Optional[RequestContext]:
         """Get the current request context."""
@@ -198,7 +203,7 @@ class ContextManager:
         request_id: Optional[str] = None,
         user_id: Optional[str] = None,
         trace_context: Optional[TraceContext] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> RequestContext:
         """Create a new request context."""
         return RequestContext(
@@ -311,7 +316,7 @@ def get_user_id() -> Optional[str]:
     return _user_id.get()
 
 
-def get_metadata() -> Dict[str, Any]:
+def get_metadata() -> dict[str, Any]:
     """Get current metadata."""
     context = get_context()
     if context:

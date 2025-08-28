@@ -2,24 +2,25 @@
 Comprehensive tests for Genesis context management.
 """
 
-import pytest
-import threading
 import asyncio
+import threading
 from datetime import datetime
 from unittest.mock import patch
 
+import pytest
+
 from genesis.core.context import (
+    ContextManager,
     RequestContext,
     TraceContext,
-    ContextManager,
-    get_context,
-    set_context,
     clear_context,
     context_span,
-    get_correlation_id,
-    set_correlation_id,
     generate_correlation_id,
     generate_request_id,
+    get_context,
+    get_correlation_id,
+    set_context,
+    set_correlation_id,
 )
 
 
@@ -78,9 +79,7 @@ class TestRequestContext:
 
     def test_request_context_creation(self):
         """Test creating request context."""
-        with patch.dict(
-            "os.environ", {"GENESIS_SERVICE": "test-service", "GENESIS_ENV": "test"}
-        ):
+        with patch.dict("os.environ", {"SERVICE": "test-service", "ENV": "test"}):
             context = RequestContext(
                 correlation_id="corr123", request_id="req456", user_id="user789"
             )
@@ -181,7 +180,7 @@ class TestContextManager:
 
     def test_get_set_clear_context(self):
         """Test basic context operations."""
-        manager = ContextManager()
+        manager = ContextManager.default()
         context = RequestContext.create_new()
 
         # Initially no context
@@ -212,7 +211,7 @@ class TestContextManager:
 
     def test_context_scope(self):
         """Test context scope manager."""
-        manager = ContextManager()
+        manager = ContextManager.default()
         outer_context = RequestContext.create_new(user_id="outer_user")
         inner_context = RequestContext.create_new(user_id="inner_user")
 
@@ -229,7 +228,7 @@ class TestContextManager:
 
     def test_context_scope_nesting(self):
         """Test nested context scopes."""
-        manager = ContextManager()
+        manager = ContextManager.default()
 
         ctx1 = RequestContext.create_new(user_id="user1")
         ctx2 = RequestContext.create_new(user_id="user2")

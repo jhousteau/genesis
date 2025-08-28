@@ -75,6 +75,54 @@ class RetryConfig:
     jitter: bool = True
     exceptions: tuple[type[Exception], ...] = (Exception,)
 
+    @classmethod
+    def default(cls) -> "RetryConfig":
+        """Create RetryConfig with values from environment variables."""
+        from genesis.core.constants import RetryDefaults
+
+        return cls(
+            max_attempts=RetryDefaults.get_max_attempts(),
+            initial_delay=RetryDefaults.get_initial_delay(),
+            max_delay=RetryDefaults.get_max_delay(),
+            exponential_base=RetryDefaults.get_exponential_base(),
+        )
+
+    @classmethod
+    def create(
+        cls,
+        max_attempts: Optional[int] = None,
+        initial_delay: Optional[float] = None,
+        max_delay: Optional[float] = None,
+        exponential_base: Optional[float] = None,
+        jitter: Optional[bool] = None,
+        exceptions: Optional[tuple[type[Exception], ...]] = None,
+    ) -> "RetryConfig":
+        """Create RetryConfig with optional parameters, using defaults for missing ones."""
+        default_config = cls.default()
+
+        return cls(
+            max_attempts=(
+                max_attempts
+                if max_attempts is not None
+                else default_config.max_attempts
+            ),
+            initial_delay=(
+                initial_delay
+                if initial_delay is not None
+                else default_config.initial_delay
+            ),
+            max_delay=max_delay if max_delay is not None else default_config.max_delay,
+            exponential_base=(
+                exponential_base
+                if exponential_base is not None
+                else default_config.exponential_base
+            ),
+            jitter=jitter if jitter is not None else default_config.jitter,
+            exceptions=(
+                exceptions if exceptions is not None else default_config.exceptions
+            ),
+        )
+
 
 def retry(config: Optional[RetryConfig] = None) -> Callable:
     """Retry decorator with exponential backoff.
@@ -88,7 +136,7 @@ def retry(config: Optional[RetryConfig] = None) -> Callable:
             # May fail, will be retried
             pass
 
-        @retry(RetryConfig(max_attempts=5, initial_delay=0.5))
+        @retry(RetryConfig.default())
         async def async_function():
             # Async functions supported
             pass
@@ -224,6 +272,58 @@ class CircuitBreakerConfig:
     sliding_window_size: int
     name: str
 
+    @classmethod
+    def default(cls, name: Optional[str] = None) -> "CircuitBreakerConfig":
+        """Create CircuitBreakerConfig with values from environment variables."""
+        from genesis.core.constants import CircuitBreakerDefaults
+
+        return cls(
+            failure_threshold=CircuitBreakerDefaults.get_failure_threshold(),
+            timeout=CircuitBreakerDefaults.get_timeout(),
+            half_open_max_calls=CircuitBreakerDefaults.get_half_open_max_calls(),
+            success_threshold=CircuitBreakerDefaults.get_success_threshold(),
+            sliding_window_size=CircuitBreakerDefaults.get_sliding_window_size(),
+            name=name or "CircuitBreaker",
+        )
+
+    @classmethod
+    def create(
+        cls,
+        failure_threshold: Optional[int] = None,
+        timeout: Optional[float] = None,
+        half_open_max_calls: Optional[int] = None,
+        success_threshold: Optional[int] = None,
+        sliding_window_size: Optional[int] = None,
+        name: Optional[str] = None,
+    ) -> "CircuitBreakerConfig":
+        """Create CircuitBreakerConfig with optional parameters, using defaults for missing ones."""
+        default_config = cls.default()
+
+        return cls(
+            failure_threshold=(
+                failure_threshold
+                if failure_threshold is not None
+                else default_config.failure_threshold
+            ),
+            timeout=timeout if timeout is not None else default_config.timeout,
+            half_open_max_calls=(
+                half_open_max_calls
+                if half_open_max_calls is not None
+                else default_config.half_open_max_calls
+            ),
+            success_threshold=(
+                success_threshold
+                if success_threshold is not None
+                else default_config.success_threshold
+            ),
+            sliding_window_size=(
+                sliding_window_size
+                if sliding_window_size is not None
+                else default_config.sliding_window_size
+            ),
+            name=name if name is not None else default_config.name,
+        )
+
 
 class CircuitBreaker:
     """
@@ -238,7 +338,7 @@ class CircuitBreaker:
 
     def __init__(self, config: Optional[CircuitBreakerConfig] = None):
         if config is None:
-            config = CircuitBreakerConfig()
+            config = CircuitBreakerConfig.default()
 
         # Configuration
         self.failure_threshold = config.failure_threshold
@@ -484,8 +584,8 @@ def resilient_call(
             return requests.get('https://api.example.com')
 
         @resilient_call(
-            retry_config=RetryConfig(max_attempts=3, initial_delay=1.0),
-            circuit_config=CircuitBreakerConfig(failure_threshold=5, timeout=60)
+            retry_config=RetryConfig.default(),
+            circuit_config=CircuitBreakerConfig.default()
         )
         def database_call():
             return db.query("SELECT * FROM table")
@@ -504,10 +604,10 @@ def resilient_call(
 
 # Convenience functions
 def resilient_external_service(
-    max_attempts: int,
-    failure_threshold: int,
-    timeout: float,
-    name: str,
+    max_attempts: Optional[int] = None,
+    failure_threshold: Optional[int] = None,
+    timeout: Optional[float] = None,
+    name: Optional[str] = None,
 ) -> Callable:
     """
     Pre-configured resilient decorator for external service calls.
@@ -518,29 +618,22 @@ def resilient_external_service(
     - Moderate timeout (60 seconds)
     """
     return resilient_call(
-        retry_config=RetryConfig(
+        retry_config=RetryConfig.create(
             max_attempts=max_attempts,
-            initial_delay=1.0,
-            max_delay=30.0,
-            exponential_base=2.0,
-            jitter=True,
         ),
-        circuit_config=CircuitBreakerConfig(
+        circuit_config=CircuitBreakerConfig.create(
             failure_threshold=failure_threshold,
             timeout=timeout,
-            half_open_max_calls=3,
-            success_threshold=1,
-            sliding_window_size=10,
             name=name,
         ),
     )
 
 
 def resilient_database(
-    max_attempts: int,
-    failure_threshold: int,
-    timeout: float,
-    name: str,
+    max_attempts: Optional[int] = None,
+    failure_threshold: Optional[int] = None,
+    timeout: Optional[float] = None,
+    name: Optional[str] = None,
 ) -> Callable:
     """
     Pre-configured resilient decorator for database calls.
@@ -551,19 +644,12 @@ def resilient_database(
     - Shorter timeout (30 seconds for faster recovery)
     """
     return resilient_call(
-        retry_config=RetryConfig(
+        retry_config=RetryConfig.create(
             max_attempts=max_attempts,
-            initial_delay=0.5,
-            max_delay=10.0,
-            exponential_base=2.0,
-            jitter=True,
         ),
-        circuit_config=CircuitBreakerConfig(
+        circuit_config=CircuitBreakerConfig.create(
             failure_threshold=failure_threshold,
             timeout=timeout,
-            half_open_max_calls=2,
-            success_threshold=2,
-            sliding_window_size=5,
             name=name,
         ),
     )

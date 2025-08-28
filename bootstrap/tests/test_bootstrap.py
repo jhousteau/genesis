@@ -1,10 +1,11 @@
 """Tests for bootstrap script functionality."""
 
 import os
+import shutil
 import subprocess
 import tempfile
-import shutil
 from pathlib import Path
+
 import pytest
 
 
@@ -202,7 +203,7 @@ class TestBootstrapScript:
         """Test that script meets the ~150 line requirement."""
         script_path = Path(__file__).parent.parent / "src" / "bootstrap.sh"
 
-        with open(script_path, "r") as f:
+        with open(script_path) as f:
             lines = len(f.readlines())
 
         assert lines <= 180, f"Script should be ~150 lines, got {lines}"

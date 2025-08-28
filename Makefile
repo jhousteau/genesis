@@ -184,14 +184,14 @@ version: ## Show project version information
 
 genesis-cli: ## Install Genesis CLI for development
 	@echo "$(BLUE)Installing Genesis CLI for development...$(NC)"
-	@cd genesis-cli && poetry install
+	@poetry install
 	@echo "$(GREEN)✓ Genesis CLI installed!$(NC)"
-	@echo "$(YELLOW)You can now use: cd genesis-cli && poetry run genesis --help$(NC)"
+	@echo "$(YELLOW)You can now use: poetry run python -m genesis.cli --help$(NC)"
 
 genesis-lint: ## Lint Genesis Python components specifically
 	@echo "$(BLUE)Linting Genesis Python components...$(NC)"
 	@cd shared-python && poetry run ruff check .
-	@cd genesis-cli && poetry run ruff check .
+	@poetry run ruff check genesis/
 	@echo "$(GREEN)✓ Genesis linting complete$(NC)"
 
 genesis-lint-fix: ## Lint and auto-fix Genesis Python components with AutoFixer
@@ -201,20 +201,20 @@ genesis-lint-fix: ## Lint and auto-fix Genesis Python components with AutoFixer
 		python -c "from genesis.core.autofix import AutoFixer; fixer = AutoFixer(); result = fixer.run(); exit(0 if result.success else 1)"; \
 	else \
 		echo "$(YELLOW)Genesis AutoFixer not available, using legacy mode...$(NC)"; \
-		cd shared-python && poetry run ruff check --fix . && cd ../genesis-cli && poetry run ruff check --fix .; \
+		cd shared-python && poetry run ruff check --fix . && cd .. && poetry run ruff check --fix genesis/; \
 	fi
 	@echo "$(GREEN)✓ Genesis auto-fix complete$(NC)"
 
 genesis-lint-fix-all: ## Lint and auto-fix Genesis components (including unsafe fixes)
 	@echo "$(BLUE)Linting and auto-fixing Genesis (including unsafe fixes)...$(NC)"
 	@cd shared-python && poetry run ruff check --fix --unsafe-fixes .
-	@cd genesis-cli && poetry run ruff check --fix --unsafe-fixes .
+	@poetry run ruff check --fix --unsafe-fixes genesis/
 	@echo "$(GREEN)✓ Genesis comprehensive auto-fix complete$(NC)"
 
 genesis-format: ## Format Genesis Python components specifically
 	@echo "$(BLUE)Formatting Genesis Python components...$(NC)"
 	@cd shared-python && poetry run black . && poetry run isort .
-	@cd genesis-cli && poetry run black . && poetry run isort .
+	@poetry run black genesis/ && poetry run isort genesis/
 	@echo "$(GREEN)✓ Genesis formatting complete$(NC)"
 
 genesis-test: ## Run Genesis-specific tests
@@ -234,19 +234,19 @@ ifndef name
 	$(error Missing required parameter: name. Usage: make bootstrap name=<name> [type=python-api])
 endif
 	@echo "$(BLUE)Bootstrapping new project: $(name)...$(NC)"
-	@cd genesis-cli && poetry run genesis bootstrap $(name) --type $(or $(type),python-api)
+	@source .envrc && poetry run python -m genesis.cli bootstrap $(name) --type $(or $(type),python-api)
 
 status: ## Check Genesis project status
 	@echo "$(BLUE)Checking Genesis project status...$(NC)"
-	@cd genesis-cli && poetry run genesis status
+	@source .envrc && poetry run python -m genesis.cli status
 
 commit: ## Smart commit with Genesis quality gates
 	@echo "$(BLUE)Running Genesis smart commit...$(NC)"
-	@cd genesis-cli && poetry run genesis commit
+	@source .envrc && poetry run python -m genesis.cli commit --message "feat: Remove hardcoded defaults and enforce fail-fast configuration"
 
 sync: ## Sync Genesis components
 	@echo "$(BLUE)Syncing Genesis components...$(NC)"
-	@cd genesis-cli && poetry run genesis sync
+	@source .envrc && poetry run python -m genesis.cli sync
 
 ai-safety-report: ## Generate comprehensive AI safety report
 	@echo "$(BLUE)Generating AI safety report...$(NC)"
