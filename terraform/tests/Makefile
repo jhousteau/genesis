@@ -5,7 +5,7 @@ validate:
 	@echo "🔍 Running Terraform validation tests..."
 	./validate.sh
 
-# Integration tests with terratest (creates real resources)  
+# Integration tests with terratest (creates real resources)
 integration:
 	@echo "🚀 Running Terraform integration tests..."
 	@echo "⚠️  WARNING: This will create real GCP resources and may incur costs"

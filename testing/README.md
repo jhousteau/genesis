@@ -15,7 +15,7 @@ Shared testing utilities, fixtures, and framework for all Genesis components. Pr
 
 **Test Organization:**
 - **Unit tests**: Individual component functionality
-- **Integration tests**: Cross-component communication  
+- **Integration tests**: Cross-component communication
 - **E2E tests**: Complete Genesis workflows
 - **AI Safety tests**: File count limits and isolation validation
 
@@ -27,7 +27,7 @@ Shared testing utilities, fixtures, and framework for all Genesis components. Pr
 - `mock_commands.py` - Shell command execution mocking
 - `__init__.py` - Fixture exports and imports
 
-### `utilities/` - Test Helper Functions  
+### `utilities/` - Test Helper Functions
 - `ai_safety.py` - AI safety validation, file counting, and reporting
 - `__init__.py` - Utility exports
 
@@ -61,7 +61,7 @@ def test_project_ai_safety(genesis_root):
     checker = AISafetyChecker(max_total_files=100, max_component_files=30)
     result = checker.check_project(genesis_root)
     assert result['is_safe']
-    
+
     # Print detailed report if needed
     if not result['is_safe']:
         print_ai_safety_report(genesis_root)
@@ -84,7 +84,7 @@ def test_git_workflow():
 def test_cli_bootstrap_integration(mock_genesis_project):
     from genesis import cli
     from click.testing import CliRunner
-    
+
     runner = CliRunner()
     result = runner.invoke(cli, ['bootstrap', 'test-project'])
     assert result.exit_code == 0
@@ -96,7 +96,7 @@ The framework provides several test markers for organization:
 
 - `@pytest.mark.unit` - Unit tests for individual components
 - `@pytest.mark.integration` - Integration tests across components
-- `@pytest.mark.e2e` - End-to-end tests for complete workflows  
+- `@pytest.mark.e2e` - End-to-end tests for complete workflows
 - `@pytest.mark.ai_safety` - Tests for AI safety constraints
 - `@pytest.mark.slow` - Tests that take more than 2 seconds
 - `@pytest.mark.requires_git` - Tests that need git operations
@@ -187,7 +187,7 @@ Total files: 73
 
 Component breakdown:
   ✅ bootstrap: 8 files
-  ✅ genesis-cli: 12 files  
+  ✅ genesis-cli: 12 files
   ✅ smart-commit: 6 files
   ✅ worktree-tools: 7 files
   ✅ shared-python: 15 files
@@ -242,11 +242,11 @@ The testing infrastructure integrates with Genesis CI/CD:
 - name: Run Tests
   run: |
     pytest --cov=. --cov-report=xml
-    
+
 - name: AI Safety Check
   run: |
     pytest -m ai_safety --tb=short
-    
+
 - name: Upload Coverage
   uses: codecov/codecov-action@v3
 ```
@@ -254,7 +254,7 @@ The testing infrastructure integrates with Genesis CI/CD:
 ## Best Practices
 
 1. **Use appropriate markers** for test categorization
-2. **Mock external dependencies** (git, network, filesystem)  
+2. **Mock external dependencies** (git, network, filesystem)
 3. **Validate AI safety** in integration tests
 4. **Test component isolation** and boundaries
 5. **Use temp directories** for test isolation

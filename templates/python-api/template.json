@@ -20,13 +20,13 @@
       "substitute": true
     },
     {
-      "src": "src/{{project_name}}/main.py.template", 
+      "src": "src/{{project_name}}/main.py.template",
       "dest": "src/{{project_name}}/main.py",
       "substitute": true
     },
     {
       "src": "tests/test_main.py.template",
-      "dest": "tests/test_main.py", 
+      "dest": "tests/test_main.py",
       "substitute": true
     },
     {

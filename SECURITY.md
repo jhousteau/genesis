@@ -24,7 +24,7 @@ Genesis implements multiple layers of automated security scanning:
 - **Scope**: All commits and pull requests
 - **Action**: Prevents secrets from being committed
 
-#### 2. Dependency Scanning  
+#### 2. Dependency Scanning
 - **Python**: Safety (vulnerability database scanning)
 - **Node.js**: npm audit (vulnerability scanning)
 - **Schedule**: Every dependency update and weekly scans
@@ -50,7 +50,7 @@ Genesis implements multiple layers of automated security scanning:
 
 #### Dependency Management
 - Weekly automated security updates
-- Major version updates require manual review  
+- Major version updates require manual review
 - Vulnerability scanning on all dependencies
 - Lock files committed for reproducible builds
 
@@ -135,7 +135,7 @@ Projects created by Genesis inherit security configurations:
 - [ ] Release notes include security fixes
 - [ ] Automated security tests pass
 
-### Regular Maintenance  
+### Regular Maintenance
 - [ ] Weekly dependency updates reviewed
 - [ ] Security scanning results analyzed
 - [ ] Pre-commit hook versions updated
@@ -170,7 +170,7 @@ gitleaks protect --staged
 ### Genesis Principles Applied to Security
 
 1. **Build Generic, Use Everywhere**: Security configurations work for Genesis and all generated projects
-2. **Eat Our Own Dog Food**: Genesis uses its own security patterns  
+2. **Eat Our Own Dog Food**: Genesis uses its own security patterns
 3. **AI Safety**: Secure by default, safe for AI-assisted development
 4. **Lean Implementation**: Comprehensive security without bloat
 

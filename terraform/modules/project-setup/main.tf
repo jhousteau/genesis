@@ -1,6 +1,6 @@
 /**
  * Project Setup Module - Complete Project Initialization
- * 
+ *
  * Combines project bootstrap, state backend, and service accounts for quick setup.
  * Follows Genesis principle: One module, one complete workflow.
  */

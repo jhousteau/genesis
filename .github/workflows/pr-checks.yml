@@ -14,7 +14,7 @@ jobs:
         with:
           # Need full history for proper diff analysis
           fetch-depth: 0
-      
+
       - name: Validate PR title and description
         run: |
           # Check if PR has a meaningful title
@@ -22,13 +22,13 @@ jobs:
             echo "❌ PR title too short. Please provide a descriptive title."
             exit 1
           fi
-          
+
           # Check if PR has description
           if [[ -z "$PR_BODY" ]] || [[ ${#PR_BODY} -lt 20 ]]; then
             echo "❌ PR description too short. Please describe what changes were made."
             exit 1
           fi
-          
+
           echo "✓ PR title and description validation passed"
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -70,14 +70,14 @@ jobs:
           # Ensure changes respect component isolation
           changed_dirs=$(git diff --name-only origin/main...HEAD | cut -d'/' -f1 | sort -u)
           component_count=$(echo "$changed_dirs" | wc -l)
-          
+
           if [ $component_count -gt 3 ]; then
             echo "❌ Changes span too many components ($component_count)"
             echo "Consider breaking this PR into smaller, focused changes."
             echo "Changed directories: $changed_dirs"
             exit 1
           fi
-          
+
           echo "✓ Changes are appropriately scoped"
 
   lint-check:
@@ -85,16 +85,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install black ruff mypy
-          
+
       - name: Run Python linters
         if: hashFiles('**/*.py') != ''
         run: |
@@ -109,7 +109,7 @@ jobs:
         with:
           node-version: '20'
         if: hashFiles('**/*.{ts,tsx,js,jsx}') != ''
-          
+
       - name: Run TypeScript linters
         if: hashFiles('**/*.{ts,tsx,js,jsx}') != ''
         run: |

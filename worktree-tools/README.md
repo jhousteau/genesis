@@ -100,7 +100,7 @@ Each worktree includes an AI safety manifest:
 ```
 # AI Safety Manifest - Genesis Sparse Worktree
 Worktree: fix-auth
-Focus: src/auth/login.py  
+Focus: src/auth/login.py
 Files: 8/30
 Branch: sparse-fix-auth
 Created: 2025-01-27T10:30:00Z

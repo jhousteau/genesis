@@ -25,7 +25,7 @@ from .handler import (
 
 __all__ = [
     "ErrorCategory",
-    "ErrorSeverity", 
+    "ErrorSeverity",
     "ErrorContext",
     "GenesisError",
     "InfrastructureError",
@@ -34,7 +34,7 @@ __all__ = [
     "AuthenticationError",
     "AuthorizationError",
     "GenesisTimeoutError",
-    "RateLimitError", 
+    "RateLimitError",
     "ExternalServiceError",
     "ResourceError",
     "handle_error",

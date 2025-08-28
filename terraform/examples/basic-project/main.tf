@@ -1,6 +1,6 @@
 /**
  * Basic Project Setup Example
- * 
+ *
  * Creates a GCP project with Terraform state backend and minimal configuration.
  * Perfect for getting started quickly.
  */

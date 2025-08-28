@@ -1,6 +1,6 @@
 /**
  * Project Bootstrap Module - Simplified and Essential
- * 
+ *
  * Creates a GCP project with basic APIs enabled and optional service account.
  * Follows Genesis principle: Do what's needed, skip the complexity.
  */

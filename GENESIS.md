@@ -14,7 +14,7 @@ genesis/                    # Main repo (human oversight only)
 ├── genesis_cli/           # CLI commands (21 files)
 ├── shared-infra/          # Shared components
 │   ├── bootstrap/         # Project setup (16 files)
-│   ├── smart-commit/      # Quality gates (35 files) 
+│   ├── smart-commit/      # Quality gates (35 files)
 │   └── libs/              # Shared utilities (31 files)
 └── tests/                 # Test suite
 
@@ -32,7 +32,7 @@ genesis/                    # Main repo (human oversight only)
 **Commands**:
 ```bash
 genesis bootstrap <name>    # Create new project
-genesis worktree create     # Create sparse worktree  
+genesis worktree create     # Create sparse worktree
 genesis sync               # Update shared components
 genesis status             # Check project health
 ```
@@ -168,7 +168,7 @@ pyyaml = "^6.0"         # Configuration
 export GENESIS_ENV=development
 export LOG_LEVEL=debug
 
-# Production  
+# Production
 export GENESIS_ENV=production
 export LOG_LEVEL=warning
 ```
@@ -332,7 +332,7 @@ logger.info("Operation completed", user_id=123, duration=0.5)
 
 ### What We Kept
 - **Smart commit concept**: Quality gates before commits
-- **Bootstrap automation**: Project initialization  
+- **Bootstrap automation**: Project initialization
 - **Shared libraries**: Common utilities
 - **Testing structure**: Unit/integration/e2e
 

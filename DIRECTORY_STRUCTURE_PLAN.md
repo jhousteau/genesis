@@ -220,7 +220,7 @@ genesis-cli/         → shared-python/
 
 ### Per-Component File Counts
 - **docs/**: 3 files
-- **genesis-cli/**: 15-20 files  
+- **genesis-cli/**: 15-20 files
 - **smart-commit/**: 8-10 files
 - **bootstrap/**: 10-12 files
 - **shared-python/**: 15-20 files
@@ -274,7 +274,7 @@ genesis-cli/         → shared-python/
    - Move CLI files → genesis-cli/
    - Move smart-commit → smart-commit/
    - Move bootstrap → bootstrap/
-   
+
 2. **Phase 2: Establish Boundaries**
    - Add component-specific README files
    - Create component-specific tests

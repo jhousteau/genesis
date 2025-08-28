@@ -92,7 +92,7 @@ AI-generated code
 - **NOW**: We're extracting and simplifying smart-commit.sh from old code
 - **FUTURE**: Projects will use the smart-commit tool we create
 
-### Directory Structure  
+### Directory Structure
 - **NOW**: Creating genesis-cli/, shared-python/, etc. directories
 - **FUTURE**: Projects import FROM these directories via Genesis
 
@@ -113,7 +113,7 @@ AI-generated code
 - Dependency management (Poetry, npm)
 - Root Makefile for automation
 
-### Phase 1: Structure  
+### Phase 1: Structure
 - Component-based directories
 - CI/CD with GitHub Actions
 - Testing infrastructure
@@ -146,7 +146,7 @@ AI-generated code
 ### CLI Commands
 ```bash
 genesis bootstrap <name>    # Create new project with templates
-genesis worktree create     # Create AI-safe sparse worktree  
+genesis worktree create     # Create AI-safe sparse worktree
 genesis sync               # Update shared components
 genesis status             # Check project health
 ```

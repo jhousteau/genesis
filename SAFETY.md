@@ -11,7 +11,7 @@ cd /Users/jameshousteau/source_code/genesis
 # AI sees 3000+ files → disaster waiting to happen
 
 # ✅ ALWAYS: Use sparse worktree
-cd /Users/jameshousteau/source_code/genesis-cli  
+cd /Users/jameshousteau/source_code/genesis-cli
 # AI sees 21 files → safe, focused work
 ```
 
@@ -26,7 +26,7 @@ git sparse-checkout set specific/component/only/
 
 ### Rule #3: Review Before Merge
 - **All AI changes** must be human-reviewed
-- **Show git diff** before accepting changes  
+- **Show git diff** before accepting changes
 - **Test thoroughly** in sparse environment
 - **Never auto-merge** AI pull requests
 
@@ -50,7 +50,7 @@ find . -type f | wc -l  # Should be < 30
 # CLI work (21 files)
 git sparse-checkout set genesis_cli/ pyproject.toml
 
-# Smart commit work (35 files)  
+# Smart commit work (35 files)
 git sparse-checkout set shared-infra/smart-commit/
 
 # Bootstrap work (16 files)
@@ -88,7 +88,7 @@ git worktree prune
 4. **Stop if confused** - unclear requests = danger
 5. **Ask for clarification** when scope seems broad
 
-### After AI Session  
+### After AI Session
 1. **Review all changes** with git diff
 2. **Test modified code** thoroughly
 3. **Check for side effects** in other components
@@ -100,7 +100,7 @@ git worktree prune
 # Good AI request
 "In the genesis-cli sparse worktree, add a status command to genesis_cli/commands/status.py that shows project health"
 
-# Bad AI request  
+# Bad AI request
 "Improve the entire Genesis project and fix any issues you find"
 ```
 
@@ -110,7 +110,7 @@ git worktree prune
 ```bash
 # Feature branches from sparse worktrees
 ../genesis-component/  # feature/new-component
-../genesis-fix/        # fix/specific-bug  
+../genesis-fix/        # fix/specific-bug
 ../genesis-refactor/   # refactor/cleanup-logging
 ```
 
@@ -118,7 +118,7 @@ git worktree prune
 ```bash
 # Use conventional commits
 feat: add status command to CLI
-fix: resolve import error in shared_core  
+fix: resolve import error in shared_core
 docs: update README with new examples
 test: add integration tests for bootstrap
 
@@ -162,7 +162,7 @@ config = {"api_key": "sk-123456"}  # Never commit this
 ```bash
 # Files AI should NEVER access
 .env*                    # Environment secrets
-*.key, *.pem            # Private keys  
+*.key, *.pem            # Private keys
 credentials.json        # Service account keys
 config/production.yaml  # Production configs
 ```
@@ -246,7 +246,7 @@ git push --force-with-lease
 ```bash
 # Include purpose in name
 ../genesis-cli-status/      # Adding status command
-../genesis-fix-logging/     # Fix logging issue  
+../genesis-fix-logging/     # Fix logging issue
 ../genesis-test-bootstrap/  # Add bootstrap tests
 ```
 
@@ -272,7 +272,7 @@ rm -rf ../old-workspace-*      # Clean up directories
 
 ### Safety Indicators
 - **Zero secrets** in git history
-- **Zero cross-component** contamination  
+- **Zero cross-component** contamination
 - **100% review rate** for AI changes
 - **All workspaces** under 30 files
 - **No failed merges** due to AI changes
@@ -289,7 +289,7 @@ If something goes seriously wrong:
 1. **Stop all AI sessions** immediately
 2. **Document the issue** with git status/diff
 3. **Revert to last known good state**
-4. **Review sparse worktree setup** 
+4. **Review sparse worktree setup**
 5. **Update safety guidelines** based on lessons learned
 
 Remember: **When in doubt, err on the side of caution**. It's better to be overly restrictive than to allow AI contamination of the codebase.

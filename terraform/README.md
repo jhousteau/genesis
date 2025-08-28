@@ -7,7 +7,7 @@ Simple, focused Terraform modules for GCP project setup. **No over-engineering.*
 Based on the [OLD_CODE_ANALYSIS.md](../OLD_CODE_ANALYSIS.md), we learned that Terraform modules can become massively over-engineered. Genesis modules follow these principles:
 
 - **Simple**: ~100 lines max per module
-- **Focused**: One clear purpose per module  
+- **Focused**: One clear purpose per module
 - **Actually Used**: Only features that projects regularly need
 - **Generic**: Works for any project type
 
@@ -25,7 +25,7 @@ Based on the [OLD_CODE_ANALYSIS.md](../OLD_CODE_ANALYSIS.md), we learned that Te
 ### What We DON'T Include
 
 - ❌ 6 deployment strategies (old code had this)
-- ❌ Multi-region disaster recovery 
+- ❌ Multi-region disaster recovery
 - ❌ Complex CMEK encryption setups
 - ❌ Advanced monitoring/alerting
 - ❌ VPC Service Controls
@@ -41,7 +41,7 @@ Based on the [OLD_CODE_ANALYSIS.md](../OLD_CODE_ANALYSIS.md), we learned that Te
 ```hcl
 module "project" {
   source = "path/to/genesis/terraform/modules/project-setup"
-  
+
   project_id      = "my-awesome-project"
   billing_account = "XXXXXX-YYYYYY-ZZZZZZ"
 }
@@ -49,7 +49,7 @@ module "project" {
 
 That's it! You get:
 - GCP project with essential APIs
-- Terraform state bucket 
+- Terraform state bucket
 - Service account for Terraform
 - Basic budget alert
 
@@ -58,7 +58,7 @@ That's it! You get:
 ```hcl
 module "state" {
   source = "path/to/genesis/terraform/modules/state-backend"
-  
+
   project_id = "existing-project-id"
 }
 ```
@@ -81,7 +81,7 @@ Creates a GCP project with essential APIs enabled.
 
 **What it doesn't do:**
 - Complex organization policies
-- Advanced audit logging  
+- Advanced audit logging
 - Multi-region setup
 
 ### state-backend
@@ -129,7 +129,7 @@ Combines bootstrap + state-backend + service-accounts.
 The previous Genesis had **1000+ line Terraform modules** with features like:
 
 - Multi-region state replication (45 resources)
-- Advanced security scanning (17 security policies)  
+- Advanced security scanning (17 security policies)
 - Cost anomaly detection (automated budgets)
 - Disaster recovery automation (cross-region backups)
 - CMEK keys for 8 different services
@@ -182,7 +182,7 @@ When adding new modules:
 
 - ✅ New project setup: < 5 minutes
 - ✅ Module complexity: < 100 lines each
-- ✅ Features used: > 80% utilization  
+- ✅ Features used: > 80% utilization
 - ✅ AI-safe: Complete module in one session
 
 ---

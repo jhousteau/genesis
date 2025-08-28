@@ -15,29 +15,29 @@ TERRAFORM_DIR="$(cd "$TEST_DIR/.." && pwd)"
 test_module() {
     local module_path="$1"
     local module_name=$(basename "$module_path")
-    
+
     echo "Testing module: $module_name"
-    
+
     cd "$module_path"
-    
+
     # Initialize
     terraform init -backend=false > /dev/null 2>&1 || {
         echo -e "${RED}❌ $module_name: terraform init failed${NC}"
         return 1
     }
-    
+
     # Validate
     terraform validate > /dev/null 2>&1 || {
         echo -e "${RED}❌ $module_name: terraform validate failed${NC}"
         return 1
     }
-    
+
     # Format check
     terraform fmt -check > /dev/null 2>&1 || {
         echo -e "${RED}❌ $module_name: terraform fmt check failed${NC}"
         return 1
     }
-    
+
     echo -e "${GREEN}✅ $module_name: passed${NC}"
     return 0
 }

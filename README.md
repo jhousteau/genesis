@@ -28,7 +28,7 @@ find . -type f | wc -l  # Returns: 21
 ## Core Components
 
 1. **Genesis CLI** (`genesis_cli/`) - Project management commands
-2. **Smart Commit** (`shared-infra/smart-commit/`) - Quality gates before commits  
+2. **Smart Commit** (`shared-infra/smart-commit/`) - Quality gates before commits
 3. **Bootstrap** (`shared-infra/bootstrap/`) - Automated project setup
 4. **Shared Libraries** (`shared-infra/libs/`) - Reusable Python/TypeScript utilities
 

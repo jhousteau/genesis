@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Genesis Project Bootstrap - Generic project initialization  
+# Genesis Project Bootstrap - Generic project initialization
 # Extracted and simplified from old Genesis (505→148 lines)
 
 set -euo pipefail
@@ -20,7 +20,7 @@ Arguments:
 
 Options:
   --type <type>    python-api, typescript-service, cli-tool (default: python-api)
-  --path <path>    Directory to create in (default: current directory)  
+  --path <path>    Directory to create in (default: current directory)
   --skip-git       Skip Git initialization
   --help          Show help
 
@@ -32,7 +32,7 @@ create_project() {
     log "📁 Creating $PROJECT_TYPE project..."
     mkdir -p "$PROJECT_PATH"/{src,tests,docs}
     command -v git &>/dev/null || error_exit "Git is required"
-    
+
     case "$PROJECT_TYPE" in
         python-api)
             cat > "$PROJECT_PATH/pyproject.toml" << EOF
@@ -87,14 +87,14 @@ $PROJECT_TYPE project with structure and tooling.
 ## Quick Start
 \`\`\`bash
 make setup  # Install dependencies
-make test   # Run tests  
+make test   # Run tests
 make dev    # Start development
 \`\`\`
 
 ## Development
 Quality gates, testing, and CI/CD ready.
 EOF
-    
+
     cat > "$PROJECT_PATH/.gitignore" << 'EOF'
 node_modules/
 venv/
@@ -108,7 +108,7 @@ coverage/
 .env
 .env.local
 EOF
-    
+
     cat > "$PROJECT_PATH/Makefile" << 'EOF'
 .PHONY: setup test lint build clean dev help
 setup: ## Install dependencies

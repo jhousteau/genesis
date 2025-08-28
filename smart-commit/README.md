@@ -6,7 +6,7 @@ Extracted and simplified quality gates system from old Genesis codebase. Provide
 
 **Core Quality Gates:**
 - ✅ Pre-commit hook validation (if .pre-commit-config.yaml exists)
-- ✅ Test execution with continue option (pytest or make test)  
+- ✅ Test execution with continue option (pytest or make test)
 - ✅ Linting with auto-fix (ruff, black)
 - ✅ Basic secret detection (API keys, tokens)
 - ✅ Commit message validation (length, format)
@@ -14,7 +14,7 @@ Extracted and simplified quality gates system from old Genesis codebase. Provide
 
 **Simplifications from Original (225→93 lines):**
 - Removed over-complex user interaction
-- Streamlined error handling  
+- Streamlined error handling
 - Simplified command detection
 - Focused on core functionality
 - Maintained all essential quality gates
@@ -74,7 +74,7 @@ cd smart-commit/
 The script automatically detects and uses:
 - `.pre-commit-config.yaml` - Pre-commit hooks
 - `pytest` or `make test` - Test runners
-- `ruff`, `black` - Code linters/formatters  
+- `ruff`, `black` - Code linters/formatters
 - Git configuration - For commit creation
 
 No additional configuration required - works out of the box with Genesis patterns.
