@@ -6,6 +6,8 @@ from typing import Any, Optional, Union
 
 import yaml
 
+from .errors import ResourceError, ValidationError, handle_error
+
 
 class ConfigLoader:
     """Simple configuration loader supporting YAML files and env var overrides."""
@@ -25,8 +27,17 @@ class ConfigLoader:
         if not path.exists():
             return {}
         
-        with open(path) as f:
-            return yaml.safe_load(f) or {}
+        try:
+            with open(path) as f:
+                content = yaml.safe_load(f) or {}
+                if not isinstance(content, dict):
+                    raise ValidationError(f"Configuration file must contain a YAML dictionary, got {type(content).__name__}")
+                return content
+        except yaml.YAMLError as e:
+            raise ValidationError(f"Invalid YAML in configuration file {path}: {e}")
+        except Exception as e:
+            handled_error = handle_error(e)
+            raise ResourceError(f"Failed to load configuration file {path}: {handled_error.message}", resource_type="config_file")
     
     def load_env(self, config: dict[str, Any]) -> dict[str, Any]:
         """Apply environment variable overrides to config."""

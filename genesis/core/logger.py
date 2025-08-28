@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 
+from .context import get_context
+
 
 @dataclass
 class LogConfig:
@@ -36,6 +38,11 @@ class JSONFormatter(logging.Formatter):
         
         if self.config.include_caller:
             log_data["caller"] = f"{record.filename}:{record.lineno}"
+        
+        # Include context information automatically
+        context = get_context()
+        if context:
+            log_data.update(context.get_logger_context())
         
         if hasattr(record, "extra_data"):
             log_data.update(record.extra_data)

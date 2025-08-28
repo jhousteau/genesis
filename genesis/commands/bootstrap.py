@@ -14,13 +14,11 @@ from typing import Optional, Dict, Any
 import click
 
 from ..core.logger import get_logger
+from ..core.errors import ValidationError, ResourceError, InfrastructureError, handle_error
 
 logger = get_logger(__name__)
 
 
-class BootstrapError(Exception):
-    """Bootstrap-specific error."""
-    pass
 
 
 def find_genesis_root() -> Optional[Path]:
@@ -45,25 +43,25 @@ def get_template_path(project_type: str) -> Optional[Path]:
 def validate_project_name(name: str) -> None:
     """Validate project name meets requirements."""
     if not name:
-        raise BootstrapError("Project name cannot be empty")
+        raise ValidationError("Project name cannot be empty", field="name")
     
     if not name.replace('-', '').replace('_', '').isalnum():
-        raise BootstrapError("Project name must contain only letters, numbers, hyphens, and underscores")
+        raise ValidationError("Project name must contain only letters, numbers, hyphens, and underscores", field="name")
     
     if name.startswith('-') or name.startswith('_'):
-        raise BootstrapError("Project name cannot start with hyphen or underscore")
+        raise ValidationError("Project name cannot start with hyphen or underscore", field="name")
 
 
 def create_project_directory(project_path: Path) -> None:
     """Create project directory structure."""
     if project_path.exists():
-        raise BootstrapError(f"Directory {project_path} already exists")
+        raise ResourceError(f"Directory {project_path} already exists", resource_type="directory")
     
     try:
         project_path.mkdir(parents=True, exist_ok=False)
         logger.info(f"Created project directory: {project_path}")
     except OSError as e:
-        raise BootstrapError(f"Failed to create directory {project_path}: {e}")
+        raise InfrastructureError(f"Failed to create directory {project_path}: {e}")
 
 
 def process_template_file(
@@ -88,7 +86,7 @@ def process_template_file(
         logger.debug(f"Processed template: {template_file} -> {target_file}")
         
     except Exception as e:
-        raise BootstrapError(f"Failed to process template {template_file}: {e}")
+        raise InfrastructureError(f"Failed to process template {template_file}: {e}")
 
 
 def copy_template_structure(
@@ -192,7 +190,7 @@ def bootstrap_project(
     # Get template path
     template_path = get_template_path(project_type)
     if not template_path:
-        raise BootstrapError(f"Template '{project_type}' not found or Genesis not detected")
+        raise ResourceError(f"Template '{project_type}' not found or Genesis not detected", resource_type="template")
     
     logger.info(f"Bootstrapping {project_type} project '{name}' at {project_path}")
     
@@ -217,7 +215,8 @@ def bootstrap_project(
                 logger.debug(f"Cleaned up failed project directory: {project_path}")
             except Exception:
                 pass  # Best effort cleanup
-        raise BootstrapError(f"Bootstrap failed: {e}")
+        handled_error = handle_error(e)
+        raise InfrastructureError(f"Bootstrap failed: {handled_error.message}")
 
 
 # CLI command integration
@@ -229,10 +228,8 @@ def bootstrap_command(name: str, project_type: str, target_path: Optional[str], 
         click.echo(f"📁 Type: {project_type}")
         click.echo("🚀 Ready to start development!")
         
-    except BootstrapError as e:
-        click.echo(f"❌ Bootstrap failed: {e}", err=True)
-        sys.exit(1)
     except Exception as e:
-        click.echo(f"❌ Unexpected error: {e}", err=True)
-        logger.exception("Unexpected bootstrap error")
+        handled_error = handle_error(e)
+        click.echo(f"❌ Bootstrap failed: {handled_error.message}", err=True)
+        logger.error("Bootstrap error", extra=handled_error.to_dict())
         sys.exit(1)

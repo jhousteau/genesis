@@ -10,6 +10,8 @@ from typing import Optional
 
 import click
 
+from .core.errors import handle_error
+
 # Version info
 __version__ = "2.0.0-dev"
 
@@ -82,8 +84,9 @@ def worktree(ctx, name: str, focus_path: str, max_files: int, verify: bool):
     try:
         result = subprocess.run(cmd, check=True)
         click.echo(f"✅ Sparse worktree '{name}' created successfully!")
-    except subprocess.CalledProcessError as e:
-        click.echo(f"❌ Worktree creation failed: {e}", err=True)
+    except Exception as e:
+        handled_error = handle_error(e)
+        click.echo(f"❌ Worktree creation failed: {handled_error.message}", err=True)
         sys.exit(1)
 
 @cli.command()
@@ -111,8 +114,9 @@ def commit(ctx, message: Optional[str]):
     try:
         result = subprocess.run(cmd, check=True)
         click.echo("✅ Smart commit completed!")
-    except subprocess.CalledProcessError as e:
-        click.echo(f"❌ Smart commit failed: {e}", err=True)
+    except Exception as e:
+        handled_error = handle_error(e)
+        click.echo(f"❌ Smart commit failed: {handled_error.message}", err=True)
         sys.exit(1)
 
 @cli.command()
@@ -141,8 +145,9 @@ def clean(ctx, worktrees: bool, artifacts: bool, clean_all: bool):
                 shutil.rmtree(worktrees_dir)
                 cleaned_items.append("worktrees directory")
                 click.echo("✅ Cleaned old worktrees")
-            except OSError as e:
-                click.echo(f"⚠️  Could not clean worktrees: {e}", err=True)
+            except Exception as e:
+                handled_error = handle_error(e)
+                click.echo(f"⚠️  Could not clean worktrees: {handled_error.message}", err=True)
     
     # Clean build artifacts
     if artifacts or clean_all:
@@ -210,10 +215,9 @@ def sync(ctx):
             os.chdir(shared_python)
             subprocess.run(["poetry", "install"], check=True, capture_output=True)
             click.echo("✅ Updated shared-python dependencies")
-        except subprocess.CalledProcessError:
-            click.echo("⚠️  Could not update shared-python (poetry not available?)", err=True)
-        except FileNotFoundError:
-            click.echo("⚠️  Poetry not found - skipping shared-python sync", err=True)
+        except Exception as e:
+            handled_error = handle_error(e)
+            click.echo(f"⚠️  Could not update shared-python: {handled_error.message}", err=True)
     
     # Check for updates to Genesis components
     components = ["bootstrap", "smart-commit", "worktree-tools"]
@@ -273,8 +277,9 @@ def status(ctx, verbose: bool):
         else:
             click.echo(f"⚠️  File count: {file_count} (Target: ≤100 for AI safety)")
             all_healthy = False
-    except subprocess.CalledProcessError:
-        click.echo("⚠️  Could not check file count")
+    except Exception as e:
+        handled_error = handle_error(e)
+        click.echo(f"⚠️  Could not check file count: {handled_error.message}")
         all_healthy = False
     
     # Overall health

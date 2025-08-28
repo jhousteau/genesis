@@ -7,6 +7,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from .errors import handle_error
+
 
 class HealthStatus(Enum):
     """Health check status values."""
@@ -60,11 +62,13 @@ class HealthCheck:
             result.duration_ms = (time.time() - start_time) * 1000
             return result
         except Exception as e:
+            handled_error = handle_error(e)
             return CheckResult(
                 name=name,
                 status=HealthStatus.UNHEALTHY,
-                message=f"Check failed: {str(e)}",
-                duration_ms=(time.time() - start_time) * 1000
+                message=f"Check failed: {handled_error.message}",
+                duration_ms=(time.time() - start_time) * 1000,
+                metadata={"error_code": handled_error.code, "error_category": handled_error.category.value}
             )
     
     def run_all_checks(self) -> list[CheckResult]:
