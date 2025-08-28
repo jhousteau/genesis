@@ -99,20 +99,6 @@ jobs:
       - name: Run tests
         run: npm test
 
-  go-tests:
-    name: Go Tests
-    runs-on: ubuntu-latest
-    if: hashFiles('go.mod') != ''
-    steps:
-      - uses: actions/checkout@v4
-      
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-          
-      - name: Run tests
-        run: go test ./...
-
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
