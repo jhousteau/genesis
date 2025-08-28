@@ -1,0 +1,8 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+project_id      = "my-awesome-project-dev"
+project_name    = "My Awesome Project"
+billing_account = "XXXXXX-YYYYYY-ZZZZZZ"
+environment     = "dev"
+region          = "us-central1"
+budget_amount   = 50

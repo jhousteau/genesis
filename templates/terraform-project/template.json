@@ -1,0 +1,44 @@
+{
+  "name": "terraform-project",
+  "description": "Terraform project template using Genesis modules",
+  "type": "infrastructure",
+  "variables": {
+    "project_name": {
+      "description": "Name of the Terraform project",
+      "required": true,
+      "default": "my-terraform-project"
+    },
+    "gcp_project_id": {
+      "description": "GCP Project ID (will be created)",
+      "required": true
+    },
+    "gcp_billing_account": {
+      "description": "GCP Billing Account ID",
+      "required": true
+    },
+    "gcp_organization_id": {
+      "description": "GCP Organization ID (optional)",
+      "required": false,
+      "default": ""
+    },
+    "gcp_region": {
+      "description": "Default GCP region",
+      "required": false,
+      "default": "us-central1"
+    }
+  },
+  "files": [
+    "main.tf",
+    "variables.tf", 
+    "outputs.tf",
+    "terraform.tfvars.example",
+    "Makefile",
+    "README.md",
+    ".gitignore"
+  ],
+  "post_create": [
+    "cp terraform.tfvars.example terraform.tfvars",
+    "echo 'Edit terraform.tfvars with your values'",
+    "echo 'Run: make init plan apply'"
+  ]
+}

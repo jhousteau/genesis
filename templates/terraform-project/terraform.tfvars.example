@@ -1,0 +1,34 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+# Required: Project configuration
+project_name         = "my-awesome-project"
+gcp_project_id      = "my-project-id-123"
+gcp_billing_account = "012345-678901-ABCDEF"
+
+# Optional: Organization (leave empty for personal projects)
+gcp_organization_id = ""
+
+# Optional: Default region
+gcp_region = "us-central1"
+
+# Optional: Customize service accounts
+service_accounts = {
+  terraform = {
+    account_id   = "terraform"
+    display_name = "Terraform Service Account"
+    description  = "Service account for Terraform operations"
+    project_roles = [
+      "roles/editor",
+      "roles/storage.admin"
+    ]
+  }
+  app = {
+    account_id   = "app-workload"
+    display_name = "Application Service Account"  
+    description  = "Service account for application workloads"
+    project_roles = [
+      "roles/compute.instanceAdmin",
+      "roles/storage.objectViewer"
+    ]
+  }
+}

@@ -1,0 +1,76 @@
+name: Terraform Tests
+
+on:
+  push:
+    paths:
+      - 'terraform/**'
+      - 'templates/terraform-project/**'
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - 'templates/terraform-project/**'
+
+jobs:
+  terraform-validate:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ~1.0
+        
+    - name: Run Terraform validation tests
+      run: |
+        cd terraform/tests
+        chmod +x validate.sh
+        ./validate.sh
+        
+  terraform-security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Run Checkov
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: terraform/
+        quiet: true
+        soft_fail: true
+        
+  terraform-docs:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Generate terraform docs
+      uses: terraform-docs/gh-actions@v1
+      with:
+        working-dir: terraform/modules
+        recursive: true
+        recursive-path: .
+        output-file: README.md
+        output-method: inject
+        git-push: false
+        
+    - name: Check for docs changes
+      run: |
+        if [[ `git status --porcelain` ]]; then
+          echo "❌ Terraform documentation is out of date"
+          echo "Please run 'terraform-docs' to update module documentation"
+          git diff --name-only
+          exit 1
+        else
+          echo "✅ Terraform documentation is up to date"
+        fi

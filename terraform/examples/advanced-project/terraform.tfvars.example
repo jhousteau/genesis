@@ -1,0 +1,17 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+project_id      = "my-company-app-prod"
+project_name    = "My Company App - Production"
+billing_account = "XXXXXX-YYYYYY-ZZZZZZ"
+environment     = "prod"
+region          = "us-central1"
+budget_amount   = 1000
+
+# Metadata
+cost_center = "engineering"
+team        = "backend"
+
+# GitHub Actions Integration (optional)
+github_repository                      = "myorg/myapp"
+workload_identity_pool_id              = "github-actions-pool"
+workload_identity_pool_project_number  = "123456789012"
