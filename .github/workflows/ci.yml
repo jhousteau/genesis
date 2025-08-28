@@ -3,8 +3,24 @@ name: CI Pipeline
 on:
   push:
     branches: [main]
+    paths:
+      - 'genesis/**'
+      - 'terraform/**'
+      - 'templates/**'
+      - 'smart-commit/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'Makefile'
   pull_request:
     branches: [main]
+    paths:
+      - 'genesis/**'
+      - 'terraform/**'
+      - 'templates/**'
+      - 'smart-commit/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'Makefile'
 
 jobs:
   file-safety-check:
@@ -31,9 +47,9 @@ jobs:
 
       - name: Validate component structure
         run: |
-          if [ -f "./validate-components.sh" ]; then
-            chmod +x ./validate-components.sh
-            ./validate-components.sh
+          if [ -f "./scripts/validate-components.sh" ]; then
+            chmod +x ./scripts/validate-components.sh
+            ./scripts/validate-components.sh
           else
             echo "⚠️  validate-components.sh not found, skipping validation"
           fi
