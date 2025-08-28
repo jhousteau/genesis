@@ -10,8 +10,10 @@ from typing import Optional
 
 import click
 
+from .core.errors import handle_error
+
 # Version info
-__version__ = "0.1.0"
+__version__ = "2.0.0-dev"
 
 # Genesis root detection
 def find_genesis_root() -> Optional[Path]:
@@ -51,29 +53,8 @@ def cli(ctx):
 @click.pass_context
 def bootstrap(ctx, name: str, project_type: str, target_path: Optional[str], skip_git: bool):
     """Create new project with Genesis patterns and tooling."""
-    genesis_root = ctx.obj.get('genesis_root')
-    if not genesis_root:
-        click.echo("❌ Not in a Genesis project. Run from Genesis directory.", err=True)
-        sys.exit(1)
-    
-    bootstrap_script = genesis_root / "bootstrap" / "src" / "bootstrap.sh"
-    if not bootstrap_script.exists():
-        click.echo("❌ Bootstrap script not found. Genesis may be incomplete.", err=True)
-        sys.exit(1)
-    
-    # Build command arguments
-    cmd = [str(bootstrap_script), name, "--type", project_type]
-    if target_path:
-        cmd.extend(["--path", target_path])
-    if skip_git:
-        cmd.append("--skip-git")
-    
-    try:
-        result = subprocess.run(cmd, check=True)
-        click.echo(f"✅ Project '{name}' created successfully!")
-    except subprocess.CalledProcessError as e:
-        click.echo(f"❌ Bootstrap failed: {e}", err=True)
-        sys.exit(1)
+    from genesis.commands.bootstrap import bootstrap_command
+    bootstrap_command(name, project_type, target_path, skip_git)
 
 @cli.command()
 @click.argument('name')
@@ -103,8 +84,9 @@ def worktree(ctx, name: str, focus_path: str, max_files: int, verify: bool):
     try:
         result = subprocess.run(cmd, check=True)
         click.echo(f"✅ Sparse worktree '{name}' created successfully!")
-    except subprocess.CalledProcessError as e:
-        click.echo(f"❌ Worktree creation failed: {e}", err=True)
+    except Exception as e:
+        handled_error = handle_error(e)
+        click.echo(f"❌ Worktree creation failed: {handled_error.message}", err=True)
         sys.exit(1)
 
 @cli.command()
@@ -132,8 +114,9 @@ def commit(ctx, message: Optional[str]):
     try:
         result = subprocess.run(cmd, check=True)
         click.echo("✅ Smart commit completed!")
-    except subprocess.CalledProcessError as e:
-        click.echo(f"❌ Smart commit failed: {e}", err=True)
+    except Exception as e:
+        handled_error = handle_error(e)
+        click.echo(f"❌ Smart commit failed: {handled_error.message}", err=True)
         sys.exit(1)
 
 @cli.command()
@@ -162,8 +145,9 @@ def clean(ctx, worktrees: bool, artifacts: bool, clean_all: bool):
                 shutil.rmtree(worktrees_dir)
                 cleaned_items.append("worktrees directory")
                 click.echo("✅ Cleaned old worktrees")
-            except OSError as e:
-                click.echo(f"⚠️  Could not clean worktrees: {e}", err=True)
+            except Exception as e:
+                handled_error = handle_error(e)
+                click.echo(f"⚠️  Could not clean worktrees: {handled_error.message}", err=True)
     
     # Clean build artifacts
     if artifacts or clean_all:
@@ -231,10 +215,9 @@ def sync(ctx):
             os.chdir(shared_python)
             subprocess.run(["poetry", "install"], check=True, capture_output=True)
             click.echo("✅ Updated shared-python dependencies")
-        except subprocess.CalledProcessError:
-            click.echo("⚠️  Could not update shared-python (poetry not available?)", err=True)
-        except FileNotFoundError:
-            click.echo("⚠️  Poetry not found - skipping shared-python sync", err=True)
+        except Exception as e:
+            handled_error = handle_error(e)
+            click.echo(f"⚠️  Could not update shared-python: {handled_error.message}", err=True)
     
     # Check for updates to Genesis components
     components = ["bootstrap", "smart-commit", "worktree-tools"]
@@ -294,8 +277,9 @@ def status(ctx, verbose: bool):
         else:
             click.echo(f"⚠️  File count: {file_count} (Target: ≤100 for AI safety)")
             all_healthy = False
-    except subprocess.CalledProcessError:
-        click.echo("⚠️  Could not check file count")
+    except Exception as e:
+        handled_error = handle_error(e)
+        click.echo(f"⚠️  Could not check file count: {handled_error.message}")
         all_healthy = False
     
     # Overall health

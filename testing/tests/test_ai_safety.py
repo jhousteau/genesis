@@ -3,9 +3,10 @@
 import pytest
 from pathlib import Path
 from testing.fixtures import create_genesis_project_structure
-from testing.utilities import (
-    validate_ai_safety_limits, assert_file_count_safe,
-    assert_component_isolation, AISafetyChecker
+from genesis.testing.ai_safety import (
+    count_files_in_directory, validate_ai_safety_limits,
+    assert_file_count_safe, assert_component_isolation,
+    get_file_count_report, print_ai_safety_report, AISafetyChecker
 )
 
 
@@ -114,7 +115,7 @@ class TestAISafetyValidation:
         (temp_dir / "main.py").write_text("# main")
         (temp_dir / "README.md").write_text("# readme")
         
-        from testing.utilities.ai_safety import count_files_in_directory
+        # count_files_in_directory already imported at top
         file_count = count_files_in_directory(temp_dir)
         
         # Should only count main.py and README.md
@@ -145,7 +146,7 @@ class TestFileCountReporting:
         """Test generation of detailed file count reports."""
         fs = create_genesis_project_structure(temp_dir)
         
-        from testing.utilities.ai_safety import get_file_count_report
+        # get_file_count_report already imported at top
         report = get_file_count_report(temp_dir)
         
         assert 'directory' in report
@@ -168,7 +169,7 @@ class TestFileCountReporting:
         """Test printing of AI safety report."""
         fs = create_genesis_project_structure(temp_dir)
         
-        from testing.utilities.ai_safety import print_ai_safety_report
+        # print_ai_safety_report already imported at top
         print_ai_safety_report(temp_dir)
         
         captured = capsys.readouterr()

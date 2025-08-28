@@ -3,12 +3,12 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "genesis"  # TODO: Template variable {{project_name}}
-version = "0.1.0"
-description = "Modern, AI-safe development toolkit with sparse worktree isolation"  # TODO: Template variable {{description}}
-authors = ["Your Name <your.email@example.com>"]  # TODO: Template variable {{author_name}} <{{author_email}}>
+name = "genesis"
+version = "2.0.0-dev"
+description = "Genesis Development Toolkit - Unified package for lean, AI-safe projects"
+authors = ["Genesis Team"]
 readme = "README.md"
-packages = [{include = "genesis", from = "src"}]  # TODO: Template variable {{package_name}}
+packages = [{include = "genesis"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -30,7 +30,7 @@ pytest-mock = "^3.12.0"
 coverage = "^7.4.0"
 
 [tool.poetry.scripts]
-genesis = "genesis.cli:main"  # TODO: Template variable {{cli_name}} = "{{package_name}}.cli:main"
+genesis = "genesis.cli:cli"
 
 [tool.black]
 line-length = 88
@@ -95,7 +95,7 @@ python_functions = [
 ]
 
 [tool.coverage.run]
-source = ["src"]
+source = ["genesis"]
 
 [tool.coverage.report]
 exclude_lines = [
