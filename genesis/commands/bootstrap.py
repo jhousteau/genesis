@@ -101,7 +101,17 @@ def copy_template_structure(
     template_path: Path, project_path: Path, project_name: str
 ) -> None:
     """Copy and process template structure."""
+    from genesis.core.constants import get_python_version, get_git_author_info
+    
     logger.info(f"Processing template from {template_path}")
+
+    # Get dynamic values - fail fast if not available
+    try:
+        python_version = get_python_version()
+        author_name, author_email = get_git_author_info()
+    except ValueError as e:
+        logger.error(f"Configuration error: {e}")
+        raise click.ClickException(f"Bootstrap failed: {e}")
 
     # Create substitution map supporting multiple template formats
     # Create Python-safe module name (replace hyphens with underscores)
@@ -118,9 +128,11 @@ def copy_template_structure(
         "{{project-name}}": project_name,
         "{{module_name}}": module_name,
         "{{project_description}}": f"A {project_name} project created with Genesis",
-        "{{python_version}}": "3.11",
-        "{{author_name}}": "Developer",
-        "{{author_email}}": "developer@example.com",
+        "{{python_version}}": get_python_version(),
+        "{{author_name}}": author_name,
+        "{{author_email}}": author_email,
+        "{{project_type}}": "Genesis Project",
+        "{{genesis_version}}": "0.1.0-alpha",
     }
 
     # Process all template files
@@ -189,7 +201,7 @@ def initialize_git_repo(project_path: Path, skip_git: bool) -> None:
 
 def bootstrap_project(
     name: str,
-    project_type: str = "python-api",
+    project_type: str,
     target_path: Optional[str] = None,
     skip_git: bool = False,
 ) -> Path:

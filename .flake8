@@ -1,0 +1,28 @@
+[flake8]
+max-line-length = 88
+extend-ignore = 
+    E203,  # whitespace before ':'
+    E501,  # line too long (handled by black)
+    W503,  # line break before binary operator
+exclude = 
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    old-bloated-code-read-only
+
+# Custom rules for hardcoded values
+per-file-ignores =
+    # Allow some defaults in test files
+    */tests/*:E501
+    # Allow some defaults in __init__.py for compatibility
+    __init__.py:E501
+
+# Rules to catch hardcoded values
+select = E,W,F,C,N
+# Enable specific checks
+enable-extensions = 
+    # Check for hardcoded strings that might be configuration
+    # This would require flake8-string-format plugin

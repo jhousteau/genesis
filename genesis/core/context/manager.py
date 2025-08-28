@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Optional, Generator
 
+from genesis.core.constants import get_service_name, get_environment
+
 
 # Context variables for thread-safe and async-safe storage
 _current_context: ContextVar[Optional["RequestContext"]] = ContextVar(
@@ -64,10 +66,10 @@ class RequestContext:
     user_id: Optional[str] = None
     trace_context: Optional[TraceContext] = None
     service: str = field(
-        default_factory=lambda: os.environ.get("GENESIS_SERVICE", "genesis")
+        default_factory=lambda: get_service_name()
     )
     environment: str = field(
-        default_factory=lambda: os.environ.get("GENESIS_ENV", "development")
+        default_factory=lambda: get_environment()
     )
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -154,9 +156,14 @@ class ContextManager:
     Provides thread-safe context storage and retrieval using contextvars.
     """
 
-    def __init__(self, service_name: str = "genesis", environment: str = "development"):
-        self.service_name = service_name
-        self.environment = environment
+    def __init__(self, service_name: str, environment: str):
+        if not service_name or not service_name.strip():
+            raise ValueError("service_name is required and cannot be empty")
+        if not environment or not environment.strip():
+            raise ValueError("environment is required and cannot be empty")
+            
+        self.service_name = service_name.strip()
+        self.environment = environment.strip()
 
     def get_current_context(self) -> Optional[RequestContext]:
         """Get the current request context."""
@@ -233,8 +240,8 @@ def get_context_manager() -> ContextManager:
     global _context_manager
     if _context_manager is None:
         _context_manager = ContextManager(
-            service_name=os.environ.get("GENESIS_SERVICE", "genesis"),
-            environment=os.environ.get("GENESIS_ENV", "development"),
+            service_name=get_service_name(),
+            environment=get_environment(),
         )
     return _context_manager
 

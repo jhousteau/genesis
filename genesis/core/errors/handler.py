@@ -78,14 +78,32 @@ class ErrorContext:
     def create_default(
         cls, service: Optional[str] = None, environment: Optional[str] = None
     ) -> "ErrorContext":
-        """Create a default error context."""
-        import os
+        """
+        Create a default error context with proper service and environment detection.
+        
+        Args:
+            service: Optional service name override
+            environment: Optional environment override
+            
+        Returns:
+            ErrorContext instance
+            
+        Raises:
+            ValueError: If service or environment cannot be determined
+        """
+        if service is None or environment is None:
+            from genesis.core.constants import get_service_name, get_environment
+            
+            if service is None:
+                service = get_service_name()
+            if environment is None:
+                environment = get_environment()
 
         return cls(
             correlation_id=str(uuid.uuid4()),
             timestamp=datetime.utcnow(),
-            service=service or os.environ.get("GENESIS_SERVICE", "genesis"),
-            environment=environment or os.environ.get("GENESIS_ENV", "development"),
+            service=service,
+            environment=environment,
         )
 
 
@@ -122,13 +140,8 @@ class GenesisError(Exception):
         self.stack_trace = self._capture_stack_trace()
 
     def _create_default_context(self) -> ErrorContext:
-        """Create default error context from environment."""
-        import os
-
-        return ErrorContext.create_default(
-            service=os.environ.get("GENESIS_SERVICE", "genesis"),
-            environment=os.environ.get("GENESIS_ENV", "development"),
-        )
+        """Create default error context with proper detection."""
+        return ErrorContext.create_default()
 
     def _capture_stack_trace(self) -> List[str]:
         """Capture current stack trace for debugging."""
@@ -308,9 +321,21 @@ class ErrorHandler:
     Manages error processing, categorization, and context enrichment.
     """
 
-    def __init__(self, service_name: str = "genesis", environment: str = "development"):
-        self.service_name = service_name
-        self.environment = environment
+    def __init__(self, service_name: str, environment: str):
+        """
+        Initialize error handler with required service and environment info.
+        
+        Args:
+            service_name: Name of the service (required)
+            environment: Environment name (required)
+        """
+        if not service_name or not service_name.strip():
+            raise ValueError("service_name is required and cannot be empty")
+        if not environment or not environment.strip():
+            raise ValueError("environment is required and cannot be empty")
+            
+        self.service_name = service_name.strip()
+        self.environment = environment.strip()
         self.handlers: List[Callable[[GenesisError], None]] = []
 
     def handle(
@@ -371,7 +396,8 @@ class ErrorHandler:
         # Create context if not provided
         if context is None:
             context = ErrorContext.create_default(
-                service=self.service_name, environment=self.environment
+                service=self.service_name, 
+                environment=self.environment
             )
 
         return genesis_error_class(message=str(error), context=context, cause=error)
@@ -386,14 +412,22 @@ _error_handler: Optional[ErrorHandler] = None
 
 
 def get_error_handler() -> ErrorHandler:
-    """Get the global error handler instance."""
+    """
+    Get the global error handler instance.
+    
+    Returns:
+        ErrorHandler instance with properly configured service and environment
+        
+    Raises:
+        ValueError: If service name or environment cannot be determined
+    """
     global _error_handler
     if _error_handler is None:
-        import os
-
+        from genesis.core.constants import get_service_name, get_environment
+        
         _error_handler = ErrorHandler(
-            service_name=os.environ.get("GENESIS_SERVICE", "genesis"),
-            environment=os.environ.get("GENESIS_ENV", "development"),
+            service_name=get_service_name(),
+            environment=get_environment(),
         )
     return _error_handler
 

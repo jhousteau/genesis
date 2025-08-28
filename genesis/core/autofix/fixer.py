@@ -38,7 +38,7 @@ class AutoFixer:
     def __init__(
         self,
         project_root: Optional[Path] = None,
-        max_iterations: int = 5,
+        max_iterations: Optional[int] = None,
         stage_all_files: bool = True,
         run_validation: bool = True,
     ):
@@ -51,6 +51,19 @@ class AutoFixer:
             run_validation: Whether to run validation stage at the end
         """
         self.project_root = project_root or Path.cwd()
+        
+        if max_iterations is None:
+            import os
+            max_iterations_str = os.environ.get("GENESIS_AUTOFIX_MAX_ITERATIONS")
+            if not max_iterations_str:
+                raise ValueError("GENESIS_AUTOFIX_MAX_ITERATIONS environment variable is required")
+            try:
+                max_iterations = int(max_iterations_str)
+                if max_iterations <= 0:
+                    raise ValueError("GENESIS_AUTOFIX_MAX_ITERATIONS must be positive")
+            except ValueError as e:
+                raise ValueError(f"Invalid GENESIS_AUTOFIX_MAX_ITERATIONS '{max_iterations_str}': {e}")
+        
         self.max_iterations = max_iterations
         self.stage_all_files = stage_all_files
         self.run_validation = run_validation

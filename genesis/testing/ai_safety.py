@@ -62,9 +62,17 @@ def count_files_in_directory(
 
 
 def validate_ai_safety_limits(
-    directory: Path, max_files: int = 100, max_component_files: int = 30
+    directory: Path, max_files: Optional[int] = None, max_component_files: Optional[int] = None
 ) -> Dict[str, Any]:
     """Validate directory meets AI safety file count limits."""
+    from genesis.core.constants import AILimits
+    
+    # Use configured limits if not provided
+    if max_files is None:
+        max_files = AILimits.get_max_project_files()
+    if max_component_files is None:
+        max_component_files = AILimits.get_max_component_files()
+        
     total_files = count_files_in_directory(directory)
 
     # Check component directories
@@ -97,8 +105,13 @@ def validate_ai_safety_limits(
     }
 
 
-def assert_file_count_safe(directory: Path, max_files: int = 100, message: str = None):
+def assert_file_count_safe(directory: Path, max_files: Optional[int] = None, message: str = None):
     """Assert that directory has safe file count for AI."""
+    from genesis.core.constants import AILimits
+    
+    if max_files is None:
+        max_files = AILimits.get_max_project_files()
+        
     file_count = count_files_in_directory(directory)
     if message is None:
         message = (
@@ -108,8 +121,13 @@ def assert_file_count_safe(directory: Path, max_files: int = 100, message: str =
     assert file_count <= max_files, message
 
 
-def assert_component_isolation(component_path: Path, max_files: int = 30):
+def assert_component_isolation(component_path: Path, max_files: Optional[int] = None):
     """Assert that component meets isolation requirements."""
+    from genesis.core.constants import AILimits
+    
+    if max_files is None:
+        max_files = AILimits.get_max_component_files()
+        
     assert (
         component_path.exists()
     ), f"Component directory {component_path} does not exist"
@@ -208,7 +226,14 @@ def print_ai_safety_report(directory: Path):
 class AISafetyChecker:
     """Class for checking AI safety constraints during tests."""
 
-    def __init__(self, max_total_files: int = 100, max_component_files: int = 30):
+    def __init__(self, max_total_files: Optional[int] = None, max_component_files: Optional[int] = None):
+        from genesis.core.constants import AILimits
+        
+        if max_total_files is None:
+            max_total_files = AILimits.get_max_project_files()
+        if max_component_files is None:
+            max_component_files = AILimits.get_max_component_files()
+            
         self.max_total_files = max_total_files
         self.max_component_files = max_component_files
 

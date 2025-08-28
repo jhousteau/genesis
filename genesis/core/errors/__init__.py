@@ -19,6 +19,7 @@ from .handler import (
     RateLimitError,
     ExternalServiceError,
     ResourceError,
+    ErrorHandler,
     handle_error,
     get_error_handler,
 )
@@ -37,6 +38,7 @@ __all__ = [
     "RateLimitError",
     "ExternalServiceError",
     "ResourceError",
+    "ErrorHandler",
     "handle_error",
     "get_error_handler",
 ]

@@ -202,3 +202,4 @@ target/
 *.bak
 *.backup
 *~
+PROJECT_INDEX.json

@@ -14,10 +14,10 @@ from .context import get_context
 class LogConfig:
     """Configuration for logging behavior."""
 
-    level: str = "INFO"
-    format_json: bool = True
-    include_timestamp: bool = True
-    include_caller: bool = False
+    level: str
+    format_json: bool
+    include_timestamp: bool
+    include_caller: bool
     extra_fields: dict[str, Any] = field(default_factory=dict)
 
 
@@ -74,7 +74,13 @@ def get_logger(
         logger.info("Message with data", extra={"extra_data": {"key": "value"}})
     """
     if config is None:
-        config = LogConfig()
+        from genesis.core.constants import LoggerConfig
+        config = LogConfig(
+            level=LoggerConfig.get_level(),
+            format_json=LoggerConfig.should_format_json(),
+            include_timestamp=LoggerConfig.should_include_timestamp(),
+            include_caller=LoggerConfig.should_include_caller(),
+        )
 
     logger = logging.getLogger(name)
 

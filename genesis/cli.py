@@ -12,8 +12,8 @@ import click
 
 from .core.errors import handle_error
 
-# Version info
-__version__ = "2.0.0-dev"
+# Import version from package
+from genesis import __version__
 
 
 # Genesis root detection
@@ -50,9 +50,9 @@ def cli(ctx):
 @click.option(
     "--type",
     "project_type",
-    default="python-api",
+    required=True,
     type=click.Choice(["python-api", "typescript-service", "cli-tool"]),
-    help="Project template type",
+    help="Project template type (required)",
 )
 @click.option(
     "--path", "target_path", default=None, help="Directory to create project in"
@@ -71,11 +71,13 @@ def bootstrap(
 @cli.command()
 @click.argument("name")
 @click.argument("focus_path")
-@click.option("--max-files", default=30, type=int, help="Maximum files in worktree")
+@click.option("--max-files", type=int, help="Maximum files in worktree (default from GENESIS_MAX_WORKTREE_FILES)")
 @click.option("--verify", is_flag=True, help="Verify safety after creation")
 @click.pass_context
-def worktree(ctx, name: str, focus_path: str, max_files: int, verify: bool):
+def worktree(ctx, name: str, focus_path: str, max_files: Optional[int], verify: bool):
     """Create AI-safe sparse worktree with file limits."""
+    from genesis.core.constants import AILimits
+    
     genesis_root = ctx.obj.get("genesis_root")
     if not genesis_root:
         click.echo("❌ Not in a Genesis project. Run from Genesis directory.", err=True)
@@ -87,6 +89,14 @@ def worktree(ctx, name: str, focus_path: str, max_files: int, verify: bool):
     if not worktree_script.exists():
         click.echo("❌ Worktree script not found. Genesis may be incomplete.", err=True)
         sys.exit(1)
+
+    # Use configured limit if not provided
+    if max_files is None:
+        try:
+            max_files = AILimits.get_max_worktree_files()
+        except ValueError as e:
+            click.echo(f"❌ Configuration error: {e}", err=True)
+            sys.exit(1)
 
     # Build command arguments
     cmd = [str(worktree_script), name, focus_path, "--max-files", str(max_files)]
@@ -279,6 +289,11 @@ def sync(ctx):
     click.echo("✅ Sync complete!")
 
 
+# Add version management commands
+from genesis.commands.version import version
+cli.add_command(version)
+
+
 @cli.command()
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed status")
 @click.pass_context
@@ -338,10 +353,17 @@ def status(ctx, verbose: bool):
             len(result.stdout.strip().split("\n")) if result.stdout.strip() else 0
         )
 
-        if file_count <= 100:
-            click.echo(f"✅ File count: {file_count} (AI-safe: ≤100)")
-        else:
-            click.echo(f"⚠️  File count: {file_count} (Target: ≤100 for AI safety)")
+        try:
+            from genesis.core.constants import AILimits
+            max_files = AILimits.get_max_project_files()
+            
+            if file_count <= max_files:
+                click.echo(f"✅ File count: {file_count} (AI-safe: ≤{max_files})")
+            else:
+                click.echo(f"⚠️  File count: {file_count} (Target: ≤{max_files} for AI safety)")
+                all_healthy = False
+        except ValueError as e:
+            click.echo(f"⚠️  Could not check file limits: {e}")
             all_healthy = False
     except Exception as e:
         handled_error = handle_error(e)

@@ -50,6 +50,25 @@ repos:
       - id: black
         language_version: python3.11
 
+  # Custom hardcoded values detection
+  - repo: local
+    hooks:
+      - id: hardcoded-values-check
+        name: Check for hardcoded configuration values
+        description: Prevents hardcoded configuration values from being committed
+        entry: ./scripts/find-hardcoded-values.sh
+        language: script
+        pass_filenames: false
+        files: '\.(py|ts|tsx|js|jsx)$'
+        
+      - id: variable-defaults-check
+        name: Check for variable default assignments
+        description: Prevents hardcoded variable defaults from being committed
+        entry: ./scripts/check-variable-defaults.sh
+        language: script
+        pass_filenames: false
+        files: '\.(py|ts|tsx|js|jsx)$'
+
   # Terraform hooks
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.96.2

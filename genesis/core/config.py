@@ -95,8 +95,14 @@ class ConfigLoader:
         return config
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Get configuration value by key."""
+        """Get configuration value by key with optional default."""
         return self._config.get(key, default)
+    
+    def get_required(self, key: str) -> Any:
+        """Get required configuration value - fails fast if missing."""
+        if key not in self._config:
+            raise ValueError(f"Required configuration key '{key}' is missing")
+        return self._config[key]
 
     def __getitem__(self, key: str) -> Any:
         """Dictionary-style access to config values."""

@@ -13,7 +13,9 @@ Usage:
     from genesis.commands import bootstrap_project
 """
 
-__version__ = "2.0.0-dev"
+# Import version dynamically from pyproject.toml - fail fast if not available
+from genesis.core.version import get_version
+__version__ = get_version()
 __author__ = "Genesis Team"
 
 # Core exports for convenience

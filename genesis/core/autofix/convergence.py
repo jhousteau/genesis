@@ -23,13 +23,26 @@ class ConvergenceResult:
 class ConvergentFixer:
     """Implements convergent fixing - runs commands until no changes occur."""
 
-    def __init__(self, max_runs: int = 5, dry_run: bool = False):
+    def __init__(self, max_runs: Optional[int] = None, dry_run: bool = False):
         """Initialize convergent fixer.
 
         Args:
             max_runs: Maximum number of runs before giving up
             dry_run: If True, show what would be run without executing
         """
+        import os
+        
+        if max_runs is None:
+            max_runs_str = os.environ.get("GENESIS_AUTOFIX_MAX_RUNS")
+            if not max_runs_str:
+                raise ValueError("GENESIS_AUTOFIX_MAX_RUNS environment variable is required")
+            try:
+                max_runs = int(max_runs_str)
+                if max_runs <= 0:
+                    raise ValueError("GENESIS_AUTOFIX_MAX_RUNS must be positive")
+            except ValueError as e:
+                raise ValueError(f"Invalid GENESIS_AUTOFIX_MAX_RUNS '{max_runs_str}': {e}")
+        
         self.max_runs = max_runs
         self.dry_run = dry_run
 

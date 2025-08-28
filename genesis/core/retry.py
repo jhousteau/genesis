@@ -68,10 +68,10 @@ F = TypeVar("F", bound=Callable[..., Any])
 class RetryConfig:
     """Configuration for retry behavior."""
 
-    max_attempts: int = 3
-    initial_delay: float = 1.0
-    max_delay: float = 60.0
-    exponential_base: float = 2.0
+    max_attempts: int
+    initial_delay: float
+    max_delay: float
+    exponential_base: float
     jitter: bool = True
     exceptions: tuple[type[Exception], ...] = (Exception,)
 
@@ -171,7 +171,7 @@ class CircuitBreakerState(Enum):
 class CircuitBreakerError(GenesisError):
     """Exception raised when circuit breaker is open."""
 
-    def __init__(self, message: str, circuit_name: str = "unknown"):
+    def __init__(self, message: str, circuit_name: str):
         super().__init__(
             message=message,
             code="CIRCUIT_BREAKER_OPEN",
@@ -217,12 +217,12 @@ class CircuitBreakerMetrics:
 class CircuitBreakerConfig:
     """Configuration for circuit breaker behavior."""
 
-    failure_threshold: int = 5
-    timeout: float = 60.0
-    half_open_max_calls: int = 5
-    success_threshold: int = 1
-    sliding_window_size: int = 10
-    name: str = "CircuitBreaker"
+    failure_threshold: int
+    timeout: float
+    half_open_max_calls: int
+    success_threshold: int
+    sliding_window_size: int
+    name: str
 
 
 class CircuitBreaker:
@@ -504,10 +504,10 @@ def resilient_call(
 
 # Convenience functions
 def resilient_external_service(
-    max_attempts: int = 3,
-    failure_threshold: int = 5,
-    timeout: float = 60.0,
-    name: str = "ExternalService",
+    max_attempts: int,
+    failure_threshold: int,
+    timeout: float,
+    name: str,
 ) -> Callable:
     """
     Pre-configured resilient decorator for external service calls.
@@ -537,10 +537,10 @@ def resilient_external_service(
 
 
 def resilient_database(
-    max_attempts: int = 2,
-    failure_threshold: int = 3,
-    timeout: float = 30.0,
-    name: str = "Database",
+    max_attempts: int,
+    failure_threshold: int,
+    timeout: float,
+    name: str,
 ) -> Callable:
     """
     Pre-configured resilient decorator for database calls.
