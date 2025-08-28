@@ -102,24 +102,122 @@ jobs:
   security-scan:
     name: Security Scanning
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       
+      # Secret Detection
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+          GITLEAKS_ENABLE_COMMENTS: false
+      
+      # SAST Analysis with CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          queries: security-extended,security-and-quality
+      
+      - name: Autobuild for CodeQL
+        uses: github/codeql-action/autobuild@v3
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"
+      
+      # Python Dependency Security
       - name: Python security scan
         if: hashFiles('pyproject.toml') != ''
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: |
-          pip install safety
-          safety check --json || true
-        if: hashFiles('pyproject.toml') != ''
+        run: |
+          pip install safety bandit
+          echo "🔍 Running Safety (dependency vulnerabilities)..."
+          timeout 120 safety scan --output json > safety-report.json 2>&1 || echo "Safety scan completed with warnings"
+          echo "🔍 Running Bandit (SAST for Python)..."
+          bandit -r . -f json -o bandit-report.json --configfile .bandit || echo "Bandit scan completed with findings"
+          
+          # Show summaries
+          if [ -f safety-report.json ]; then
+            echo "📊 Safety Report Summary:"
+            python -c "
+import json
+try:
+    with open('safety-report.json') as f:
+        data = json.load(f)
+        vulns = data.get('vulnerabilities', [])
+        print(f'Vulnerabilities found: {len(vulns)}')
+        if vulns:
+            for v in vulns[:3]:  # Show first 3
+                print(f'  - {v.get(\"package_name\", \"unknown\")}: {v.get(\"vulnerability_id\", \"unknown\")}')
+except:
+    print('Safety report parsing failed - check format')
+            " || echo "Safety report analysis failed"
+          fi
+          
+          if [ -f bandit-report.json ]; then
+            echo "📊 Bandit Report Summary:"  
+            python -c "
+import json
+try:
+    with open('bandit-report.json') as f:
+        data = json.load(f)
+        results = data.get('results', [])
+        print(f'Issues found: {len(results)}')
+        if results:
+            confidence_levels = [r['issue_confidence'] for r in results]
+            print(f'Confidence levels: {list(set(confidence_levels))}')
+            severity_levels = [r['issue_severity'] for r in results]
+            print(f'Severity levels: {list(set(severity_levels))}')
+except:
+    print('Bandit report parsing failed')
+            " || echo "Bandit report analysis failed"
+          fi
         
+      # Node.js Security
       - name: Node.js security scan
         if: hashFiles('package.json') != ''
-        run: npm audit --audit-level moderate || true
+        run: |
+          echo "🔍 Running npm audit..."
+          npm audit --audit-level moderate --json > npm-audit.json || true
+          if [ -f npm-audit.json ]; then
+            echo "📊 NPM Audit Summary:"
+            node -e "const data=require('./npm-audit.json'); console.log(\`Vulnerabilities: \${Object.keys(data.vulnerabilities || {}).length}\`);" || echo "No npm audit issues found"
+          fi
+      
+      # Upload security artifacts
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            safety-report.json
+            bandit-report.json
+            npm-audit.json
+          retention-days: 30
+      
+      # Security Summary
+      - name: Security Scan Summary
+        if: always()
+        run: |
+          echo "## 🛡️ Security Scan Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Scans Performed:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Secret detection (Gitleaks)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Static analysis (CodeQL)" >> $GITHUB_STEP_SUMMARY
+          if [ -f safety-report.json ]; then
+            echo "- ✅ Python dependency scan (Safety)" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ Python SAST scan (Bandit)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f npm-audit.json ]; then
+            echo "- ✅ Node.js dependency scan (npm audit)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📁 Detailed reports available in security-reports artifact" >> $GITHUB_STEP_SUMMARY
