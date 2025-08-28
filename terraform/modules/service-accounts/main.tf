@@ -1,6 +1,6 @@
 /**
  * Service Accounts Module - Simplified and Essential
- * 
+ *
  * Creates service accounts with IAM roles. No over-engineering.
  * Follows Genesis principle: Simple, focused functionality.
  */

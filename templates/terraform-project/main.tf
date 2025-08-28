@@ -30,7 +30,7 @@ module "project_setup" {
   organization_id = var.gcp_organization_id
   location        = var.gcp_region
 
-  # Service account configuration  
+  # Service account configuration
   service_accounts = var.service_accounts
 
   labels = {

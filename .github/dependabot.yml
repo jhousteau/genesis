@@ -23,12 +23,12 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
-  # Node.js dependencies  
+  # Node.js dependencies
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday" 
+      day: "monday"
       time: "04:30"
     target-branch: "main"
     open-pull-requests-limit: 5

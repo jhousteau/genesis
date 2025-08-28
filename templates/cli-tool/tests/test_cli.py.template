@@ -50,7 +50,7 @@ def test_display_command(runner):
 def test_display_with_style(runner):
     """Test display command with different styles."""
     styles = ['info', 'success', 'warning', 'error']
-    
+
     for style in styles:
         result = runner.invoke(cli, ['display', 'Test', '--style', style])
         assert result.exit_code == 0

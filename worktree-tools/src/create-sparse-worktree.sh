@@ -14,7 +14,7 @@ Usage: $0 <name> <focus_path> [--max-files <n>] [--verify]
 Create AI-safe sparse worktree with file limits and contamination prevention.
 
 Arguments:
-  name         Worktree name (e.g., fix-auth, update-tests)  
+  name         Worktree name (e.g., fix-auth, update-tests)
   focus_path   Path to focus on (file or directory)
 
 Options:
@@ -99,7 +99,7 @@ FILE_COUNT=$(git ls-files --cached --others --exclude-standard | wc -l)
 # Apply file count restrictions if needed
 if [[ $FILE_COUNT -gt $MAX_FILES ]]; then
     echo -e "${YELLOW}File count ($FILE_COUNT) exceeds limit ($MAX_FILES) - applying restrictions${NC}"
-    
+
     # Restrict to code files only
     git ls-files --cached --others --exclude-standard | \
         grep -E '\.(py|ts|js|go|sh|md)$' | head -"$MAX_FILES" > .git/info/sparse-checkout
@@ -113,7 +113,7 @@ cat > .ai-safety-manifest << EOF
 # This workspace has restricted visibility to prevent AI contamination
 
 Worktree: $NAME
-Focus: $FOCUS_PATH  
+Focus: $FOCUS_PATH
 Files: $FILE_COUNT/$MAX_FILES
 Branch: $BRANCH
 Created: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -154,7 +154,7 @@ fi
 echo
 echo -e "${BLUE}Next steps:${NC}"
 echo "  cd $WORKTREE_DIR"
-echo "  # Work on $FOCUS_PATH"  
+echo "  # Work on $FOCUS_PATH"
 echo "  # Use smart-commit when ready"
 echo
 echo -e "${YELLOW}This is an AI-safe workspace - only $FILE_COUNT files visible to prevent contamination${NC}"

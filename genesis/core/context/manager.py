@@ -15,7 +15,9 @@ from typing import Any, Dict, Optional, Generator
 
 
 # Context variables for thread-safe and async-safe storage
-_current_context: ContextVar[Optional["RequestContext"]] = ContextVar("current_context", default=None)
+_current_context: ContextVar[Optional["RequestContext"]] = ContextVar(
+    "current_context", default=None
+)
 _correlation_id: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
 _request_id: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
 _trace_id: ContextVar[Optional[str]] = ContextVar("trace_id", default=None)
@@ -27,7 +29,7 @@ _metadata: ContextVar[Optional[Dict[str, Any]]] = ContextVar("metadata", default
 @dataclass
 class TraceContext:
     """Distributed tracing context information."""
-    
+
     trace_id: str
     span_id: str
     parent_span_id: Optional[str] = None
@@ -37,7 +39,7 @@ class TraceContext:
         """Convert to dictionary for serialization."""
         return {
             "trace_id": self.trace_id,
-            "span_id": self.span_id, 
+            "span_id": self.span_id,
             "parent_span_id": self.parent_span_id,
             "baggage": self.baggage,
         }
@@ -55,14 +57,18 @@ class TraceContext:
 @dataclass
 class RequestContext:
     """Complete request context for distributed operations."""
-    
+
     correlation_id: str
     request_id: str
     timestamp: datetime = field(default_factory=datetime.utcnow)
     user_id: Optional[str] = None
     trace_context: Optional[TraceContext] = None
-    service: str = field(default_factory=lambda: os.environ.get("GENESIS_SERVICE", "genesis"))
-    environment: str = field(default_factory=lambda: os.environ.get("GENESIS_ENV", "development"))
+    service: str = field(
+        default_factory=lambda: os.environ.get("GENESIS_SERVICE", "genesis")
+    )
+    environment: str = field(
+        default_factory=lambda: os.environ.get("GENESIS_ENV", "development")
+    )
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -144,7 +150,7 @@ class RequestContext:
 class ContextManager:
     """
     Central context manager for handling request contexts.
-    
+
     Provides thread-safe context storage and retrieval using contextvars.
     """
 
@@ -199,11 +205,13 @@ class ContextManager:
         )
 
     @contextmanager
-    def context_scope(self, context: RequestContext) -> Generator[RequestContext, None, None]:
+    def context_scope(
+        self, context: RequestContext
+    ) -> Generator[RequestContext, None, None]:
         """Context manager for scoped context execution."""
         # Save current context
         previous_context = self.get_current_context()
-        
+
         try:
             # Set new context
             self.set_current_context(context)
@@ -226,7 +234,7 @@ def get_context_manager() -> ContextManager:
     if _context_manager is None:
         _context_manager = ContextManager(
             service_name=os.environ.get("GENESIS_SERVICE", "genesis"),
-            environment=os.environ.get("GENESIS_ENV", "development")
+            environment=os.environ.get("GENESIS_ENV", "development"),
         )
     return _context_manager
 

@@ -75,7 +75,7 @@ router.get('/detailed', async (req, res) => {
 router.get('/ready', (req, res) => {
   // Add your readiness logic here
   // For example, check if database connections are ready
-  
+
   res.json({
     status: 'ready',
     service: '{{project_name}}',
@@ -83,7 +83,7 @@ router.get('/ready', (req, res) => {
   });
 });
 
-// Liveness check (for Kubernetes)  
+// Liveness check (for Kubernetes)
 router.get('/live', (req, res) => {
   res.json({
     status: 'alive',

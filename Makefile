@@ -80,22 +80,28 @@ lint: ## Run all linters and formatters
 		fi; \
 	fi
 
-format: ## Auto-format all code
-	@echo "$(BLUE)Formatting code for $(PROJECT_NAME)...$(NC)"
-	@if command -v black >/dev/null 2>&1; then \
-		echo "$(BLUE)Formatting Python with black (respects .gitignore)...$(NC)"; \
-		black .; \
-	fi
-	@if command -v ruff >/dev/null 2>&1; then \
-		echo "$(BLUE)Auto-fixing with ruff (respects .gitignore)...$(NC)"; \
-		ruff check --fix .; \
-	fi
-	@if [ -f "package.json" ] && command -v prettier >/dev/null 2>&1; then \
-		echo "$(BLUE)Formatting TypeScript with prettier...$(NC)"; \
-		if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
-			git ls-files --cached --others --exclude-standard | grep -E '\.(ts|js)$$' | xargs -r npx prettier --write; \
-		else \
-			npx prettier --write src/**/*.ts; \
+format: ## Auto-format all code with Genesis AutoFixer
+	@echo "$(BLUE)Formatting code for $(PROJECT_NAME) with Genesis AutoFixer...$(NC)"
+	@if python -c "from genesis.core.autofix import AutoFixer" 2>/dev/null; then \
+		echo "$(BLUE)Using Genesis AutoFixer for multi-stage formatting...$(NC)"; \
+		python -c "from genesis.core.autofix import AutoFixer; fixer = AutoFixer(); result = fixer.run_stage_only(['formatter']); exit(0 if result.success else 1)"; \
+	else \
+		echo "$(YELLOW)Genesis AutoFixer not available, using legacy formatting...$(NC)"; \
+		if command -v black >/dev/null 2>&1; then \
+			echo "$(BLUE)Formatting Python with black (respects .gitignore)...$(NC)"; \
+			black .; \
+		fi; \
+		if command -v ruff >/dev/null 2>&1; then \
+			echo "$(BLUE)Auto-fixing with ruff (respects .gitignore)...$(NC)"; \
+			ruff check --fix .; \
+		fi; \
+		if [ -f "package.json" ] && command -v prettier >/dev/null 2>&1; then \
+			echo "$(BLUE)Formatting TypeScript with prettier...$(NC)"; \
+			if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+				git ls-files --cached --others --exclude-standard | grep -E '\.(ts|js)$$' | xargs -r npx prettier --write; \
+			else \
+				npx prettier --write src/**/*.ts; \
+			fi; \
 		fi; \
 	fi
 
@@ -188,10 +194,15 @@ genesis-lint: ## Lint Genesis Python components specifically
 	@cd genesis-cli && poetry run ruff check .
 	@echo "$(GREEN)✓ Genesis linting complete$(NC)"
 
-genesis-lint-fix: ## Lint and auto-fix Genesis Python components
-	@echo "$(BLUE)Linting and auto-fixing Genesis Python components...$(NC)"
-	@cd shared-python && poetry run ruff check --fix .
-	@cd genesis-cli && poetry run ruff check --fix .
+genesis-lint-fix: ## Lint and auto-fix Genesis Python components with AutoFixer
+	@echo "$(BLUE)Running Genesis AutoFixer system...$(NC)"
+	@if python -c "from genesis.core.autofix import AutoFixer" 2>/dev/null; then \
+		echo "$(BLUE)Using Genesis AutoFixer with convergent fixing...$(NC)"; \
+		python -c "from genesis.core.autofix import AutoFixer; fixer = AutoFixer(); result = fixer.run(); exit(0 if result.success else 1)"; \
+	else \
+		echo "$(YELLOW)Genesis AutoFixer not available, using legacy mode...$(NC)"; \
+		cd shared-python && poetry run ruff check --fix . && cd ../genesis-cli && poetry run ruff check --fix .; \
+	fi
 	@echo "$(GREEN)✓ Genesis auto-fix complete$(NC)"
 
 genesis-lint-fix-all: ## Lint and auto-fix Genesis components (including unsafe fixes)
@@ -200,7 +211,7 @@ genesis-lint-fix-all: ## Lint and auto-fix Genesis components (including unsafe 
 	@cd genesis-cli && poetry run ruff check --fix --unsafe-fixes .
 	@echo "$(GREEN)✓ Genesis comprehensive auto-fix complete$(NC)"
 
-genesis-format: ## Format Genesis Python components specifically  
+genesis-format: ## Format Genesis Python components specifically
 	@echo "$(BLUE)Formatting Genesis Python components...$(NC)"
 	@cd shared-python && poetry run black . && poetry run isort .
 	@cd genesis-cli && poetry run black . && poetry run isort .

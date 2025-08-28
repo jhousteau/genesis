@@ -43,7 +43,7 @@ Edit `terraform.tfvars`:
 ```hcl
 # Required
 project_name         = "my-awesome-project"
-gcp_project_id      = "my-project-id-123" 
+gcp_project_id      = "my-project-id-123"
 gcp_billing_account = "012345-678901-ABCDEF"
 
 # Optional
@@ -56,7 +56,7 @@ gcp_region         = "us-central1"
 ```bash
 make help      # Show all available commands
 make init      # Initialize Terraform
-make plan      # Show execution plan  
+make plan      # Show execution plan
 make apply     # Apply changes
 make destroy   # Destroy resources
 make validate  # Validate configuration
@@ -73,7 +73,7 @@ After the first `terraform apply`:
 2. Uncomment and configure the backend in `main.tf`:
    ```hcl
    backend "gcs" {
-     bucket = "your-project-terraform-state" 
+     bucket = "your-project-terraform-state"
      prefix = "terraform/state"
    }
    ```

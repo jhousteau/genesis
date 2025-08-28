@@ -1,6 +1,6 @@
 /**
  * Advanced Project Setup Example
- * 
+ *
  * Creates a GCP project with additional service accounts, GitHub Actions integration,
  * and multiple APIs. Good for production setups.
  */

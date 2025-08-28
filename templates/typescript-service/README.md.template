@@ -38,7 +38,7 @@ npm run dev
 # Run tests
 npm test
 
-# Run tests in watch mode  
+# Run tests in watch mode
 npm run test:watch
 
 # Run tests with coverage

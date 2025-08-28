@@ -1,6 +1,6 @@
 /**
  * Terraform State Backend Module - Simplified and Essential
- * 
+ *
  * Creates a GCS bucket for Terraform state with basic security and versioning.
  * Follows Genesis principle: Simple, focused, and actually used.
  */

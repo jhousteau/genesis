@@ -12,7 +12,7 @@ FastAPI-based REST API with comprehensive tooling:
 - **Code Quality**: Black, isort, mypy, pre-commit hooks
 - **Features**: Auto-generated OpenAPI docs, health checks, structured logging
 
-### 2. CLI Tool (`cli-tool`) 
+### 2. CLI Tool (`cli-tool`)
 Click-based command-line application:
 - **Framework**: Click with Rich for beautiful output
 - **Package Management**: Poetry
@@ -61,7 +61,7 @@ genesis bootstrap my-api --type python-api
 # Create CLI tool
 genesis bootstrap my-tool --type cli-tool
 
-# Create TypeScript service  
+# Create TypeScript service
 genesis bootstrap my-service --type typescript-service
 ```
 

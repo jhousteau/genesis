@@ -130,7 +130,7 @@ genesis/
 ├── docs/                     # Keep existing docs
 ├── genesis-cli/              # NEW: CLI component
 ├── smart-commit/             # MOVE from shared-infra/
-├── bootstrap/                # NEW: Bootstrap component  
+├── bootstrap/                # NEW: Bootstrap component
 ├── shared-python/            # NEW: Python libraries
 ├── shared-typescript/        # NEW: TypeScript libraries
 ├── worktree-tools/          # NEW: Worktree management

@@ -28,18 +28,18 @@ def hello(name: str, count: int):
 
 @cli.command()
 @click.argument('text')
-@click.option('--style', default='info', 
+@click.option('--style', default='info',
               type=click.Choice(['info', 'success', 'warning', 'error']),
               help='Display style')
 def display(text: str, style: str):
     """Display text with styling."""
     styles = {
         'info': 'blue',
-        'success': 'green', 
+        'success': 'green',
         'warning': 'yellow',
         'error': 'red'
     }
-    
+
     panel = Panel(
         text,
         title=f"{{project_name}} - {style.title()}",
