@@ -64,8 +64,8 @@ export function createErrorContext(
   return {
     correlationId: crypto.randomUUID(),
     timestamp: new Date(),
-    service: service || process.env.GENESIS_SERVICE || 'genesis',
-    environment: environment || process.env.GENESIS_ENV || 'development',
+    service: service || process.env.SERVICE || 'genesis',
+    environment: environment || process.env.ENV || 'development',
   };
 }
 
@@ -86,7 +86,7 @@ export class GenesisError extends Error {
   constructor(options: GenesisErrorOptions) {
     super(options.message);
     this.name = 'GenesisError';
-    
+
     this.code = options.code || 'GENESIS_ERROR';
     this.category = options.category || ErrorCategory.UNKNOWN;
     this.severity = options.severity || ErrorSeverity.ERROR;
@@ -103,8 +103,8 @@ export class GenesisError extends Error {
 
   private createDefaultContext(): ErrorContext {
     return createErrorContext(
-      process.env.GENESIS_SERVICE || 'genesis',
-      process.env.GENESIS_ENV || 'development'
+      process.env.SERVICE || 'genesis',
+      process.env.ENV || 'development'
     );
   }
 
@@ -405,8 +405,8 @@ let globalErrorHandler: ErrorHandler | undefined;
 export function getErrorHandler(): ErrorHandler {
   if (!globalErrorHandler) {
     globalErrorHandler = new ErrorHandler(
-      process.env.GENESIS_SERVICE || 'genesis',
-      process.env.GENESIS_ENV || 'development'
+      process.env.SERVICE || 'genesis',
+      process.env.ENV || 'development'
     );
   }
   return globalErrorHandler;

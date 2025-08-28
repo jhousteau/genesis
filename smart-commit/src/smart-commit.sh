@@ -17,33 +17,7 @@ log "======================"
 # 1. Check for uncommitted changes
 [[ -z $(git status --porcelain) ]] && error_exit "No changes to commit"
 
-# 2. Run pre-commit hooks if available
-if [[ -f .pre-commit-config.yaml ]]; then
-    log "ℹ️ Running pre-commit checks..."
-    pre-commit run --all-files || error_exit "Pre-commit checks failed"
-    log "✅ Pre-commit checks passed" "$GREEN"
-fi
-
-# 3. Run tests with continue option
-log "ℹ️ Running tests..."
-test_cmd=""
-if [[ -d tests/ ]] && command -v pytest &>/dev/null; then
-    test_cmd="pytest tests/ -q"
-elif [[ -f Makefile ]] && make -n test &>/dev/null; then
-    test_cmd="make test"
-fi
-
-if [[ -n $test_cmd ]]; then
-    if $test_cmd &>/dev/null; then
-        log "✅ Tests passed" "$GREEN"
-    else
-        log "⚠️ Tests failed" "$YELLOW"
-        read -p "Continue anyway? (y/N): " -n 1 -r
-        echo; [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
-    fi
-fi
-
-# 4. Run autofix system with convergent fixing
+# 2. Run autofix system with convergent fixing first
 log "ℹ️ Running Genesis AutoFixer..."
 if command -v python &>/dev/null && python -c "from genesis.core.autofix import AutoFixer" 2>/dev/null; then
     # Use Genesis autofix system
@@ -74,7 +48,33 @@ else
         black . &>/dev/null || true
     fi
 fi
-log "✅ Code quality checks passed" "$GREEN"
+log "✅ AutoFixer completed" "$GREEN"
+
+# 3. Run pre-commit hooks for validation
+if [[ -f .pre-commit-config.yaml ]]; then
+    log "ℹ️ Running pre-commit checks..."
+    pre-commit run --all-files || error_exit "Pre-commit checks failed"
+    log "✅ Pre-commit checks passed" "$GREEN"
+fi
+
+# 4. Run tests with continue option
+log "ℹ️ Running tests..."
+test_cmd=""
+if [[ -d tests/ ]] && command -v pytest &>/dev/null; then
+    test_cmd="pytest tests/ -q"
+elif [[ -f Makefile ]] && make -n test &>/dev/null; then
+    test_cmd="make test"
+fi
+
+if [[ -n $test_cmd ]]; then
+    if $test_cmd &>/dev/null; then
+        log "✅ Tests passed" "$GREEN"
+    else
+        log "⚠️ Tests failed" "$YELLOW"
+        read -p "Continue anyway? (y/N): " -n 1 -r
+        echo; [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
+    fi
+fi
 
 # 5. Basic secret detection
 log "ℹ️ Scanning for secrets..."
@@ -84,13 +84,24 @@ fi
 
 # 6. Interactive commit message
 echo ""
-PS3="Select commit type: "
-select type in "feat" "fix" "docs" "refactor" "test" "chore"; do
-    [[ -n $type ]] && break
-done
 
-read -p "Enter description: " desc
-commit_msg="$type: $desc"
+# Check if commit message provided via environment variable (from CLI)
+if [[ -n "${COMMIT_MESSAGE:-}" ]]; then
+    commit_msg="$COMMIT_MESSAGE"
+    log "Using provided commit message: $commit_msg"
+# Check if commit type and message provided as arguments
+elif [[ $# -ge 2 ]]; then
+    type="$1"
+    desc="$2"
+    # Validate commit type
+    if [[ ! "$type" =~ ^(feat|fix|docs|refactor|test|chore)$ ]]; then
+        error_exit "Invalid commit type: $type. Must be one of: feat, fix, docs, refactor, test, chore"
+    fi
+    log "Using provided commit: $type: $desc"
+    commit_msg="$type: $desc"
+else
+    error_exit "Commit message required. Use: CLI with --message or script with 'type' 'description' arguments"
+fi
 
 # Validate message length
 [[ ${#commit_msg} -lt $MIN_MSG_LENGTH ]] && error_exit "Message too short (min $MIN_MSG_LENGTH chars)"
@@ -104,9 +115,12 @@ echo ""
 log "💬 Message: $commit_msg"
 echo ""
 
-read -p "Proceed with commit? (Y/n): " -n 1 -r
-echo
-[[ $REPLY =~ ^[Nn]$ ]] && { log "Cancelled" "$YELLOW"; exit 0; }
+# Skip confirmation if message provided via environment variable (non-interactive)
+if [[ -z "${COMMIT_MESSAGE:-}" ]]; then
+    read -p "Proceed with commit? (Y/n): " -n 1 -r
+    echo
+    [[ $REPLY =~ ^[Nn]$ ]] && { log "Cancelled" "$YELLOW"; exit 0; }
+fi
 
 # 8. Create commit
 git add .

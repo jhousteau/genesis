@@ -18,14 +18,14 @@ Infrastructure as Code modules for complete GCP deployments.
 ```hcl
 module "bootstrap" {
   source = "./terraform/modules/bootstrap"
-  
+
   project_id = "my-project-id"
   region     = "us-central1"
 }
 
 module "project_setup" {
   source = "./terraform/modules/project-setup"
-  
+
   project_id = module.bootstrap.project_id
   region     = var.region
 }
@@ -36,7 +36,7 @@ module "project_setup" {
 ```hcl
 module "state_backend" {
   source = "./terraform/modules/state-backend"
-  
+
   project_id = "my-project-id"
   region     = "us-central1"
   bucket_name = "my-project-terraform-state"

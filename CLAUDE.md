@@ -7,7 +7,7 @@ Genesis is a development toolkit we are creating. This document prevents confusi
 ## Context Detection Rules
 
 ### You're BUILDING Genesis if:
-- The project root contains `EXTRACTION_PLAN.md`  
+- The project root contains `EXTRACTION_PLAN.md`
 - Tasks involve creating Genesis components
 - You're creating the genesis-cli tool itself
 - Working in a project directory named "genesis"
@@ -46,7 +46,7 @@ Any configuration, script, or template we create for Genesis must work for ANY p
 ❌ **BAD** (Genesis-specific):
 ```bash
 export GENESIS_MODE="development"
-export GENESIS_LOG_LEVEL="info"
+export LOG_LEVEL="info"
 ```
 
 ✅ **GOOD** (Generic):
@@ -58,7 +58,7 @@ export LOG_LEVEL="info"
 ### Apply This Rule To Everything
 - Environment variables → Use PROJECT_* or generic names
 - Makefile targets → Generic names like `test`, `build`, not `test-genesis`
-- Directory paths → Use relative or PROJECT_ROOT, not GENESIS_ROOT
+- Directory paths → Use relative or PROJECT_ROOT, not PROJECT_ROOT
 - Config files → Should work for any project type
 - CI/CD workflows → Generic job names and steps
 
@@ -141,6 +141,22 @@ if not database_url:
 
 **Reason**: Hardcoded values create security risks, deployment issues, and make applications non-configurable. Genesis enforces fail-fast configuration loading and single source of truth patterns.
 
+**Why Fail-Fast is Critical**: When required configuration is missing, the application should immediately fail with a clear error message. This approach:
+
+1. **Catches configuration errors at startup** - not after hours of operation
+2. **Provides clear, actionable error messages** - developers know exactly what to fix
+3. **Prevents silent failures** - no mysterious behavior from missing config
+4. **Enforces explicit configuration** - every deployment must be properly configured
+5. **Eliminates security risks** - no accidental use of development defaults in production
+
+Example of proper fail-fast behavior:
+```
+$ python -m genesis.cli smart-commit
+ValueError: Log level not configured. Set LOG_LEVEL or configure environment.
+```
+
+This immediate, clear failure is infinitely better than the application running with unknown defaults.
+
 **Detection**: Use `scripts/find-hardcoded-values.sh` and `scripts/check-variable-defaults.sh` to systematically find violations.
 
 ## 🚫 FORBIDDEN FILE CLUTTER
@@ -150,7 +166,7 @@ if not database_url:
 ### Root Directory Rules
 Only these file types are allowed in project root:
 - **Configuration**: `README.md`, `CLAUDE.md`, `Makefile`, `pyproject.toml`, `package.json`, `.gitignore`, `.envrc`
-- **Licensing**: `LICENSE`, `SECURITY.md` 
+- **Licensing**: `LICENSE`, `SECURITY.md`
 - **Infrastructure**: `Dockerfile`, `docker-compose.yml`, `main.tf`, `variables.tf`
 
 ### Mandatory Directory Structure

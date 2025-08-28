@@ -1,9 +1,7 @@
 """Tests for circuit breaker functionality in retry module."""
 
-import asyncio
 import threading
 import time
-from unittest.mock import Mock
 
 import pytest
 
@@ -13,11 +11,11 @@ from genesis.core.retry import (
     CircuitBreakerError,
     CircuitBreakerMetrics,
     CircuitBreakerState,
+    RetryConfig,
     circuit_breaker,
     resilient_call,
     resilient_database,
     resilient_external_service,
-    RetryConfig,
 )
 
 
@@ -26,7 +24,7 @@ class TestCircuitBreakerConfig:
 
     def test_default_config(self):
         """Test default configuration values."""
-        config = CircuitBreakerConfig()
+        config = CircuitBreakerConfig.default()
         assert config.failure_threshold == 5
         assert config.timeout == 60.0
         assert config.half_open_max_calls == 5
@@ -36,7 +34,7 @@ class TestCircuitBreakerConfig:
 
     def test_custom_config(self):
         """Test custom configuration values."""
-        config = CircuitBreakerConfig(
+        config = CircuitBreakerConfig.create(
             failure_threshold=3,
             timeout=30.0,
             half_open_max_calls=2,
@@ -90,15 +88,15 @@ class TestCircuitBreakerError:
     """Test CircuitBreakerError exception."""
 
     def test_default_error(self):
-        """Test default error creation."""
-        error = CircuitBreakerError("Circuit is open")
+        """Test error creation requires circuit name."""
+        error = CircuitBreakerError("Circuit is open", "test_circuit")
         assert str(error) == "Circuit is open"
-        assert error.circuit_name == "unknown"
+        assert error.circuit_name == "test_circuit"
         assert error.code == "CIRCUIT_BREAKER_OPEN"
 
     def test_error_with_circuit_name(self):
         """Test error with circuit name."""
-        error = CircuitBreakerError("Circuit is open", circuit_name="TestCircuit")
+        error = CircuitBreakerError("Circuit is open", "TestCircuit")
         assert error.circuit_name == "TestCircuit"
         assert error.details["circuit_name"] == "TestCircuit"
         assert error.details["circuit_state"] == "open"
@@ -144,7 +142,7 @@ class TestCircuitBreaker:
 
     def test_circuit_opens_after_failures(self):
         """Test circuit opens after failure threshold is reached."""
-        config = CircuitBreakerConfig(failure_threshold=3, sliding_window_size=5)
+        config = CircuitBreakerConfig.create(failure_threshold=3, sliding_window_size=5)
         cb = CircuitBreaker(config)
 
         def failing_function():
@@ -163,7 +161,7 @@ class TestCircuitBreaker:
 
     def test_circuit_rejects_calls_when_open(self):
         """Test circuit rejects calls when open."""
-        config = CircuitBreakerConfig(failure_threshold=1)
+        config = CircuitBreakerConfig.create(failure_threshold=1)
         cb = CircuitBreaker(config)
 
         def failing_function():
@@ -181,7 +179,7 @@ class TestCircuitBreaker:
 
     def test_circuit_half_open_after_timeout(self):
         """Test circuit transitions to HALF_OPEN after timeout."""
-        config = CircuitBreakerConfig(failure_threshold=1, timeout=0.1)
+        config = CircuitBreakerConfig.create(failure_threshold=1, timeout=0.1)
         cb = CircuitBreaker(config)
 
         def failing_function():
@@ -205,7 +203,7 @@ class TestCircuitBreaker:
 
     def test_circuit_closes_after_success_in_half_open(self):
         """Test circuit closes after successful calls in HALF_OPEN state."""
-        config = CircuitBreakerConfig(
+        config = CircuitBreakerConfig.create(
             failure_threshold=1, timeout=0.1, success_threshold=2, half_open_max_calls=3
         )
         cb = CircuitBreaker(config)
@@ -246,7 +244,7 @@ class TestCircuitBreaker:
 
     def test_circuit_reopens_on_failure_in_half_open(self):
         """Test circuit reopens on failure while in HALF_OPEN state."""
-        config = CircuitBreakerConfig(failure_threshold=1, timeout=0.1)
+        config = CircuitBreakerConfig.create(failure_threshold=1, timeout=0.1)
         cb = CircuitBreaker(config)
 
         def failing_function():
@@ -268,7 +266,7 @@ class TestCircuitBreaker:
 
     def test_half_open_call_limit(self):
         """Test HALF_OPEN state respects call limit."""
-        config = CircuitBreakerConfig(
+        config = CircuitBreakerConfig.create(
             failure_threshold=1,
             timeout=0.1,
             half_open_max_calls=2,
@@ -298,7 +296,7 @@ class TestCircuitBreaker:
 
     def test_reset_functionality(self):
         """Test manual reset functionality."""
-        config = CircuitBreakerConfig(failure_threshold=1)
+        config = CircuitBreakerConfig.create(failure_threshold=1)
         cb = CircuitBreaker(config)
 
         def failing_function():
@@ -316,7 +314,7 @@ class TestCircuitBreaker:
 
     def test_get_status(self):
         """Test status information retrieval."""
-        config = CircuitBreakerConfig(name="TestCircuit")
+        config = CircuitBreakerConfig.create(name="TestCircuit")
         cb = CircuitBreaker(config)
 
         status = cb.get_status()
@@ -389,7 +387,7 @@ class TestCircuitBreakerDecorator:
 
     def test_decorator_sync_function(self):
         """Test decorator with synchronous function."""
-        config = CircuitBreakerConfig(failure_threshold=2, name="DecoratorTest")
+        config = CircuitBreakerConfig.create(failure_threshold=2, name="DecoratorTest")
         cb = CircuitBreaker(config)
 
         @cb.decorator
@@ -415,7 +413,9 @@ class TestCircuitBreakerDecorator:
     @pytest.mark.asyncio
     async def test_decorator_async_function(self):
         """Test decorator with asynchronous function."""
-        config = CircuitBreakerConfig(failure_threshold=1, name="AsyncDecoratorTest")
+        config = CircuitBreakerConfig.create(
+            failure_threshold=1, name="AsyncDecoratorTest"
+        )
         cb = CircuitBreaker(config)
 
         @cb.decorator
@@ -437,7 +437,7 @@ class TestCircuitBreakerDecorator:
 
     def test_factory_decorator(self):
         """Test circuit_breaker factory decorator."""
-        config = CircuitBreakerConfig(failure_threshold=1, name="FactoryTest")
+        config = CircuitBreakerConfig.create(failure_threshold=1, name="FactoryTest")
 
         @circuit_breaker(config)
         def test_function():
@@ -460,8 +460,8 @@ class TestResilientIntegration:
         call_count = 0
 
         @resilient_call(
-            retry_config=RetryConfig(max_attempts=2, initial_delay=0.01),
-            circuit_config=CircuitBreakerConfig(
+            retry_config=RetryConfig.create(max_attempts=2, initial_delay=0.01),
+            circuit_config=CircuitBreakerConfig.create(
                 failure_threshold=2, name="ResilientTest"
             ),
         )
@@ -537,8 +537,8 @@ class TestResilientIntegration:
         call_count = 0
 
         @resilient_call(
-            retry_config=RetryConfig(max_attempts=2, initial_delay=0.01),
-            circuit_config=CircuitBreakerConfig(failure_threshold=2),
+            retry_config=RetryConfig.create(max_attempts=2, initial_delay=0.01),
+            circuit_config=CircuitBreakerConfig.create(failure_threshold=2),
         )
         async def async_function():
             nonlocal call_count
@@ -563,7 +563,7 @@ class TestEdgeCases:
 
     def test_zero_failure_threshold(self):
         """Test behavior with zero failure threshold."""
-        config = CircuitBreakerConfig(failure_threshold=0)
+        config = CircuitBreakerConfig.create(failure_threshold=0)
         cb = CircuitBreaker(config)
 
         def failing_function():
@@ -578,7 +578,7 @@ class TestEdgeCases:
 
     def test_very_short_timeout(self):
         """Test behavior with very short timeout."""
-        config = CircuitBreakerConfig(failure_threshold=1, timeout=0.001)
+        config = CircuitBreakerConfig.create(failure_threshold=1, timeout=0.001)
         cb = CircuitBreaker(config)
 
         # Trip circuit
@@ -594,7 +594,9 @@ class TestEdgeCases:
 
     def test_large_sliding_window(self):
         """Test behavior with large sliding window."""
-        config = CircuitBreakerConfig(failure_threshold=5, sliding_window_size=1000)
+        config = CircuitBreakerConfig.create(
+            failure_threshold=5, sliding_window_size=1000
+        )
         cb = CircuitBreaker(config)
 
         # Add many successful calls

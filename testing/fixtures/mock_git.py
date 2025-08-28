@@ -1,8 +1,6 @@
 """Git operation mocks for testing."""
 
 from unittest.mock import Mock, patch
-from typing import Dict, Any, Optional
-import subprocess
 
 
 class MockGit:

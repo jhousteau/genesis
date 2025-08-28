@@ -6,12 +6,12 @@ Provides common testing utilities, mocks, and AI safety validation.
 
 import os
 import tempfile
-import shutil
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator, Dict, Any
-import pytest
-import subprocess
+from typing import Any
 from unittest.mock import Mock, patch
+
+import pytest
 
 # Test markers
 pytest_plugins = []
@@ -102,7 +102,7 @@ def ai_safety_validator():
 
         def validate_file_count(
             self, path: Path, max_files: int = None
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Validate file count for AI safety."""
             if max_files is None:
                 max_files = self.max_files
@@ -117,7 +117,7 @@ def ai_safety_validator():
                 "files": [f.relative_to(path) for f in files if f.is_file()],
             }
 
-        def validate_component_isolation(self, component_path: Path) -> Dict[str, Any]:
+        def validate_component_isolation(self, component_path: Path) -> dict[str, Any]:
             """Validate component has proper isolation."""
             files = list(component_path.rglob("*"))
             file_count = len([f for f in files if f.is_file()])

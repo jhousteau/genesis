@@ -10,10 +10,10 @@ from typing import Optional
 
 import click
 
-from .core.errors import handle_error
-
 # Import version from package
 from genesis import __version__
+
+from .core.errors import handle_error
 
 
 # Genesis root detection
@@ -71,13 +71,17 @@ def bootstrap(
 @cli.command()
 @click.argument("name")
 @click.argument("focus_path")
-@click.option("--max-files", type=int, help="Maximum files in worktree (default from GENESIS_MAX_WORKTREE_FILES)")
+@click.option(
+    "--max-files",
+    type=int,
+    help="Maximum files in worktree (default from MAX_WORKTREE_FILES)",
+)
 @click.option("--verify", is_flag=True, help="Verify safety after creation")
 @click.pass_context
 def worktree(ctx, name: str, focus_path: str, max_files: Optional[int], verify: bool):
     """Create AI-safe sparse worktree with file limits."""
     from genesis.core.constants import AILimits
-    
+
     genesis_root = ctx.obj.get("genesis_root")
     if not genesis_root:
         click.echo("❌ Not in a Genesis project. Run from Genesis directory.", err=True)
@@ -134,7 +138,7 @@ def commit(ctx, message: Optional[str]):
     if message:
         # Note: smart-commit.sh handles interactive commit message entry
         # We'll need to set an environment variable or pass it differently
-        os.environ["GENESIS_COMMIT_MESSAGE"] = message
+        os.environ["COMMIT_MESSAGE"] = message
 
     try:
         result = subprocess.run(cmd, check=True)
@@ -239,7 +243,7 @@ def clean(ctx, worktrees: bool, artifacts: bool, clean_all: bool):
                                 cleaned_items.append(
                                     f"artifact: {Path(file_path).name}"
                                 )
-            except (subprocess.CalledProcessError, OSError) as e:
+            except (subprocess.CalledProcessError, OSError):
                 # Continue with other patterns if one fails
                 pass
 
@@ -291,6 +295,7 @@ def sync(ctx):
 
 # Add version management commands
 from genesis.commands.version import version
+
 cli.add_command(version)
 
 
@@ -355,12 +360,15 @@ def status(ctx, verbose: bool):
 
         try:
             from genesis.core.constants import AILimits
+
             max_files = AILimits.get_max_project_files()
-            
+
             if file_count <= max_files:
                 click.echo(f"✅ File count: {file_count} (AI-safe: ≤{max_files})")
             else:
-                click.echo(f"⚠️  File count: {file_count} (Target: ≤{max_files} for AI safety)")
+                click.echo(
+                    f"⚠️  File count: {file_count} (Target: ≤{max_files} for AI safety)"
+                )
                 all_healthy = False
         except ValueError as e:
             click.echo(f"⚠️  Could not check file limits: {e}")

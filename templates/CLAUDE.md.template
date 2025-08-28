@@ -67,13 +67,29 @@ def send_request(url: str, timeout: Optional[int] = None):
 database_url = os.environ.get("DATABASE_URL", "postgresql://localhost/app")
 port = int(os.environ.get("PORT", "8080"))
 
-# ✅ REQUIRED - Fail fast with clear error messages  
+# ✅ REQUIRED - Fail fast with clear error messages
 database_url = os.environ.get("DATABASE_URL")
 if not database_url:
     raise ValueError("DATABASE_URL environment variable is required")
 ```
 
 **Reason**: Hardcoded values create security risks, deployment issues, and make applications non-configurable. This project enforces fail-fast configuration loading and single source of truth patterns.
+
+**Why Fail-Fast is Critical**: When required configuration is missing, the application should immediately fail with a clear error message. This approach:
+
+1. **Catches configuration errors at startup** - not after hours of operation
+2. **Provides clear, actionable error messages** - developers know exactly what to fix
+3. **Prevents silent failures** - no mysterious behavior from missing config
+4. **Enforces explicit configuration** - every deployment must be properly configured
+5. **Eliminates security risks** - no accidental use of development defaults in production
+
+Example of proper fail-fast behavior:
+```
+$ python -m {{project_name}} start
+ValueError: DATABASE_URL environment variable is required but not set
+```
+
+This immediate, clear failure is infinitely better than the application running with unknown defaults.
 
 ## 🚫 FORBIDDEN FILE CLUTTER
 
@@ -82,7 +98,7 @@ if not database_url:
 ### Root Directory Rules
 Only these file types are allowed in project root:
 - **Configuration**: `README.md`, `CLAUDE.md`, `Makefile`, `pyproject.toml`, `package.json`, `.gitignore`, `.envrc`
-- **Licensing**: `LICENSE`, `SECURITY.md` 
+- **Licensing**: `LICENSE`, `SECURITY.md`
 - **Infrastructure**: `Dockerfile`, `docker-compose.yml`, `main.tf`, `variables.tf`
 
 ### Mandatory Directory Structure
@@ -90,7 +106,7 @@ Only these file types are allowed in project root:
 {{project_name}}/
 ├── src/              # Source code ONLY
 ├── scripts/          # Executable utilities (.sh files)
-├── tests/            # Test files (test_*.py, *.test.ts, conftest.py)  
+├── tests/            # Test files (test_*.py, *.test.ts, conftest.py)
 ├── docs/             # Documentation (.md files except README/CLAUDE)
 └── config/           # Configuration files (.json, .yml, .toml)
 ```
@@ -104,7 +120,7 @@ Only these file types are allowed in project root:
 ./config.json          # → Should be in config/
 ./util.py              # → Should be in src/
 
-# ✅ REQUIRED - Proper organization  
+# ✅ REQUIRED - Proper organization
 ./scripts/my-script.sh
 ./docs/api-docs.md
 ./tests/conftest.py

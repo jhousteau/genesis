@@ -1,6 +1,6 @@
 /**
  * @genesis/shared - TypeScript shared utilities
- * 
+ *
  * Core functionality including configuration, health checks, logging, retry logic,
  * error handling, and context management.
  */

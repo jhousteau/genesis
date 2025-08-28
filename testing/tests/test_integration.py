@@ -1,13 +1,13 @@
 """Integration tests for Genesis components working together."""
 
-import pytest
 import subprocess
-import tempfile
 from pathlib import Path
-from unittest.mock import patch, Mock
+from unittest.mock import patch
+
+import pytest
+
 from testing.fixtures import (
     create_genesis_project_structure,
-    create_mock_shell_commands,
     patch_subprocess_run,
 )
 
@@ -32,8 +32,9 @@ class TestComponentIntegration:
                 0, str(Path(__file__).parent.parent.parent / "genesis-cli" / "src")
             )
 
-            from genesis import cli
             from click.testing import CliRunner
+
+            from genesis import cli
 
             runner = CliRunner()
 
@@ -70,8 +71,9 @@ class TestComponentIntegration:
             0, str(Path(__file__).parent.parent.parent / "genesis-cli" / "src")
         )
 
-        from genesis import cli
         from click.testing import CliRunner
+
+        from genesis import cli
 
         runner = CliRunner()
 
@@ -102,8 +104,9 @@ class TestComponentIntegration:
             0, str(Path(__file__).parent.parent.parent / "genesis-cli" / "src")
         )
 
-        from genesis import cli
         from click.testing import CliRunner
+
+        from genesis import cli
 
         runner = CliRunner()
 
@@ -176,8 +179,9 @@ class TestEndToEndWorkflows:
             0, str(Path(__file__).parent.parent.parent / "genesis-cli" / "src")
         )
 
-        from genesis import cli
         from click.testing import CliRunner
+
+        from genesis import cli
 
         runner = CliRunner()
 
@@ -264,8 +268,9 @@ class TestErrorHandlingIntegration:
             0, str(Path(__file__).parent.parent.parent / "genesis-cli" / "src")
         )
 
-        from genesis import cli
         from click.testing import CliRunner
+
+        from genesis import cli
 
         runner = CliRunner()
 
@@ -294,8 +299,9 @@ class TestErrorHandlingIntegration:
             0, str(Path(__file__).parent.parent.parent / "genesis-cli" / "src")
         )
 
-        from genesis import cli
         from click.testing import CliRunner
+
+        from genesis import cli
 
         runner = CliRunner()
 
@@ -314,8 +320,9 @@ class TestErrorHandlingIntegration:
             0, str(Path(__file__).parent.parent.parent / "genesis-cli" / "src")
         )
 
-        from genesis import cli
         from click.testing import CliRunner
+
+        from genesis import cli
 
         runner = CliRunner()
 

@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
-YELLOW='\033[1;33m' 
+YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
@@ -44,7 +44,7 @@ AI_PATTERNS=(
 
 for pattern in "${AI_PATTERNS[@]}"; do
     log_check "Checking for: $pattern"
-    
+
     if command -v rg >/dev/null 2>&1; then
         results=$(rg --line-number --no-heading --type-not binary "$pattern" . 2>/dev/null || true)
     else
@@ -52,7 +52,7 @@ for pattern in "${AI_PATTERNS[@]}"; do
             -not -path "*/.venv/*" -not -path "*/venv/*" -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/build/*" -not -path "*/dist/*" \
             -exec grep -E -Hn "$pattern" {} \; 2>/dev/null || true)
     fi
-    
+
     if [ -n "$results" ]; then
         log_issue "Found forbidden AI signatures:"
         echo "$results" | head -20

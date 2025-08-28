@@ -2,6 +2,7 @@
 
 import subprocess
 from dataclasses import dataclass
+from typing import Optional
 
 from genesis.core.logger import get_logger
 
@@ -23,7 +24,7 @@ class ConvergenceResult:
 class ConvergentFixer:
     """Implements convergent fixing - runs commands until no changes occur."""
 
-    def __init__(self, max_runs: Optional[int] = None, dry_run: bool = False):
+    def __init__(self, max_runs: Optional[int] = None, dry_run: Optional[bool] = None):
         """Initialize convergent fixer.
 
         Args:
@@ -31,20 +32,20 @@ class ConvergentFixer:
             dry_run: If True, show what would be run without executing
         """
         import os
-        
+
         if max_runs is None:
-            max_runs_str = os.environ.get("GENESIS_AUTOFIX_MAX_RUNS")
+            max_runs_str = os.environ.get("AUTOFIX_MAX_RUNS")
             if not max_runs_str:
-                raise ValueError("GENESIS_AUTOFIX_MAX_RUNS environment variable is required")
+                raise ValueError("AUTOFIX_MAX_RUNS environment variable is required")
             try:
                 max_runs = int(max_runs_str)
                 if max_runs <= 0:
-                    raise ValueError("GENESIS_AUTOFIX_MAX_RUNS must be positive")
+                    raise ValueError("AUTOFIX_MAX_RUNS must be positive")
             except ValueError as e:
-                raise ValueError(f"Invalid GENESIS_AUTOFIX_MAX_RUNS '{max_runs_str}': {e}")
-        
+                raise ValueError(f"Invalid AUTOFIX_MAX_RUNS '{max_runs_str}': {e}")
+
         self.max_runs = max_runs
-        self.dry_run = dry_run
+        self.dry_run = dry_run if dry_run is not None else False
 
     def run_until_stable(self, name: str, command: str) -> ConvergenceResult:
         """Run command until git diff shows no changes.

@@ -1,7 +1,7 @@
 """AI safety validation utilities for testing."""
 
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any, Optional
 
 
 def count_files_in_directory(
@@ -62,17 +62,19 @@ def count_files_in_directory(
 
 
 def validate_ai_safety_limits(
-    directory: Path, max_files: Optional[int] = None, max_component_files: Optional[int] = None
-) -> Dict[str, Any]:
+    directory: Path,
+    max_files: Optional[int] = None,
+    max_component_files: Optional[int] = None,
+) -> dict[str, Any]:
     """Validate directory meets AI safety file count limits."""
     from genesis.core.constants import AILimits
-    
+
     # Use configured limits if not provided
     if max_files is None:
         max_files = AILimits.get_max_project_files()
     if max_component_files is None:
         max_component_files = AILimits.get_max_component_files()
-        
+
     total_files = count_files_in_directory(directory)
 
     # Check component directories
@@ -105,13 +107,15 @@ def validate_ai_safety_limits(
     }
 
 
-def assert_file_count_safe(directory: Path, max_files: Optional[int] = None, message: str = None):
+def assert_file_count_safe(
+    directory: Path, max_files: Optional[int] = None, message: str = None
+):
     """Assert that directory has safe file count for AI."""
     from genesis.core.constants import AILimits
-    
+
     if max_files is None:
         max_files = AILimits.get_max_project_files()
-        
+
     file_count = count_files_in_directory(directory)
     if message is None:
         message = (
@@ -124,10 +128,10 @@ def assert_file_count_safe(directory: Path, max_files: Optional[int] = None, mes
 def assert_component_isolation(component_path: Path, max_files: Optional[int] = None):
     """Assert that component meets isolation requirements."""
     from genesis.core.constants import AILimits
-    
+
     if max_files is None:
         max_files = AILimits.get_max_component_files()
-        
+
     assert (
         component_path.exists()
     ), f"Component directory {component_path} does not exist"
@@ -144,7 +148,7 @@ def assert_component_isolation(component_path: Path, max_files: Optional[int] = 
     ), f"Component {component_path.name} has {file_count} files, exceeds limit of {max_files}"
 
 
-def get_file_count_report(directory: Path) -> Dict[str, Any]:
+def get_file_count_report(directory: Path) -> dict[str, Any]:
     """Generate detailed file count report for directory."""
     report = {
         "directory": str(directory),
@@ -219,31 +223,35 @@ def print_ai_safety_report(directory: Path):
         print(f"  {ext}: {count}")
 
     if not status["is_safe"] or not status["all_components_safe"]:
-        print(f"\n⚠️  Action needed to maintain AI safety!")
+        print("\n⚠️  Action needed to maintain AI safety!")
         print("   Consider reducing file count or improving component isolation.")
 
 
 class AISafetyChecker:
     """Class for checking AI safety constraints during tests."""
 
-    def __init__(self, max_total_files: Optional[int] = None, max_component_files: Optional[int] = None):
+    def __init__(
+        self,
+        max_total_files: Optional[int] = None,
+        max_component_files: Optional[int] = None,
+    ):
         from genesis.core.constants import AILimits
-        
+
         if max_total_files is None:
             max_total_files = AILimits.get_max_project_files()
         if max_component_files is None:
             max_component_files = AILimits.get_max_component_files()
-            
+
         self.max_total_files = max_total_files
         self.max_component_files = max_component_files
 
-    def check_project(self, project_path: Path) -> Dict[str, Any]:
+    def check_project(self, project_path: Path) -> dict[str, Any]:
         """Check entire project for AI safety."""
         return validate_ai_safety_limits(
             project_path, self.max_total_files, self.max_component_files
         )
 
-    def check_component(self, component_path: Path) -> Dict[str, Any]:
+    def check_component(self, component_path: Path) -> dict[str, Any]:
         """Check single component for AI safety."""
         file_count = count_files_in_directory(component_path)
         return {

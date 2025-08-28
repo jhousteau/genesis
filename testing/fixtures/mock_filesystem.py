@@ -1,10 +1,10 @@
 """Filesystem mocks and utilities for testing."""
 
-import tempfile
-import shutil
-from pathlib import Path
-from typing import Dict, List, Any, Optional
 import os
+import shutil
+import tempfile
+from pathlib import Path
+from typing import Any, Optional
 
 
 class MockFilesystem:
@@ -21,7 +21,7 @@ class MockFilesystem:
         self.created_files = []
         self.created_dirs = []
 
-    def create_file(self, relative_path: str, content: str = "") -> Path:
+    def create_file(self, relative_path: str, content: str) -> Path:
         """Create a file with given content."""
         file_path = self.base_path / relative_path
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -36,7 +36,7 @@ class MockFilesystem:
         self.created_dirs.append(dir_path)
         return dir_path
 
-    def create_structure(self, structure: Dict[str, Any]) -> None:
+    def create_structure(self, structure: dict[str, Any]) -> None:
         """Create filesystem structure from nested dict.
 
         Example:
@@ -53,7 +53,7 @@ class MockFilesystem:
         self._create_structure_recursive(structure, self.base_path)
 
     def _create_structure_recursive(
-        self, structure: Dict[str, Any], base: Path
+        self, structure: dict[str, Any], base: Path
     ) -> None:
         """Recursively create structure."""
         for name, content in structure.items():
@@ -67,11 +67,11 @@ class MockFilesystem:
                 # It's a file
                 self.create_file(path.relative_to(self.base_path), str(content))
 
-    def count_files(self, pattern: str = "*") -> int:
+    def count_files(self, pattern: str) -> int:
         """Count files matching pattern."""
         return len(list(self.base_path.rglob(pattern)))
 
-    def list_files(self, pattern: str = "*") -> List[Path]:
+    def list_files(self, pattern: str) -> list[Path]:
         """List files matching pattern."""
         return list(self.base_path.rglob(pattern))
 

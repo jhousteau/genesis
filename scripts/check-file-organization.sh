@@ -66,14 +66,14 @@ REQUIRED_DIRS=(
 
 check_root_clutter() {
     log_check "Checking for files cluttering project root"
-    
+
     local found_issues=false
-    
+
     # Check all files in root (not directories)
     for file in *; do
         if [ -f "$file" ]; then
             local allowed=false
-            
+
             # Check against allowed patterns
             for pattern in "${ALLOWED_ROOT_FILES[@]}"; do
                 if [[ "$file" =~ ^${pattern}$ ]]; then
@@ -81,14 +81,14 @@ check_root_clutter() {
                     break
                 fi
             done
-            
+
             if [ "$allowed" = false ]; then
                 if [ "$found_issues" = false ]; then
                     log_issue "Files in wrong location - should be moved:"
                     found_issues=true
                 fi
                 echo "  $file"
-                
+
                 # Suggest where it should go
                 case "$file" in
                     *.md)
@@ -132,7 +132,7 @@ check_root_clutter() {
             fi
         fi
     done
-    
+
     if [ "$found_issues" = false ]; then
         log_success "Project root is clean"
     fi
@@ -141,9 +141,9 @@ check_root_clutter() {
 
 check_misplaced_scripts() {
     log_check "Checking for scripts outside scripts/ directory"
-    
+
     local found_issues=false
-    
+
     # Find .sh files outside of scripts/ directory or component src/ directories
     if command -v find >/dev/null 2>&1; then
         local misplaced_scripts=$(find . -name "*.sh" \
@@ -155,7 +155,7 @@ check_misplaced_scripts() {
             -not -path "./.venv/*" \
             -not -path "./venv/*" \
             2>/dev/null || true)
-        
+
         if [ -n "$misplaced_scripts" ]; then
             log_issue "Shell scripts in wrong location:"
             echo "$misplaced_scripts" | while read -r script; do
@@ -164,7 +164,7 @@ check_misplaced_scripts() {
             found_issues=true
         fi
     fi
-    
+
     if [ "$found_issues" = false ]; then
         log_success "All shell scripts properly located"
     fi
@@ -173,9 +173,9 @@ check_misplaced_scripts() {
 
 check_documentation_organization() {
     log_check "Checking documentation organization"
-    
+
     local found_issues=false
-    
+
     # Find .md files in wrong places
     if command -v find >/dev/null 2>&1; then
         local misplaced_docs=$(find . -name "*.md" \
@@ -190,7 +190,7 @@ check_documentation_organization() {
             -not -path "./.venv/*" \
             -not -path "./venv/*" \
             2>/dev/null || true)
-        
+
         if [ -n "$misplaced_docs" ]; then
             log_issue "Documentation files in wrong location:"
             echo "$misplaced_docs" | while read -r doc; do
@@ -201,7 +201,7 @@ check_documentation_organization() {
             done
         fi
     fi
-    
+
     if [ "$found_issues" = false ]; then
         log_success "Documentation properly organized"
     fi
@@ -210,9 +210,9 @@ check_documentation_organization() {
 
 check_test_organization() {
     log_check "Checking test file organization"
-    
+
     local found_issues=false
-    
+
     # Find test files outside of tests/ directories
     if command -v find >/dev/null 2>&1; then
         local misplaced_tests=$(find . \( -name "*test*.py" -o -name "*test*.js" -o -name "*test*.ts" -o -name "conftest.py" \) \
@@ -223,7 +223,7 @@ check_test_organization() {
             -not -path "./.venv/*" \
             -not -path "./venv/*" \
             2>/dev/null || true)
-        
+
         if [ -n "$misplaced_tests" ]; then
             log_issue "Test files in wrong location:"
             echo "$misplaced_tests" | while read -r test; do
@@ -232,7 +232,7 @@ check_test_organization() {
             found_issues=true
         fi
     fi
-    
+
     if [ "$found_issues" = false ]; then
         log_success "Test files properly organized"
     fi
@@ -241,15 +241,15 @@ check_test_organization() {
 
 check_directory_structure() {
     log_check "Checking for required directory structure"
-    
+
     local missing_dirs=()
-    
+
     for dir in "${REQUIRED_DIRS[@]}"; do
         if [ ! -d "$dir" ]; then
             missing_dirs+=("$dir")
         fi
     done
-    
+
     if [ ${#missing_dirs[@]} -gt 0 ]; then
         log_issue "Missing required directories:"
         for dir in "${missing_dirs[@]}"; do
@@ -263,7 +263,7 @@ check_directory_structure() {
 
 # Run all checks
 check_root_clutter
-check_misplaced_scripts  
+check_misplaced_scripts
 check_documentation_organization
 check_test_organization
 check_directory_structure

@@ -11,10 +11,11 @@ Provides structured error handling with:
 import json
 import traceback
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Optional
 
 
 class ErrorSeverity(Enum):
@@ -58,9 +59,9 @@ class ErrorContext:
     request_id: Optional[str] = None
     trace_id: Optional[str] = None
     span_id: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert context to dictionary for serialization."""
         return {
             "correlation_id": self.correlation_id,
@@ -80,20 +81,20 @@ class ErrorContext:
     ) -> "ErrorContext":
         """
         Create a default error context with proper service and environment detection.
-        
+
         Args:
             service: Optional service name override
             environment: Optional environment override
-            
+
         Returns:
             ErrorContext instance
-            
+
         Raises:
             ValueError: If service or environment cannot be determined
         """
         if service is None or environment is None:
-            from genesis.core.constants import get_service_name, get_environment
-            
+            from genesis.core.constants import get_environment, get_service_name
+
             if service is None:
                 service = get_service_name()
             if environment is None:
@@ -118,12 +119,12 @@ class GenesisError(Exception):
     def __init__(
         self,
         message: str,
-        code: str = "GENESIS_ERROR",
+        code: str = "SYSTEM_ERROR",
         category: ErrorCategory = ErrorCategory.UNKNOWN,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
         context: Optional[ErrorContext] = None,
         cause: Optional[Exception] = None,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
         retry_after: Optional[int] = None,
         recoverable: bool = True,
     ):
@@ -143,11 +144,11 @@ class GenesisError(Exception):
         """Create default error context with proper detection."""
         return ErrorContext.create_default()
 
-    def _capture_stack_trace(self) -> List[str]:
+    def _capture_stack_trace(self) -> list[str]:
         """Capture current stack trace for debugging."""
         return traceback.format_stack()[:-1]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary for logging/serialization."""
         error_dict = {
             "error": {
@@ -324,7 +325,7 @@ class ErrorHandler:
     def __init__(self, service_name: str, environment: str):
         """
         Initialize error handler with required service and environment info.
-        
+
         Args:
             service_name: Name of the service (required)
             environment: Environment name (required)
@@ -333,10 +334,10 @@ class ErrorHandler:
             raise ValueError("service_name is required and cannot be empty")
         if not environment or not environment.strip():
             raise ValueError("environment is required and cannot be empty")
-            
+
         self.service_name = service_name.strip()
         self.environment = environment.strip()
-        self.handlers: List[Callable[[GenesisError], None]] = []
+        self.handlers: list[Callable[[GenesisError], None]] = []
 
     def handle(
         self, error: Exception, context: Optional[ErrorContext] = None
@@ -396,8 +397,7 @@ class ErrorHandler:
         # Create context if not provided
         if context is None:
             context = ErrorContext.create_default(
-                service=self.service_name, 
-                environment=self.environment
+                service=self.service_name, environment=self.environment
             )
 
         return genesis_error_class(message=str(error), context=context, cause=error)
@@ -414,17 +414,17 @@ _error_handler: Optional[ErrorHandler] = None
 def get_error_handler() -> ErrorHandler:
     """
     Get the global error handler instance.
-    
+
     Returns:
         ErrorHandler instance with properly configured service and environment
-        
+
     Raises:
         ValueError: If service name or environment cannot be determined
     """
     global _error_handler
     if _error_handler is None:
-        from genesis.core.constants import get_service_name, get_environment
-        
+        from genesis.core.constants import get_environment, get_service_name
+
         _error_handler = ErrorHandler(
             service_name=get_service_name(),
             environment=get_environment(),

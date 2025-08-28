@@ -103,7 +103,7 @@ class GenesisLogger implements Logger {
     }
 
     const formattedMessage = this.formatMessage(level, message, extra);
-    
+
     // Route to appropriate console method
     switch (level) {
       case LogLevel.DEBUG:

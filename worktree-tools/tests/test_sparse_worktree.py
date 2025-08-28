@@ -3,9 +3,8 @@
 import os
 import subprocess
 import tempfile
-import shutil
 from pathlib import Path
-from unittest.mock import patch
+
 import pytest
 
 
@@ -236,7 +235,7 @@ class TestSparseWorktreeCreator:
         """Test that script meets the ~150 line requirement."""
         script_path = Path(__file__).parent.parent / "src" / "create-sparse-worktree.sh"
 
-        with open(script_path, "r") as f:
+        with open(script_path) as f:
             lines = len(f.readlines())
 
         assert lines <= 170, f"Script should be ~150 lines, got {lines}"
@@ -246,7 +245,7 @@ class TestSparseWorktreeCreator:
         """Test that AI safety features are documented in the script."""
         script_path = Path(__file__).parent.parent / "src" / "create-sparse-worktree.sh"
 
-        with open(script_path, "r") as f:
+        with open(script_path) as f:
             content = f.read()
 
         # Check for key AI safety features
@@ -262,7 +261,7 @@ class TestSparseWorktreeCreator:
         """Test that color output is properly configured."""
         script_path = Path(__file__).parent.parent / "src" / "create-sparse-worktree.sh"
 
-        with open(script_path, "r") as f:
+        with open(script_path) as f:
             content = f.read()
 
         # Check for color definitions

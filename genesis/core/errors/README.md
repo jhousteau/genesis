@@ -16,7 +16,7 @@ except Exception as e:
 ## Error Categories
 
 - `INFRASTRUCTURE` - Infrastructure and deployment failures
-- `NETWORK` - Network connectivity and timeout issues  
+- `NETWORK` - Network connectivity and timeout issues
 - `VALIDATION` - Input validation and data format errors
 - `AUTHENTICATION` - Authentication and authorization failures
 - `DATABASE` - Database connection and query errors

@@ -170,7 +170,7 @@ genesis commit --message "description"     # Smart commit with autofix
 
 ### Available Templates
 - `python-api` - FastAPI service (default)
-- `cli-tool` - Command-line application  
+- `cli-tool` - Command-line application
 - `typescript-service` - Express.js service
 - `terraform-project` - Infrastructure project
 
@@ -180,7 +180,7 @@ Genesis uses convergent fixing to ensure code quality:
 
 ### Stage 1: Formatters
 - **Black**: Python code formatting
-- **Prettier**: TypeScript/JavaScript formatting  
+- **Prettier**: TypeScript/JavaScript formatting
 - **isort**: Python import organization
 
 ### Stage 2: Linters
