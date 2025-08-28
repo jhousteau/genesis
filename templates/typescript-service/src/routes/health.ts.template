@@ -1,0 +1,95 @@
+/**
+ * Health check routes for {{project_name}}
+ */
+
+import express from 'express';
+
+const router = express.Router();
+
+interface HealthResponse {
+  status: 'healthy' | 'unhealthy';
+  service: string;
+  version: string;
+  timestamp: string;
+  uptime: number;
+  environment: string;
+  checks?: {
+    [key: string]: {
+      status: 'pass' | 'fail';
+      message?: string;
+    };
+  };
+}
+
+// Basic health check
+router.get('/', (req, res) => {
+  const health: HealthResponse = {
+    status: 'healthy',
+    service: '{{project_name}}',
+    version: '0.1.0',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  };
+
+  res.json(health);
+});
+
+// Detailed health check with dependencies
+router.get('/detailed', async (req, res) => {
+  const checks: HealthResponse['checks'] = {};
+
+  // Example: Database check (add your own checks here)
+  // try {
+  //   await database.ping();
+  //   checks.database = { status: 'pass' };
+  // } catch (error) {
+  //   checks.database = { status: 'fail', message: error.message };
+  // }
+
+  // Example: External API check
+  // try {
+  //   const response = await fetch('https://api.example.com/health');
+  //   checks.externalApi = { status: response.ok ? 'pass' : 'fail' };
+  // } catch (error) {
+  //   checks.externalApi = { status: 'fail', message: error.message };
+  // }
+
+  const allHealthy = Object.values(checks).every(check => check.status === 'pass');
+
+  const health: HealthResponse = {
+    status: allHealthy ? 'healthy' : 'unhealthy',
+    service: '{{project_name}}',
+    version: '0.1.0',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    checks
+  };
+
+  const statusCode = allHealthy ? 200 : 503;
+  res.status(statusCode).json(health);
+});
+
+// Readiness check (for Kubernetes)
+router.get('/ready', (req, res) => {
+  // Add your readiness logic here
+  // For example, check if database connections are ready
+  
+  res.json({
+    status: 'ready',
+    service: '{{project_name}}',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Liveness check (for Kubernetes)  
+router.get('/live', (req, res) => {
+  res.json({
+    status: 'alive',
+    service: '{{project_name}}',
+    timestamp: new Date().toISOString()
+  });
+});
+
+export { router as healthRouter };

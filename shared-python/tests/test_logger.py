@@ -4,7 +4,7 @@ import json
 import logging
 from io import StringIO
 
-from shared_core.logger import get_logger, LogConfig, JSONFormatter
+from shared_core.logger import LogConfig, get_logger
 
 
 class TestLogger:

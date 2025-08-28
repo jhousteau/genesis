@@ -1,0 +1,58 @@
+{
+  "name": "TypeScript Service", 
+  "description": "Express-based TypeScript service with testing and build pipeline",
+  "variables": {
+    "project_name": "string",
+    "project_description": "string",
+    "author_name": "string", 
+    "author_email": "string",
+    "node_version": "18"
+  },
+  "files": [
+    {
+      "src": "package.json.template",
+      "dest": "package.json",
+      "substitute": true
+    },
+    {
+      "src": "tsconfig.json.template", 
+      "dest": "tsconfig.json",
+      "substitute": true
+    },
+    {
+      "src": "src/index.ts.template",
+      "dest": "src/index.ts",
+      "substitute": true
+    },
+    {
+      "src": "src/app.ts.template",
+      "dest": "src/app.ts", 
+      "substitute": true
+    },
+    {
+      "src": "src/routes/health.ts.template",
+      "dest": "src/routes/health.ts",
+      "substitute": true
+    },
+    {
+      "src": "tests/app.test.ts.template",
+      "dest": "tests/app.test.ts",
+      "substitute": true
+    },
+    {
+      "src": "README.md.template",
+      "dest": "README.md",
+      "substitute": true
+    },
+    {
+      "src": ".env.example.template",
+      "dest": ".env.example", 
+      "substitute": true
+    },
+    {
+      "src": "Makefile.template",
+      "dest": "Makefile",
+      "substitute": true
+    }
+  ]
+}

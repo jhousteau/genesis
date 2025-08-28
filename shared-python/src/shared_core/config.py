@@ -1,9 +1,10 @@
 """Lightweight configuration management with YAML and environment variables."""
 
 import os
-import yaml
-from typing import Any, Dict, Optional, Union
 from pathlib import Path
+from typing import Any, Optional, Union
+
+import yaml
 
 
 class ConfigLoader:
@@ -16,18 +17,18 @@ class ConfigLoader:
             env_prefix: Prefix for environment variables (e.g., "APP_")
         """
         self.env_prefix = env_prefix.upper()
-        self._config: Dict[str, Any] = {}
+        self._config: dict[str, Any] = {}
     
-    def load_file(self, file_path: Union[str, Path]) -> Dict[str, Any]:
+    def load_file(self, file_path: Union[str, Path]) -> dict[str, Any]:
         """Load configuration from YAML file."""
         path = Path(file_path)
         if not path.exists():
             return {}
         
-        with open(path, 'r') as f:
+        with open(path) as f:
             return yaml.safe_load(f) or {}
     
-    def load_env(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    def load_env(self, config: dict[str, Any]) -> dict[str, Any]:
         """Apply environment variable overrides to config."""
         result = config.copy()
         
@@ -53,8 +54,8 @@ class ConfigLoader:
     def load(
         self, 
         file_path: Optional[Union[str, Path]] = None,
-        defaults: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        defaults: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
         """Load configuration with precedence: defaults < file < environment.
         
         Args:
@@ -89,8 +90,8 @@ class ConfigLoader:
 def load_config(
     file_path: Optional[Union[str, Path]] = None,
     env_prefix: str = "",
-    defaults: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    defaults: Optional[dict[str, Any]] = None
+) -> dict[str, Any]:
     """Simple function interface for loading configuration.
     
     Args:

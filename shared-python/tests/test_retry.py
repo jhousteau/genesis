@@ -1,11 +1,10 @@
 """Tests for retry functionality."""
 
-import asyncio
-import pytest
 import time
 from unittest.mock import Mock
 
-from shared_core.retry import retry, RetryConfig
+import pytest
+from shared_core.retry import RetryConfig, retry
 
 
 class TestRetry:

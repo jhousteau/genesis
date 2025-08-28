@@ -1,4 +1,4 @@
-.PHONY: setup test lint build clean help install-dev install-prod worktree-create file-check
+.PHONY: setup test lint build clean help install-dev install-prod worktree-create file-check bootstrap status commit sync ai-safety-report extraction-status genesis-cli genesis-lint genesis-lint-fix genesis-lint-fix-all genesis-format genesis-test genesis-quality
 .DEFAULT_GOAL := help
 
 # Colors for output
@@ -68,20 +68,24 @@ test: ## Run all tests with coverage
 lint: ## Run all linters and formatters
 	@echo "$(BLUE)Running linters for $(PROJECT_NAME)...$(NC)"
 	@if command -v ruff >/dev/null 2>&1; then \
-		echo "$(BLUE)Running ruff...$(NC)"; \
+		echo "$(BLUE)Running ruff (respects .gitignore)...$(NC)"; \
 		ruff check .; \
 	fi
 	@if command -v black >/dev/null 2>&1; then \
-		echo "$(BLUE)Running black...$(NC)"; \
+		echo "$(BLUE)Running black (respects .gitignore)...$(NC)"; \
 		black --check .; \
 	fi
 	@if command -v mypy >/dev/null 2>&1; then \
-		echo "$(BLUE)Running mypy...$(NC)"; \
+		echo "$(BLUE)Running mypy (respects .gitignore)...$(NC)"; \
 		mypy .; \
 	fi
 	@if [ -f "package.json" ] && command -v eslint >/dev/null 2>&1; then \
 		echo "$(BLUE)Running eslint...$(NC)"; \
-		npx eslint src/**/*.ts; \
+		if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+			git ls-files --cached --others --exclude-standard | grep -E '\.(ts|js)$$' | xargs -r npx eslint; \
+		else \
+			npx eslint src/**/*.ts; \
+		fi; \
 	fi
 	@if [ -f "go.mod" ]; then \
 		echo "$(BLUE)Running go fmt and go vet...$(NC)"; \
@@ -92,16 +96,20 @@ lint: ## Run all linters and formatters
 format: ## Auto-format all code
 	@echo "$(BLUE)Formatting code for $(PROJECT_NAME)...$(NC)"
 	@if command -v black >/dev/null 2>&1; then \
-		echo "$(BLUE)Formatting Python with black...$(NC)"; \
+		echo "$(BLUE)Formatting Python with black (respects .gitignore)...$(NC)"; \
 		black .; \
 	fi
 	@if command -v ruff >/dev/null 2>&1; then \
-		echo "$(BLUE)Auto-fixing with ruff...$(NC)"; \
+		echo "$(BLUE)Auto-fixing with ruff (respects .gitignore)...$(NC)"; \
 		ruff check --fix .; \
 	fi
 	@if [ -f "package.json" ] && command -v prettier >/dev/null 2>&1; then \
 		echo "$(BLUE)Formatting TypeScript with prettier...$(NC)"; \
-		npx prettier --write src/**/*.ts; \
+		if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+			git ls-files --cached --others --exclude-standard | grep -E '\.(ts|js)$$' | xargs -r npx prettier --write; \
+		else \
+			npx prettier --write src/**/*.ts; \
+		fi; \
 	fi
 	@if [ -f "go.mod" ]; then \
 		echo "$(BLUE)Formatting Go code...$(NC)"; \
@@ -150,8 +158,13 @@ endif
 
 file-check: ## Verify AI safety file limits
 	@echo "$(BLUE)Checking file count for AI safety...$(NC)"
-	@file_count=$$(find . -type f | wc -l); \
-	echo "$(BLUE)Current file count: $$file_count$(NC)"; \
+	@if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+		file_count=$$(git ls-files --cached --others --exclude-standard | wc -l | tr -d ' '); \
+		echo "$(BLUE)Current file count (respecting .gitignore): $$file_count$(NC)"; \
+	else \
+		file_count=$$(find . -type f -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./__pycache__/*" -not -path "./old-bloated-code-read-only/*" | wc -l | tr -d ' '); \
+		echo "$(BLUE)Current file count (basic exclusions): $$file_count$(NC)"; \
+	fi; \
 	if [ $$file_count -gt 100 ]; then \
 		echo "$(RED)❌ WARNING: $$file_count files exceeds recommended limit of 100$(NC)"; \
 		echo "$(YELLOW)Consider using sparse worktrees for AI-safe development$(NC)"; \
@@ -187,14 +200,111 @@ version: ## Show project version information
 		echo "Go: $$(go list -m 2>/dev/null || echo 'unknown')"; \
 	fi
 
-help: ## Show this help message
-	@echo "$(BLUE)$(PROJECT_NAME) - Available commands:$(NC)"
+genesis-cli: ## Install Genesis CLI for development
+	@echo "$(BLUE)Installing Genesis CLI for development...$(NC)"
+	@cd genesis-cli && poetry install
+	@echo "$(GREEN)✓ Genesis CLI installed!$(NC)"
+	@echo "$(YELLOW)You can now use: cd genesis-cli && poetry run genesis --help$(NC)"
+
+genesis-lint: ## Lint Genesis Python components specifically
+	@echo "$(BLUE)Linting Genesis Python components...$(NC)"
+	@cd shared-python && poetry run ruff check .
+	@cd genesis-cli && poetry run ruff check .
+	@echo "$(GREEN)✓ Genesis linting complete$(NC)"
+
+genesis-lint-fix: ## Lint and auto-fix Genesis Python components
+	@echo "$(BLUE)Linting and auto-fixing Genesis Python components...$(NC)"
+	@cd shared-python && poetry run ruff check --fix .
+	@cd genesis-cli && poetry run ruff check --fix .
+	@echo "$(GREEN)✓ Genesis auto-fix complete$(NC)"
+
+genesis-lint-fix-all: ## Lint and auto-fix Genesis components (including unsafe fixes)
+	@echo "$(BLUE)Linting and auto-fixing Genesis (including unsafe fixes)...$(NC)"
+	@cd shared-python && poetry run ruff check --fix --unsafe-fixes .
+	@cd genesis-cli && poetry run ruff check --fix --unsafe-fixes .
+	@echo "$(GREEN)✓ Genesis comprehensive auto-fix complete$(NC)"
+
+genesis-format: ## Format Genesis Python components specifically  
+	@echo "$(BLUE)Formatting Genesis Python components...$(NC)"
+	@cd shared-python && poetry run black . && poetry run isort .
+	@cd genesis-cli && poetry run black . && poetry run isort .
+	@echo "$(GREEN)✓ Genesis formatting complete$(NC)"
+
+genesis-test: ## Run Genesis-specific tests
+	@echo "$(BLUE)Running Genesis test suite...$(NC)"
+	@pytest -v --tb=short
+	@echo "$(GREEN)✓ Genesis tests complete$(NC)"
+
+genesis-quality: ## Run Genesis quality checks (format + lint-fix + test)
+	@echo "$(BLUE)Running complete Genesis quality pipeline...$(NC)"
+	@$(MAKE) genesis-format
+	@$(MAKE) genesis-lint-fix
+	@$(MAKE) genesis-test
+	@echo "$(GREEN)✅ Genesis quality pipeline complete!$(NC)"
+
+bootstrap: ## Create new project with Genesis (usage: make bootstrap name=my-project type=python-api)
+ifndef name
+	$(error Missing required parameter: name. Usage: make bootstrap name=<name> [type=python-api])
+endif
+	@echo "$(BLUE)Bootstrapping new project: $(name)...$(NC)"
+	@cd genesis-cli && poetry run genesis bootstrap $(name) --type $(or $(type),python-api)
+
+status: ## Check Genesis project status
+	@echo "$(BLUE)Checking Genesis project status...$(NC)"
+	@cd genesis-cli && poetry run genesis status
+
+commit: ## Smart commit with Genesis quality gates
+	@echo "$(BLUE)Running Genesis smart commit...$(NC)"
+	@cd genesis-cli && poetry run genesis commit
+
+sync: ## Sync Genesis components
+	@echo "$(BLUE)Syncing Genesis components...$(NC)"
+	@cd genesis-cli && poetry run genesis sync
+
+ai-safety-report: ## Generate comprehensive AI safety report
+	@echo "$(BLUE)Generating AI safety report...$(NC)"
+	@python -c "from testing.utilities import print_ai_safety_report; from pathlib import Path; print_ai_safety_report(Path('.'))" 2>/dev/null || echo "$(YELLOW)⚠️  Install testing utilities first: make setup$(NC)"
+
+extraction-status: ## Show Genesis extraction progress
+	@echo "$(BLUE)Genesis Extraction Progress:$(NC)"
+	@echo "$(GREEN)✅ Phase 0: Foundation - Complete$(NC)"
+	@echo "$(GREEN)✅ Phase 1: Structure - Complete$(NC)"
+	@echo "$(GREEN)✅ Phase 2: Components - Complete$(NC)"
+	@echo "$(GREEN)✅ Phase 3: Testing & Templates - Complete$(NC)"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo "$(BLUE)Components Status:$(NC)"
+	@for component in bootstrap genesis-cli shared-python smart-commit worktree-tools testing; do \
+		if [ -d "$$component" ]; then \
+			files=$$(find $$component -type f | wc -l | tr -d ' '); \
+			if [ $$files -le 30 ]; then \
+				echo "$(GREEN)✅ $$component: $$files files (AI safe)$(NC)"; \
+			else \
+				echo "$(YELLOW)⚠️  $$component: $$files files (check limits)$(NC)"; \
+			fi; \
+		else \
+			echo "$(RED)❌ $$component: Missing$(NC)"; \
+		fi; \
+	done
+	@echo ""
+	@echo "$(BLUE)🎯 Status: Ready for production use$(NC)"
+
+help: ## Show this help message
+	@echo "$(BLUE)Genesis Development Toolkit$(NC)"
+	@echo "$(BLUE)============================$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Core Development:$(NC)"
+	@grep -E '^(setup|test|lint|format|build|clean):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(YELLOW)Genesis Commands:$(NC)"
+	@grep -E '^(genesis-cli|genesis-lint|genesis-lint-fix|genesis-lint-fix-all|genesis-format|genesis-test|bootstrap|status|commit|sync|ai-safety-report|extraction-status):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+	@echo "$(YELLOW)Utilities:$(NC)"
+	@grep -E '^(worktree-create|file-check|security|version):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "$(YELLOW)Examples:$(NC)"
-	@echo "  make setup                          # Initial project setup"
+	@echo "  make setup                          # Initial Genesis setup"
+	@echo "  make genesis-cli                    # Install Genesis CLI"
 	@echo "  make test                           # Run all tests"
-	@echo "  make lint format                    # Lint and format code"
+	@echo "  make bootstrap name=my-api type=python-api"
+	@echo "  make ai-safety-report               # Check AI safety"
 	@echo "  make worktree-create name=fix-bug path=src/bug.py"
-	@echo "  make file-check                     # Check AI safety limits"

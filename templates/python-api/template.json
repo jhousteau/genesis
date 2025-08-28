@@ -1,0 +1,48 @@
+{
+  "name": "Python API",
+  "description": "FastAPI-based REST API with Poetry, tests, and CI/CD",
+  "variables": {
+    "project_name": "string",
+    "project_description": "string",
+    "author_name": "string",
+    "author_email": "string",
+    "python_version": "3.11"
+  },
+  "files": [
+    {
+      "src": "pyproject.toml.template",
+      "dest": "pyproject.toml",
+      "substitute": true
+    },
+    {
+      "src": "src/{{project_name}}/__init__.py.template",
+      "dest": "src/{{project_name}}/__init__.py",
+      "substitute": true
+    },
+    {
+      "src": "src/{{project_name}}/main.py.template", 
+      "dest": "src/{{project_name}}/main.py",
+      "substitute": true
+    },
+    {
+      "src": "tests/test_main.py.template",
+      "dest": "tests/test_main.py", 
+      "substitute": true
+    },
+    {
+      "src": "README.md.template",
+      "dest": "README.md",
+      "substitute": true
+    },
+    {
+      "src": ".env.example.template",
+      "dest": ".env.example",
+      "substitute": true
+    },
+    {
+      "src": "Makefile.template",
+      "dest": "Makefile",
+      "substitute": true
+    }
+  ]
+}

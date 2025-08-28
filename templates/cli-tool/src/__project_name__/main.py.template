@@ -1,0 +1,12 @@
+"""Main entry point for {{project_name}}."""
+
+from {{project_name}}.cli import cli
+
+
+def main():
+    """Main entry point."""
+    cli()
+
+
+if __name__ == '__main__':
+    main()

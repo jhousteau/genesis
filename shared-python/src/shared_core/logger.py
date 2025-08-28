@@ -3,9 +3,9 @@
 import json
 import logging
 import sys
-from typing import Any, Dict, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any, Optional
 
 
 @dataclass
@@ -15,7 +15,7 @@ class LogConfig:
     format_json: bool = True
     include_timestamp: bool = True
     include_caller: bool = False
-    extra_fields: Dict[str, Any] = field(default_factory=dict)
+    extra_fields: dict[str, Any] = field(default_factory=dict)
 
 
 class JSONFormatter(logging.Formatter):

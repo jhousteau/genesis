@@ -1,7 +1,6 @@
 """Tests for health check functionality."""
 
-from datetime import datetime
-from shared_core.health import HealthCheck, HealthStatus, CheckResult
+from shared_core.health import CheckResult, HealthCheck, HealthStatus
 
 
 class TestHealthCheck:

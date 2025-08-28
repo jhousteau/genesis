@@ -1,0 +1,60 @@
+"""CLI commands for {{project_name}}."""
+
+from typing import Optional
+
+import click
+from rich.console import Console
+from rich.panel import Panel
+
+console = Console()
+
+
+@click.group()
+@click.version_option(version="0.1.0", prog_name="{{project_name}}")
+@click.pass_context
+def cli(ctx):
+    """{{project_description}}"""
+    ctx.ensure_object(dict)
+
+
+@cli.command()
+@click.option('--name', '-n', default='World', help='Name to greet')
+@click.option('--count', '-c', default=1, help='Number of greetings')
+def hello(name: str, count: int):
+    """Say hello to someone."""
+    for _ in range(count):
+        console.print(f"Hello {name}! 👋")
+
+
+@cli.command()
+@click.argument('text')
+@click.option('--style', default='info', 
+              type=click.Choice(['info', 'success', 'warning', 'error']),
+              help='Display style')
+def display(text: str, style: str):
+    """Display text with styling."""
+    styles = {
+        'info': 'blue',
+        'success': 'green', 
+        'warning': 'yellow',
+        'error': 'red'
+    }
+    
+    panel = Panel(
+        text,
+        title=f"{{project_name}} - {style.title()}",
+        border_style=styles[style]
+    )
+    console.print(panel)
+
+
+@cli.command()
+def status():
+    """Show application status."""
+    console.print("✅ {{project_name}} is running!")
+    console.print(f"📦 Version: 0.1.0")
+    console.print(f"🐍 Python CLI Tool")
+
+
+if __name__ == '__main__':
+    cli()

@@ -94,17 +94,17 @@ fi
 
 # Checkout files and count
 git checkout -q
-FILE_COUNT=$(find . -type f -not -path "./.git/*" | wc -l)
+FILE_COUNT=$(git ls-files --cached --others --exclude-standard | wc -l)
 
 # Apply file count restrictions if needed
 if [[ $FILE_COUNT -gt $MAX_FILES ]]; then
     echo -e "${YELLOW}File count ($FILE_COUNT) exceeds limit ($MAX_FILES) - applying restrictions${NC}"
     
     # Restrict to code files only
-    find . -type f \( -name "*.py" -o -name "*.ts" -o -name "*.js" -o -name "*.go" -o -name "*.sh" -o -name "*.md" \) \
-        -not -path "./.git/*" | head -"$MAX_FILES" | sed 's|^\./||' > .git/info/sparse-checkout
+    git ls-files --cached --others --exclude-standard | \
+        grep -E '\.(py|ts|js|go|sh|md)$' | head -"$MAX_FILES" > .git/info/sparse-checkout
     git read-tree -m -u HEAD
-    FILE_COUNT=$(find . -type f -not -path "./.git/*" | wc -l)
+    FILE_COUNT=$(git ls-files --cached --others --exclude-standard | wc -l)
 fi
 
 # Create AI safety manifest
@@ -140,7 +140,7 @@ echo -e "${BLUE}Depth:${NC} $MAX_DEPTH levels"
 
 echo
 echo -e "${BLUE}Included files:${NC}"
-find . -type f -not -path "./.git/*" -not -name ".ai-safety-manifest" | head -8
+git ls-files --cached --others --exclude-standard | grep -v ".ai-safety-manifest" | head -8
 [[ $FILE_COUNT -gt 8 ]] && echo "  ... and $((FILE_COUNT - 8)) more"
 
 # Safety verification

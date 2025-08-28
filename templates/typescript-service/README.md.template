@@ -1,0 +1,162 @@
+# {{project_name}}
+
+{{project_description}}
+
+## Features
+
+- Express.js web framework with TypeScript
+- Comprehensive health check endpoints
+- Security middleware (Helmet, CORS)
+- Error handling and logging
+- Jest testing with Supertest
+- ESLint and Prettier for code quality
+- Hot reload development setup
+
+## Prerequisites
+
+- Node.js {{node_version}}+
+- npm or yarn
+
+## Quick Start
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Copy environment file
+cp .env.example .env
+```
+
+### Development
+
+```bash
+# Start development server with hot reload
+npm run dev
+
+# Run tests
+npm test
+
+# Run tests in watch mode  
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Building for Production
+
+```bash
+# Build the application
+npm run build
+
+# Start production server
+npm start
+```
+
+## API Endpoints
+
+### Root
+- `GET /` - Welcome message and service info
+
+### Health Checks
+- `GET /health` - Basic health check
+- `GET /health/detailed` - Detailed health with dependency checks
+- `GET /health/ready` - Readiness probe (Kubernetes)
+- `GET /health/live` - Liveness probe (Kubernetes)
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+```env
+NODE_ENV=development
+PORT=3000
+HOST=0.0.0.0
+LOG_LEVEL=info
+```
+
+## Development Commands
+
+```bash
+# Development
+npm run dev          # Start with hot reload
+npm run build        # Build for production
+npm start           # Start production server
+
+# Testing
+npm test            # Run tests
+npm run test:watch  # Run tests in watch mode
+npm run test:coverage # Run with coverage
+
+# Code Quality
+npm run lint        # Lint code
+npm run lint:fix    # Fix linting issues
+npm run format      # Format with Prettier
+npm run typecheck   # TypeScript type checking
+npm run quality     # Run all quality checks
+
+# Utilities
+npm run clean       # Clean build artifacts
+```
+
+## Project Structure
+
+```
+{{project_name}}/
+├── src/
+│   ├── index.ts          # Application entry point
+│   ├── app.ts            # Express app setup
+│   └── routes/
+│       └── health.ts     # Health check routes
+├── tests/
+│   └── app.test.ts       # Application tests
+├── dist/                 # Built JavaScript (after npm run build)
+├── coverage/             # Test coverage reports
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+## Health Checks
+
+The service provides multiple health check endpoints:
+
+- **Basic Health**: `GET /health` - Returns service status and basic info
+- **Detailed Health**: `GET /health/detailed` - Includes dependency checks
+- **Readiness**: `GET /health/ready` - For container orchestration readiness probes
+- **Liveness**: `GET /health/live` - For container orchestration liveness probes
+
+## Docker Support
+
+```bash
+# Build image
+docker build -t {{project_name}}:latest .
+
+# Run container
+docker run -p 3000:3000 {{project_name}}:latest
+```
+
+## Testing
+
+The project uses Jest with Supertest for API testing:
+
+```bash
+# Run all tests
+npm test
+
+# Watch mode for development
+npm run test:watch
+
+# Coverage report
+npm run test:coverage
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Run quality checks: `npm run quality`
+5. Submit a pull request

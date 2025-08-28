@@ -4,8 +4,9 @@ import asyncio
 import functools
 import random
 import time
-from typing import Any, Callable, Optional, Type, Union
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any, Optional
 
 
 @dataclass
@@ -16,7 +17,7 @@ class RetryConfig:
     max_delay: float = 60.0
     exponential_base: float = 2.0
     jitter: bool = True
-    exceptions: tuple[Type[Exception], ...] = (Exception,)
+    exceptions: tuple[type[Exception], ...] = (Exception,)
 
 
 def retry(config: Optional[RetryConfig] = None) -> Callable:

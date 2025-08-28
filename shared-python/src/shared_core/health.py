@@ -1,10 +1,11 @@
 """Lightweight health check system."""
 
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 import time
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any
 
 
 class HealthStatus(Enum):
@@ -22,14 +23,14 @@ class CheckResult:
     message: str = ""
     duration_ms: float = 0.0
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class HealthCheck:
     """Simple health check coordinator."""
     
     def __init__(self):
-        self._checks: Dict[str, Callable[[], CheckResult]] = {}
+        self._checks: dict[str, Callable[[], CheckResult]] = {}
     
     def add_check(self, name: str, check_func: Callable[[], CheckResult]) -> None:
         """Add a health check function.
@@ -66,7 +67,7 @@ class HealthCheck:
                 duration_ms=(time.time() - start_time) * 1000
             )
     
-    def run_all_checks(self) -> List[CheckResult]:
+    def run_all_checks(self) -> list[CheckResult]:
         """Run all registered health checks."""
         return [self.run_check(name) for name in self._checks.keys()]
     
@@ -87,7 +88,7 @@ class HealthCheck:
         
         return HealthStatus.HEALTHY
     
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get health check summary."""
         results = self.run_all_checks()
         overall_status = self.get_overall_status()

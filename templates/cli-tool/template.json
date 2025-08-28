@@ -1,0 +1,49 @@
+{
+  "name": "CLI Tool",
+  "description": "Click-based command-line tool with Poetry and tests",
+  "variables": {
+    "project_name": "string",
+    "project_description": "string", 
+    "author_name": "string",
+    "author_email": "string",
+    "python_version": "3.11",
+    "command_name": "string"
+  },
+  "files": [
+    {
+      "src": "pyproject.toml.template",
+      "dest": "pyproject.toml",
+      "substitute": true
+    },
+    {
+      "src": "src/{{project_name}}/__init__.py.template",
+      "dest": "src/{{project_name}}/__init__.py",
+      "substitute": true
+    },
+    {
+      "src": "src/{{project_name}}/cli.py.template",
+      "dest": "src/{{project_name}}/cli.py",
+      "substitute": true
+    },
+    {
+      "src": "src/{{project_name}}/main.py.template",
+      "dest": "src/{{project_name}}/main.py", 
+      "substitute": true
+    },
+    {
+      "src": "tests/test_cli.py.template",
+      "dest": "tests/test_cli.py",
+      "substitute": true
+    },
+    {
+      "src": "README.md.template",
+      "dest": "README.md",
+      "substitute": true
+    },
+    {
+      "src": "Makefile.template",
+      "dest": "Makefile",
+      "substitute": true
+    }
+  ]
+}

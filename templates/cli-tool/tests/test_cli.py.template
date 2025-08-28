@@ -1,0 +1,71 @@
+"""Tests for CLI commands."""
+
+import pytest
+from click.testing import CliRunner
+
+from {{project_name}}.cli import cli
+
+
+@pytest.fixture
+def runner():
+    """Create CLI test runner."""
+    return CliRunner()
+
+
+def test_cli_help(runner):
+    """Test CLI help command."""
+    result = runner.invoke(cli, ['--help'])
+    assert result.exit_code == 0
+    assert '{{project_description}}' in result.output
+
+
+def test_hello_command(runner):
+    """Test hello command."""
+    result = runner.invoke(cli, ['hello'])
+    assert result.exit_code == 0
+    assert 'Hello World!' in result.output
+
+
+def test_hello_with_name(runner):
+    """Test hello command with custom name."""
+    result = runner.invoke(cli, ['hello', '--name', 'Alice'])
+    assert result.exit_code == 0
+    assert 'Hello Alice!' in result.output
+
+
+def test_hello_with_count(runner):
+    """Test hello command with count option."""
+    result = runner.invoke(cli, ['hello', '--count', '3'])
+    assert result.exit_code == 0
+    assert result.output.count('Hello World!') == 3
+
+
+def test_display_command(runner):
+    """Test display command."""
+    result = runner.invoke(cli, ['display', 'Test message'])
+    assert result.exit_code == 0
+    assert 'Test message' in result.output
+
+
+def test_display_with_style(runner):
+    """Test display command with different styles."""
+    styles = ['info', 'success', 'warning', 'error']
+    
+    for style in styles:
+        result = runner.invoke(cli, ['display', 'Test', '--style', style])
+        assert result.exit_code == 0
+        assert 'Test' in result.output
+
+
+def test_status_command(runner):
+    """Test status command."""
+    result = runner.invoke(cli, ['status'])
+    assert result.exit_code == 0
+    assert '{{project_name}} is running!' in result.output
+    assert 'Version: 0.1.0' in result.output
+
+
+def test_invalid_command(runner):
+    """Test invalid command returns error."""
+    result = runner.invoke(cli, ['invalid'])
+    assert result.exit_code != 0
