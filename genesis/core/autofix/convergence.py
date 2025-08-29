@@ -2,7 +2,6 @@
 
 import subprocess
 from dataclasses import dataclass
-from typing import Optional
 
 from genesis.core.logger import get_logger
 
@@ -24,7 +23,7 @@ class ConvergenceResult:
 class ConvergentFixer:
     """Implements convergent fixing - runs commands until no changes occur."""
 
-    def __init__(self, max_runs: Optional[int] = None, dry_run: Optional[bool] = None):
+    def __init__(self, max_runs: int | None = None, dry_run: bool | None = None):
         """Initialize convergent fixer.
 
         Args:
@@ -42,7 +41,9 @@ class ConvergentFixer:
                 if max_runs <= 0:
                     raise ValueError("AUTOFIX_MAX_RUNS must be positive")
             except ValueError as e:
-                raise ValueError(f"Invalid AUTOFIX_MAX_RUNS '{max_runs_str}': {e}")
+                raise ValueError(
+                    f"Invalid AUTOFIX_MAX_RUNS '{max_runs_str}': {e}"
+                ) from e
 
         self.max_runs = max_runs
         self.dry_run = dry_run if dry_run is not None else False
@@ -78,7 +79,9 @@ class ConvergentFixer:
                     check=True,
                 ).stdout
             except subprocess.CalledProcessError as e:
-                raise ConvergenceError(f"Failed to get git status before {name}: {e}")
+                raise ConvergenceError(
+                    f"Failed to get git status before {name}: {e}"
+                ) from e
 
             # Run the command
             logger.debug(f"Running {name} iteration {run_count}: {command}")
@@ -100,7 +103,7 @@ class ConvergentFixer:
                         logger.debug(f"{name} stderr: {result.stderr}")
 
             except Exception as e:
-                raise ConvergenceError(f"Failed to run {name}: {e}")
+                raise ConvergenceError(f"Failed to run {name}: {e}") from e
 
             # Capture git status after
             try:
@@ -111,7 +114,9 @@ class ConvergentFixer:
                     check=True,
                 ).stdout
             except subprocess.CalledProcessError as e:
-                raise ConvergenceError(f"Failed to get git status after {name}: {e}")
+                raise ConvergenceError(
+                    f"Failed to get git status after {name}: {e}"
+                ) from e
 
             # If no changes, we've converged
             if before == after:

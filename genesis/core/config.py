@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import yaml
 
@@ -21,7 +21,7 @@ class ConfigLoader:
         self.env_prefix = env_prefix.upper()
         self._config: dict[str, Any] = {}
 
-    def load_file(self, file_path: Union[str, Path]) -> dict[str, Any]:
+    def load_file(self, file_path: str | Path) -> dict[str, Any]:
         """Load configuration from YAML file."""
         path = Path(file_path)
         if not path.exists():
@@ -36,13 +36,15 @@ class ConfigLoader:
                     )
                 return content
         except yaml.YAMLError as e:
-            raise ValidationError(f"Invalid YAML in configuration file {path}: {e}")
+            raise ValidationError(
+                f"Invalid YAML in configuration file {path}: {e}"
+            ) from e
         except Exception as e:
             handled_error = handle_error(e)
             raise ResourceError(
                 f"Failed to load configuration file {path}: {handled_error.message}",
                 resource_type="config_file",
-            )
+            ) from e
 
     def load_env(self, config: dict[str, Any]) -> dict[str, Any]:
         """Apply environment variable overrides to config."""
@@ -69,8 +71,8 @@ class ConfigLoader:
 
     def load(
         self,
-        file_path: Optional[Union[str, Path]] = None,
-        defaults: Optional[dict[str, Any]] = None,
+        file_path: str | Path | None = None,
+        defaults: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Load configuration with precedence: defaults < file < environment.
 
@@ -110,9 +112,9 @@ class ConfigLoader:
 
 
 def load_config(
-    file_path: Optional[Union[str, Path]] = None,
+    file_path: str | Path | None = None,
     env_prefix: str = "",
-    defaults: Optional[dict[str, Any]] = None,
+    defaults: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Simple function interface for loading configuration.
 

@@ -1,0 +1,77 @@
+# {{project_name}} v0.1.0 Release Notes
+
+*Released: $(date +%Y-%m-%d)*
+
+## 🎉 Initial Release
+
+Welcome to the first release of {{project_name}}! This FastAPI-based service provides a solid foundation for building production-ready APIs.
+
+## ✨ What's Included
+
+### Core Features
+- **FastAPI Application**: Modern async web framework with automatic OpenAPI docs
+- **Health Check Endpoint**: `/health` endpoint for monitoring and load balancers
+- **Environment Configuration**: Secure environment-based configuration management
+
+### Development Experience
+- **Comprehensive Testing**: Pytest setup with coverage requirements (80%+)
+- **Code Quality Gates**: Pre-commit hooks with linting, formatting, and security scans
+- **Documentation Structure**: Organized docs with AI-friendly context files
+- **Development Automation**: Makefile with common tasks (test, run, format, security)
+
+### Security & Quality
+- **Security Scanning**: Bandit for Python security issues, Gitleaks for secrets
+- **Code Formatting**: Black, isort for consistent code style
+- **Linting**: Flake8, Pylint for code quality
+- **Dependency Management**: Poetry for reproducible builds
+
+### Production Ready
+- **Docker Support**: Ready for containerization
+- **Environment Variables**: Fail-fast configuration loading
+- **Logging Configuration**: Structured logging setup
+- **Health Monitoring**: Built-in health check endpoint
+
+## 🚀 Getting Started
+
+```bash
+# Install dependencies
+poetry install
+
+# Run the application
+make run
+
+# Run tests
+make test
+
+# View API documentation
+# Open http://localhost:8000/docs
+```
+
+## 📚 Documentation
+
+- **API Docs**: Auto-generated at `/docs` and `/redoc`
+- **Development Guide**: See `README.md`
+- **Architecture**: See `docs/architecture/`
+- **Standards**: See `docs/standards/`
+
+## 🔧 Configuration
+
+All configuration is handled through environment variables. See `.env.example` for available options:
+
+- `SERVICE_NAME`: Service identifier
+- `SERVICE_VERSION`: Version string
+- `SERVER_HOST`: Server bind address
+- `SERVER_PORT`: Server port
+- `LOG_LEVEL`: Logging verbosity
+
+## 🤝 Contributing
+
+This project uses Genesis development patterns:
+- Follow conventional commit messages
+- All code must pass quality gates
+- Maintain test coverage above 80%
+- Update documentation for user-facing changes
+
+---
+
+**Full Changelog**: See [CHANGELOG.md](../../CHANGELOG.md#010---$(date +%Y-%m-%d))

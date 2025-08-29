@@ -5,7 +5,7 @@ import logging
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from .context import get_context
 
@@ -58,8 +58,8 @@ class JSONFormatter(logging.Formatter):
 
 def get_logger(
     name: str,
-    config: Optional[LogConfig] = None,
-    handler: Optional[logging.Handler] = None,
+    config: LogConfig | None = None,
+    handler: logging.Handler | None = None,
 ) -> logging.Logger:
     """Get configured logger instance.
 

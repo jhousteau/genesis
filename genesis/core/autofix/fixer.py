@@ -3,7 +3,6 @@
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from genesis.core.logger import get_logger
 
@@ -25,7 +24,7 @@ class AutoFixResult:
     total_runs: int
     files_staged: bool = False
     dry_run: bool = False
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class AutoFixer:
@@ -37,8 +36,8 @@ class AutoFixer:
 
     def __init__(
         self,
-        project_root: Optional[Path] = None,
-        max_iterations: Optional[int] = None,
+        project_root: Path | None = None,
+        max_iterations: int | None = None,
         stage_all_files: bool = True,
         run_validation: bool = True,
     ):
@@ -67,7 +66,7 @@ class AutoFixer:
             except ValueError as e:
                 raise ValueError(
                     f"Invalid AUTOFIX_MAX_ITERATIONS '{max_iterations_str}': {e}"
-                )
+                ) from e
 
         self.max_iterations = max_iterations
         self.stage_all_files = stage_all_files

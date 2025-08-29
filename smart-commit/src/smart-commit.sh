@@ -4,6 +4,13 @@
 
 set -euo pipefail
 
+# Load environment configuration if available
+if [[ -f ".envrc" ]]; then
+    source .envrc
+elif [[ -f "../.envrc" ]]; then
+    source ../.envrc
+fi
+
 # Colors and configuration
 RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 MIN_MSG_LENGTH=10; MAX_MSG_LENGTH=72
@@ -53,7 +60,15 @@ log "✅ AutoFixer completed" "$GREEN"
 # 3. Run pre-commit hooks for validation
 if [[ -f .pre-commit-config.yaml ]]; then
     log "ℹ️ Running pre-commit checks..."
-    pre-commit run --all-files || error_exit "Pre-commit checks failed"
+    if ! pre-commit run --all-files; then
+        echo -e "\n${YELLOW}💡 Common fixes:${NC}"
+        echo "   • If main branch is protected: git checkout -b feature/your-change"
+        echo "   • For formatting issues: make format"
+        echo "   • For linting issues: make lint"
+        echo "   • For test failures: make test"
+        echo ""
+        error_exit "Pre-commit checks failed"
+    fi
     log "✅ Pre-commit checks passed" "$GREEN"
 fi
 
@@ -122,9 +137,194 @@ if [[ -z "${COMMIT_MESSAGE:-}" ]]; then
     [[ $REPLY =~ ^[Nn]$ ]] && { log "Cancelled" "$YELLOW"; exit 0; }
 fi
 
-# 8. Create commit
-git add .
+# 7. Update documentation before commit
+log "ℹ️ Updating documentation..."
+
+# Extract commit type from message for documentation updates
+commit_type=$(echo "$commit_msg" | cut -d':' -f1)
+
+# Update CHANGELOG.md if it exists and this is a meaningful change
+if [[ -f "CHANGELOG.md" ]] && [[ "$commit_type" =~ ^(feat|fix|chore)$ ]]; then
+    # Check if we already have an entry for this exact commit message (retry detection)
+    if ! grep -q "$(echo "$commit_msg" | cut -d':' -f2- | sed 's/^ *//')" CHANGELOG.md 2>/dev/null; then
+        log "📝 Adding entry to CHANGELOG.md"
+
+        # Create a temporary changelog entry
+        description=$(echo "$commit_msg" | cut -d':' -f2- | sed 's/^ *//')
+
+        # Map commit types to changelog sections
+        case "$commit_type" in
+            "feat")
+                section="### Added"
+                ;;
+            "fix")
+                section="### Fixed"
+                ;;
+            "chore")
+                section="### Changed"
+                ;;
+        esac
+
+        # Create a temporary file with the changelog update
+        temp_changelog=$(mktemp)
+
+        # Process the changelog
+        awk -v section="$section" -v entry="- $description" '
+        /^## \[Unreleased\]/ {
+            print $0
+            unreleased_found = 1
+            next
+        }
+        unreleased_found && /^### / {
+            if ($0 == section) {
+                print $0
+                getline
+                print entry
+                print $0
+                section_found = 1
+            } else {
+                print $0
+            }
+            next
+        }
+        unreleased_found && /^## \[/ && !section_found {
+            print section
+            print entry
+            print ""
+            print $0
+            unreleased_found = 0
+            next
+        }
+        { print $0 }
+        END {
+            if (unreleased_found && !section_found) {
+                print section
+                print entry
+                print ""
+            }
+        }' CHANGELOG.md > "$temp_changelog"
+
+        # Replace the original changelog
+        mv "$temp_changelog" CHANGELOG.md
+
+        log "✅ Updated CHANGELOG.md"
+    else
+        log "ℹ️ CHANGELOG.md already contains this entry (retry detected)"
+    fi
+else
+    log "ℹ️ Skipping CHANGELOG.md update (no changelog or non-notable change)"
+fi
+
+# 8. Detect version bump needs
+should_bump_version=false
+if [[ -f "pyproject.toml" ]] && [[ "$commit_type" == "feat" ]]; then
+    log "ℹ️ Feature detected - checking version bump..."
+
+    # Simple version bump detection - only bump minor for feat
+    current_version=$(grep -E '^version\s*=' pyproject.toml | sed -E 's/version\s*=\s*"([^"]+)"/\1/')
+
+    if [[ -n "$current_version" ]]; then
+        # Parse semantic version (major.minor.patch)
+        IFS='.' read -r major minor patch <<< "$current_version"
+        new_minor=$((minor + 1))
+        new_version="$major.$new_minor.0"
+
+        # Check if we already bumped to this version (retry detection)
+        if [[ "$current_version" != "$new_version" ]]; then
+            log "📈 Bumping version: $current_version → $new_version"
+
+            # Update pyproject.toml
+            sed -i.bak -E "s/version\s*=\s*\"[^\"]+\"/version = \"$new_version\"/" pyproject.toml
+            rm pyproject.toml.bak 2>/dev/null || true
+
+            should_bump_version=true
+            log "✅ Version bumped in pyproject.toml"
+        else
+            log "ℹ️ Version already at expected level (retry detected)"
+        fi
+    fi
+elif [[ "$commit_type" == "fix" ]]; then
+    # For fixes, bump patch version
+    current_version=$(grep -E '^version\s*=' pyproject.toml 2>/dev/null | sed -E 's/version\s*=\s*"([^"]+)"/\1/')
+
+    if [[ -n "$current_version" ]]; then
+        IFS='.' read -r major minor patch <<< "$current_version"
+        new_patch=$((patch + 1))
+        new_version="$major.$minor.$new_patch"
+
+        if [[ "$current_version" != "$new_version" ]]; then
+            log "🔧 Bumping patch version: $current_version → $new_version"
+
+            sed -i.bak -E "s/version\s*=\s*\"[^\"]+\"/version = \"$new_version\"/" pyproject.toml
+            rm pyproject.toml.bak 2>/dev/null || true
+
+            should_bump_version=true
+            log "✅ Patch version bumped in pyproject.toml"
+        fi
+    fi
+fi
+
+# 9. Handle branch management and commit
+current_branch=$(git branch --show-current)
+main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
+
+# Check if we're on the main branch
+if [[ "$current_branch" == "$main_branch" ]]; then
+    # Create a new branch based on commit message
+    branch_name=""
+    case "$commit_type" in
+        "feat")
+            branch_name="feature/$(echo "$commit_msg" | sed -E 's/^feat: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
+            ;;
+        "fix")
+            branch_name="fix/$(echo "$commit_msg" | sed -E 's/^fix: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
+            ;;
+        *)
+            branch_name="chore/$(echo "$commit_msg" | sed -E 's/^[^:]+: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
+            ;;
+    esac
+
+    log "🌿 Creating new branch: $branch_name"
+    git checkout -b "$branch_name"
+fi
+
+# 10. Create atomic commit with all changes
+git add -A
 git commit -m "$commit_msg"
 
 log "✅ Commit created: $commit_msg" "$GREEN"
-log "ℹ️ Next: git push to publish changes"
+
+# 11. Push changes and create PR if needed
+current_branch=$(git branch --show-current)
+
+if [[ "$current_branch" != "$main_branch" ]]; then
+    log "📤 Pushing branch to origin..."
+    git push -u origin "$current_branch"
+
+    # Create PR if gh CLI is available
+    if command -v gh &> /dev/null; then
+        log "🔗 Creating pull request..."
+
+        # Generate PR description based on commit type
+        pr_body=""
+        case "$commit_type" in
+            "feat")
+                pr_body="## Summary\n- New feature: $(echo "$commit_msg" | sed -E 's/^feat: //')\n\n## Test plan\n- [ ] Manual testing completed\n- [ ] All existing tests pass"
+                ;;
+            "fix")
+                pr_body="## Summary\n- Bug fix: $(echo "$commit_msg" | sed -E 's/^fix: //')\n\n## Test plan\n- [ ] Fix verified manually\n- [ ] All existing tests pass"
+                ;;
+            *)
+                pr_body="## Summary\n- $(echo "$commit_msg" | sed -E 's/^[^:]+: //')\n\n## Test plan\n- [ ] Changes reviewed and tested"
+                ;;
+        esac
+
+        gh pr create --title "$commit_msg" --body "$pr_body" --base "$main_branch" || {
+            log "⚠️ Could not create PR automatically - create manually if needed"
+        }
+    else
+        log "ℹ️ Install gh CLI for automatic PR creation"
+    fi
+else
+    log "ℹ️ On main branch - changes committed locally"
+fi

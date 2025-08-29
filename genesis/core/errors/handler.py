@@ -15,7 +15,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class ErrorSeverity(Enum):
@@ -55,11 +55,11 @@ class ErrorContext:
     timestamp: datetime
     service: str
     environment: str
-    user_id: Optional[str] = None
-    request_id: Optional[str] = None
-    trace_id: Optional[str] = None
-    span_id: Optional[str] = None
-    metadata: Optional[dict[str, Any]] = None
+    user_id: str | None = None
+    request_id: str | None = None
+    trace_id: str | None = None
+    span_id: str | None = None
+    metadata: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert context to dictionary for serialization."""
@@ -77,7 +77,7 @@ class ErrorContext:
 
     @classmethod
     def create_default(
-        cls, service: Optional[str] = None, environment: Optional[str] = None
+        cls, service: str | None = None, environment: str | None = None
     ) -> "ErrorContext":
         """
         Create a default error context with proper service and environment detection.
@@ -96,9 +96,15 @@ class ErrorContext:
             from genesis.core.constants import get_environment, get_service_name
 
             if service is None:
-                service = get_service_name()
+                try:
+                    service = get_service_name()
+                except ValueError:
+                    service = "genesis-cli"  # Default for CLI usage
             if environment is None:
-                environment = get_environment()
+                try:
+                    environment = get_environment()
+                except ValueError:
+                    environment = "development"  # Default for CLI usage
 
         return cls(
             correlation_id=str(uuid.uuid4()),
@@ -122,10 +128,10 @@ class GenesisError(Exception):
         code: str = "SYSTEM_ERROR",
         category: ErrorCategory = ErrorCategory.UNKNOWN,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
-        context: Optional[ErrorContext] = None,
-        cause: Optional[Exception] = None,
-        details: Optional[dict[str, Any]] = None,
-        retry_after: Optional[int] = None,
+        context: ErrorContext | None = None,
+        cause: Exception | None = None,
+        details: dict[str, Any] | None = None,
+        retry_after: int | None = None,
         recoverable: bool = True,
     ):
         super().__init__(message)
@@ -201,7 +207,7 @@ class InfrastructureError(GenesisError):
 class NetworkError(GenesisError):
     """Network connectivity and communication errors."""
 
-    def __init__(self, message: str, endpoint: Optional[str] = None, **kwargs):
+    def __init__(self, message: str, endpoint: str | None = None, **kwargs):
         details = kwargs.get("details", {})
         if endpoint:
             details["endpoint"] = endpoint
@@ -214,7 +220,7 @@ class NetworkError(GenesisError):
 class ValidationError(GenesisError):
     """Data validation and format errors."""
 
-    def __init__(self, message: str, field: Optional[str] = None, **kwargs):
+    def __init__(self, message: str, field: str | None = None, **kwargs):
         details = kwargs.get("details", {})
         if field:
             details["field"] = field
@@ -244,7 +250,7 @@ class AuthenticationError(GenesisError):
 class AuthorizationError(GenesisError):
     """Authorization and permission errors."""
 
-    def __init__(self, message: str, resource: Optional[str] = None, **kwargs):
+    def __init__(self, message: str, resource: str | None = None, **kwargs):
         details = kwargs.get("details", {})
         if resource:
             details["resource"] = resource
@@ -261,9 +267,7 @@ class AuthorizationError(GenesisError):
 class GenesisTimeoutError(GenesisError):
     """Timeout and deadline exceeded errors."""
 
-    def __init__(
-        self, message: str, timeout_duration: Optional[float] = None, **kwargs
-    ):
+    def __init__(self, message: str, timeout_duration: float | None = None, **kwargs):
         details = kwargs.get("details", {})
         if timeout_duration:
             details["timeout_duration"] = timeout_duration
@@ -276,7 +280,7 @@ class GenesisTimeoutError(GenesisError):
 class RateLimitError(GenesisError):
     """Rate limiting and throttling errors."""
 
-    def __init__(self, message: str, retry_after: Optional[int] = None, **kwargs):
+    def __init__(self, message: str, retry_after: int | None = None, **kwargs):
         super().__init__(
             message,
             code="RATE_LIMIT_ERROR",
@@ -289,7 +293,7 @@ class RateLimitError(GenesisError):
 class ExternalServiceError(GenesisError):
     """External service and API errors."""
 
-    def __init__(self, message: str, service_name: Optional[str] = None, **kwargs):
+    def __init__(self, message: str, service_name: str | None = None, **kwargs):
         details = kwargs.get("details", {})
         if service_name:
             details["service_name"] = service_name
@@ -305,7 +309,7 @@ class ExternalServiceError(GenesisError):
 class ResourceError(GenesisError):
     """Resource not found or access errors."""
 
-    def __init__(self, message: str, resource_type: Optional[str] = None, **kwargs):
+    def __init__(self, message: str, resource_type: str | None = None, **kwargs):
         details = kwargs.get("details", {})
         if resource_type:
             details["resource_type"] = resource_type
@@ -340,7 +344,7 @@ class ErrorHandler:
         self.handlers: list[Callable[[GenesisError], None]] = []
 
     def handle(
-        self, error: Exception, context: Optional[ErrorContext] = None
+        self, error: Exception, context: ErrorContext | None = None
     ) -> GenesisError:
         """
         Handle any error and convert to GenesisError with enriched context.
@@ -372,7 +376,7 @@ class ErrorHandler:
         return genesis_error
 
     def _convert_to_genesis_error(
-        self, error: Exception, context: Optional[ErrorContext] = None
+        self, error: Exception, context: ErrorContext | None = None
     ) -> GenesisError:
         """Convert standard exception to appropriate GenesisError subclass."""
 
@@ -408,7 +412,7 @@ class ErrorHandler:
 
 
 # Global error handler instance
-_error_handler: Optional[ErrorHandler] = None
+_error_handler: ErrorHandler | None = None
 
 
 def get_error_handler() -> ErrorHandler:
@@ -425,16 +429,24 @@ def get_error_handler() -> ErrorHandler:
     if _error_handler is None:
         from genesis.core.constants import get_environment, get_service_name
 
+        try:
+            service_name = get_service_name()
+        except ValueError:
+            service_name = "genesis-cli"
+
+        try:
+            environment = get_environment()
+        except ValueError:
+            environment = "development"
+
         _error_handler = ErrorHandler(
-            service_name=get_service_name(),
-            environment=get_environment(),
+            service_name=service_name,
+            environment=environment,
         )
     return _error_handler
 
 
-def handle_error(
-    error: Exception, context: Optional[ErrorContext] = None
-) -> GenesisError:
+def handle_error(error: Exception, context: ErrorContext | None = None) -> GenesisError:
     """
     Convenience function to handle errors with the global handler.
 

@@ -1,7 +1,7 @@
 """AI safety validation utilities for testing."""
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 def count_files_in_directory(
@@ -63,8 +63,8 @@ def count_files_in_directory(
 
 def validate_ai_safety_limits(
     directory: Path,
-    max_files: Optional[int] = None,
-    max_component_files: Optional[int] = None,
+    max_files: int | None = None,
+    max_component_files: int | None = None,
 ) -> dict[str, Any]:
     """Validate directory meets AI safety file count limits."""
     from genesis.core.constants import AILimits
@@ -108,7 +108,7 @@ def validate_ai_safety_limits(
 
 
 def assert_file_count_safe(
-    directory: Path, max_files: Optional[int] = None, message: str = None
+    directory: Path, max_files: int | None = None, message: str = None
 ):
     """Assert that directory has safe file count for AI."""
     from genesis.core.constants import AILimits
@@ -125,7 +125,7 @@ def assert_file_count_safe(
     assert file_count <= max_files, message
 
 
-def assert_component_isolation(component_path: Path, max_files: Optional[int] = None):
+def assert_component_isolation(component_path: Path, max_files: int | None = None):
     """Assert that component meets isolation requirements."""
     from genesis.core.constants import AILimits
 
@@ -232,8 +232,8 @@ class AISafetyChecker:
 
     def __init__(
         self,
-        max_total_files: Optional[int] = None,
-        max_component_files: Optional[int] = None,
+        max_total_files: int | None = None,
+        max_component_files: int | None = None,
     ):
         from genesis.core.constants import AILimits
 

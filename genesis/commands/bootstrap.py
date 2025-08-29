@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -20,10 +19,8 @@ from ..core.errors import (
 )
 from ..core.logger import get_logger
 
-logger = get_logger(__name__)
 
-
-def find_genesis_root() -> Optional[Path]:
+def find_genesis_root() -> Path | None:
     """Find Genesis project root by looking for CLAUDE.md."""
     current = Path.cwd()
     for parent in [current] + list(current.parents):
@@ -32,14 +29,27 @@ def find_genesis_root() -> Optional[Path]:
     return None
 
 
-def get_template_path(project_type: str) -> Optional[Path]:
+def get_template_path(project_type: str) -> Path | None:
     """Get path to project template."""
+    # First try to find Genesis root (for development)
     genesis_root = find_genesis_root()
-    if not genesis_root:
-        return None
+    if genesis_root:
+        template_path = genesis_root / "templates" / project_type
+        if template_path.exists():
+            return template_path
 
-    template_path = genesis_root / "templates" / project_type
-    return template_path if template_path.exists() else None
+    # If not found, try to find templates relative to the installed package
+    try:
+        import genesis
+
+        package_path = Path(genesis.__file__).parent.parent
+        template_path = package_path / "templates" / project_type
+        if template_path.exists():
+            return template_path
+    except (ImportError, AttributeError):
+        pass
+
+    return None
 
 
 def validate_project_name(name: str) -> None:
@@ -68,9 +78,11 @@ def create_project_directory(project_path: Path) -> None:
 
     try:
         project_path.mkdir(parents=True, exist_ok=False)
-        logger.info(f"Created project directory: {project_path}")
+        get_logger(__name__).info(f"Created project directory: {project_path}")
     except OSError as e:
-        raise InfrastructureError(f"Failed to create directory {project_path}: {e}")
+        raise InfrastructureError(
+            f"Failed to create directory {project_path}: {e}"
+        ) from e
 
 
 def process_template_file(
@@ -90,10 +102,14 @@ def process_template_file(
 
         # Write processed content
         target_file.write_text(content)
-        logger.debug(f"Processed template: {template_file} -> {target_file}")
+        get_logger(__name__).debug(
+            f"Processed template: {template_file} -> {target_file}"
+        )
 
     except Exception as e:
-        raise InfrastructureError(f"Failed to process template {template_file}: {e}")
+        raise InfrastructureError(
+            f"Failed to process template {template_file}: {e}"
+        ) from e
 
 
 def copy_template_structure(
@@ -102,15 +118,15 @@ def copy_template_structure(
     """Copy and process template structure."""
     from genesis.core.constants import get_git_author_info, get_python_version
 
-    logger.info(f"Processing template from {template_path}")
+    get_logger(__name__).info(f"Processing template from {template_path}")
 
     # Get dynamic values - fail fast if not available
     try:
-        python_version = get_python_version()
+        get_python_version()
         author_name, author_email = get_git_author_info()
     except ValueError as e:
-        logger.error(f"Configuration error: {e}")
-        raise click.ClickException(f"Bootstrap failed: {e}")
+        get_logger(__name__).error(f"Configuration error: {e}")
+        raise click.ClickException(f"Bootstrap failed: {e}") from e
 
     # Create substitution map supporting multiple template formats
     # Create Python-safe module name (replace hyphens with underscores)
@@ -160,13 +176,15 @@ def copy_template_structure(
             target_file = project_path / relative_path
             target_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(non_template_file, target_file)
-            logger.debug(f"Copied file: {non_template_file} -> {target_file}")
+            get_logger(__name__).debug(
+                f"Copied file: {non_template_file} -> {target_file}"
+            )
 
 
 def initialize_git_repo(project_path: Path, skip_git: bool) -> None:
     """Initialize Git repository in project."""
     if skip_git:
-        logger.info("Skipping Git initialization (--skip-git)")
+        get_logger(__name__).info("Skipping Git initialization (--skip-git)")
         return
 
     try:
@@ -190,18 +208,79 @@ def initialize_git_repo(project_path: Path, skip_git: bool) -> None:
             capture_output=True,
         )
 
-        logger.info("Initialized Git repository with initial commit")
+        get_logger(__name__).info("Initialized Git repository with initial commit")
 
     except subprocess.CalledProcessError as e:
-        logger.warning(f"Git initialization failed: {e}")
+        get_logger(__name__).warning(f"Git initialization failed: {e}")
     except FileNotFoundError:
-        logger.warning("Git not found - skipping repository initialization")
+        get_logger(__name__).warning(
+            "Git not found - skipping repository initialization"
+        )
+
+
+def setup_project_environment(project_path: Path) -> None:
+    """Set up project development environment (Poetry, pre-commit, etc.)."""
+    logger = get_logger(__name__)
+
+    # Check if this is a Python project with Poetry
+    if not (project_path / "pyproject.toml").exists():
+        logger.debug("No pyproject.toml found - skipping Python setup")
+        return
+
+    try:
+        # Install Poetry dependencies
+        logger.info("Installing project dependencies with Poetry...")
+        subprocess.run(
+            ["poetry", "install"],
+            cwd=project_path,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        logger.info("✅ Poetry dependencies installed successfully")
+
+        # Install pre-commit hooks
+        if (project_path / ".pre-commit-config.yaml").exists():
+            logger.info("Installing pre-commit hooks...")
+            subprocess.run(
+                ["poetry", "run", "pre-commit", "install", "--install-hooks"],
+                cwd=project_path,
+                check=True,
+                capture_output=True,
+            )
+            logger.info("✅ Pre-commit hooks installed successfully")
+
+        # Handle direnv if available and .envrc exists
+        if (project_path / ".envrc").exists():
+            try:
+                subprocess.run(
+                    ["direnv", "allow", str(project_path)],
+                    check=True,
+                    capture_output=True,
+                )
+                logger.info("✅ Direnv environment configured")
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                logger.info(
+                    "ℹ️  direnv not found - you can install it for automatic environment loading"
+                )
+
+    except subprocess.CalledProcessError as e:
+        error_output = e.stderr.decode() if e.stderr else str(e)
+        logger.warning(f"Project setup encountered issues: {error_output}")
+        logger.info(
+            "You can run the setup manually later with the provided setup.sh script"
+        )
+    except FileNotFoundError:
+        logger.warning("Poetry not found - skipping dependency installation")
+        logger.info(
+            "Please install Poetry and run 'poetry install' in the project directory"
+        )
 
 
 def bootstrap_project(
     name: str,
     project_type: str,
-    target_path: Optional[str] = None,
+    target_path: str | None = None,
     skip_git: bool = False,
 ) -> Path:
     """Bootstrap a new project with Genesis patterns."""
@@ -225,7 +304,9 @@ def bootstrap_project(
             resource_type="template",
         )
 
-    logger.info(f"Bootstrapping {project_type} project '{name}' at {project_path}")
+    get_logger(__name__).info(
+        f"Bootstrapping {project_type} project '{name}' at {project_path}"
+    )
 
     try:
         # Create project directory
@@ -237,7 +318,12 @@ def bootstrap_project(
         # Initialize Git repository
         initialize_git_repo(project_path, skip_git)
 
-        logger.info(f"✅ Project '{name}' created successfully at {project_path}")
+        # Set up project environment (Poetry, pre-commit, direnv)
+        setup_project_environment(project_path)
+
+        get_logger(__name__).info(
+            f"✅ Project '{name}' created successfully at {project_path}"
+        )
         return project_path
 
     except Exception as e:
@@ -245,26 +331,35 @@ def bootstrap_project(
         if project_path.exists():
             try:
                 shutil.rmtree(project_path)
-                logger.debug(f"Cleaned up failed project directory: {project_path}")
+                get_logger(__name__).debug(
+                    f"Cleaned up failed project directory: {project_path}"
+                )
             except Exception:
                 pass  # Best effort cleanup
         handled_error = handle_error(e)
-        raise InfrastructureError(f"Bootstrap failed: {handled_error.message}")
+        raise InfrastructureError(f"Bootstrap failed: {handled_error.message}") from e
 
 
 # CLI command integration
 def bootstrap_command(
-    name: str, project_type: str, target_path: Optional[str], skip_git: bool
+    name: str, project_type: str, target_path: str | None, skip_git: bool
 ) -> None:
     """Bootstrap command implementation for CLI integration."""
     try:
         project_path = bootstrap_project(name, project_type, target_path, skip_git)
         click.echo(f"✅ Project '{name}' created at {project_path}")
         click.echo(f"📁 Type: {project_type}")
-        click.echo("🚀 Ready to start development!")
+        click.echo("🚀 Fully configured and ready to start development!")
+        click.echo("")
+        click.echo("Next steps:")
+        click.echo(f"  cd {name}")
+        click.echo("  make test          # Run tests")
+        click.echo("  make run           # Start development server")
+        click.echo("  genesis commit     # Smart commit with quality gates")
+        click.echo("  make help          # See all available commands")
 
     except Exception as e:
         handled_error = handle_error(e)
         click.echo(f"❌ Bootstrap failed: {handled_error.message}", err=True)
-        logger.error("Bootstrap error", extra=handled_error.to_dict())
+        get_logger(__name__).error("Bootstrap error", extra=handled_error.to_dict())
         sys.exit(1)

@@ -1,0 +1,33 @@
+# Bandit configuration for {{project_name}} security scanning
+exclude_dirs:
+  - "*/tests/*"
+  - "*/test_*"
+  - ".venv"
+  - "venv"
+  - ".git"
+  - "__pycache__"
+  - "*.pyc"
+  - ".pytest_cache"
+  - "build"
+  - "dist"
+  - ".tox"
+  - "htmlcov"
+
+# Skip specific test IDs that are not relevant for API projects
+# B101: assert_used - OK to use assert in tests and development tools
+# B104: hardcoded_bind_all_interfaces - OK for development servers (0.0.0.0)
+# B603: subprocess_without_shell_equals_true - We need subprocess for CLI tooling
+# B607: start_process_with_partial_path - CLI tools often use partial paths
+# B404: import subprocess - We need subprocess for legitimate tooling
+# B311: random module - OK for non-security-critical randomness like IDs
+skips:
+  - B101
+  - B104
+  - B603
+  - B607
+  - B404
+  - B311
+
+# Security test levels
+confidence: MEDIUM
+severity: MEDIUM

@@ -6,18 +6,18 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 import click
 
 # Import version from package
 from genesis import __version__
+from genesis.commands.version import version
 
 from .core.errors import handle_error
 
 
 # Genesis root detection
-def find_genesis_root() -> Optional[Path]:
+def find_genesis_root() -> Path | None:
     """Find Genesis project root by looking for CLAUDE.md."""
     current = Path.cwd()
     for parent in [current] + list(current.parents):
@@ -26,14 +26,36 @@ def find_genesis_root() -> Optional[Path]:
     return None
 
 
-def get_component_path(component: str) -> Optional[Path]:
-    """Get path to a Genesis component."""
-    genesis_root = find_genesis_root()
-    if not genesis_root:
-        return None
+def get_git_root() -> Path | None:
+    """Find Git repository root."""
+    current = Path.cwd()
+    for parent in [current] + list(current.parents):
+        if (parent / ".git").exists():
+            return parent
+    return None
 
-    component_path = genesis_root / component
-    return component_path if component_path.exists() else None
+
+def get_component_path(component: str) -> Path | None:
+    """Get path to a Genesis component (works in dev and installed package)."""
+    # First try development directory
+    genesis_root = find_genesis_root()
+    if genesis_root:
+        component_path = genesis_root / component
+        if component_path.exists():
+            return component_path
+
+    # Then try installed package
+    try:
+        import genesis
+
+        package_root = Path(genesis.__file__).parent.parent
+        component_path = package_root / component
+        if component_path.exists():
+            return component_path
+    except (ImportError, AttributeError):
+        pass
+
+    return None
 
 
 @click.group()
@@ -60,7 +82,7 @@ def cli(ctx):
 @click.option("--skip-git", is_flag=True, help="Skip Git initialization")
 @click.pass_context
 def bootstrap(
-    ctx, name: str, project_type: str, target_path: Optional[str], skip_git: bool
+    ctx, name: str, project_type: str, target_path: str | None, skip_git: bool
 ):
     """Create new project with Genesis patterns and tooling."""
     from genesis.commands.bootstrap import bootstrap_command
@@ -78,20 +100,22 @@ def bootstrap(
 )
 @click.option("--verify", is_flag=True, help="Verify safety after creation")
 @click.pass_context
-def worktree(ctx, name: str, focus_path: str, max_files: Optional[int], verify: bool):
+def worktree(ctx, name: str, focus_path: str, max_files: int | None, verify: bool):
     """Create AI-safe sparse worktree with file limits."""
     from genesis.core.constants import AILimits
 
-    genesis_root = ctx.obj.get("genesis_root")
-    if not genesis_root:
-        click.echo("❌ Not in a Genesis project. Run from Genesis directory.", err=True)
+    # Find worktree-tools component
+    worktree_path = get_component_path("worktree-tools")
+    if not worktree_path:
+        click.echo(
+            "❌ Worktree-tools component not found. Genesis may not be properly installed.",
+            err=True,
+        )
         sys.exit(1)
 
-    worktree_script = (
-        genesis_root / "worktree-tools" / "src" / "create-sparse-worktree.sh"
-    )
+    worktree_script = worktree_path / "src" / "create-sparse-worktree.sh"
     if not worktree_script.exists():
-        click.echo("❌ Worktree script not found. Genesis may be incomplete.", err=True)
+        click.echo(f"❌ Worktree script not found at {worktree_script}", err=True)
         sys.exit(1)
 
     # Use configured limit if not provided
@@ -108,7 +132,7 @@ def worktree(ctx, name: str, focus_path: str, max_files: Optional[int], verify: 
         cmd.append("--verify")
 
     try:
-        result = subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True)
         click.echo(f"✅ Sparse worktree '{name}' created successfully!")
     except Exception as e:
         handled_error = handle_error(e)
@@ -119,29 +143,51 @@ def worktree(ctx, name: str, focus_path: str, max_files: Optional[int], verify: 
 @cli.command()
 @click.option("--message", "-m", help="Commit message")
 @click.pass_context
-def commit(ctx, message: Optional[str]):
+def commit(ctx, message: str | None):
     """Smart commit with quality gates and pre-commit hooks."""
-    genesis_root = ctx.obj.get("genesis_root")
-    if not genesis_root:
-        click.echo("❌ Not in a Genesis project. Run from Genesis directory.", err=True)
-        sys.exit(1)
-
-    smart_commit_script = genesis_root / "smart-commit" / "src" / "smart-commit.sh"
-    if not smart_commit_script.exists():
+    # Check if we're in a git repository
+    if not Path.cwd().joinpath(".git").exists():
         click.echo(
-            "❌ Smart-commit script not found. Genesis may be incomplete.", err=True
+            "❌ Not in a git repository. Initialize git first with: git init", err=True
         )
         sys.exit(1)
+
+    # Find smart-commit script from component path
+    smart_commit_path = get_component_path("smart-commit")
+    if not smart_commit_path:
+        click.echo(
+            "❌ Smart-commit component not found. Genesis may not be properly installed.",
+            err=True,
+        )
+        sys.exit(1)
+
+    smart_commit_script = smart_commit_path / "src" / "smart-commit.sh"
+    if not smart_commit_script.exists():
+        click.echo(
+            f"❌ Smart-commit script not found at {smart_commit_script}", err=True
+        )
+        sys.exit(1)
+
+    # Set required environment variables for AutoFixer if not already set
+    env_vars = {
+        "AUTOFIX_MAX_ITERATIONS": "3",
+        "AUTOFIX_MAX_RUNS": "5",
+        "AI_MAX_FILES": "30",
+        "AI_SAFETY_MODE": "enforced",
+        "LOG_LEVEL": "info",
+    }
+
+    for var, default_value in env_vars.items():
+        if var not in os.environ:
+            os.environ[var] = default_value
 
     # Build command arguments
     cmd = [str(smart_commit_script)]
     if message:
-        # Note: smart-commit.sh handles interactive commit message entry
-        # We'll need to set an environment variable or pass it differently
         os.environ["COMMIT_MESSAGE"] = message
 
     try:
-        result = subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True)
         click.echo("✅ Smart commit completed!")
     except Exception as e:
         handled_error = handle_error(e)
@@ -156,10 +202,10 @@ def commit(ctx, message: Optional[str]):
 @click.pass_context
 def clean(ctx, worktrees: bool, artifacts: bool, clean_all: bool):
     """Clean workspace: remove old worktrees and build artifacts."""
-    genesis_root = ctx.obj.get("genesis_root")
-    if not genesis_root:
-        click.echo("❌ Not in a Genesis project. Run from Genesis directory.", err=True)
-        sys.exit(1)
+    # Get the current repo root instead of genesis_root
+    repo_root = get_git_root()
+    if not repo_root:
+        raise click.ClickException("Not in a Git repository")
 
     # Default to cleaning everything if no specific flags
     if not any([worktrees, artifacts, clean_all]):
@@ -169,7 +215,7 @@ def clean(ctx, worktrees: bool, artifacts: bool, clean_all: bool):
 
     # Clean old worktrees
     if worktrees or clean_all:
-        worktrees_dir = genesis_root.parent / "worktrees"
+        worktrees_dir = repo_root.parent / "worktrees"
         if worktrees_dir.exists():
             try:
                 shutil.rmtree(worktrees_dir)
@@ -204,7 +250,7 @@ def clean(ctx, worktrees: bool, artifacts: bool, clean_all: bool):
                     result = subprocess.run(
                         [
                             "find",
-                            str(genesis_root),
+                            str(repo_root),
                             "-type",
                             "d",
                             "-name",
@@ -226,7 +272,7 @@ def clean(ctx, worktrees: bool, artifacts: bool, clean_all: bool):
                     result = subprocess.run(
                         [
                             "find",
-                            str(genesis_root),
+                            str(repo_root),
                             "-name",
                             pattern,
                             "-not",
@@ -292,9 +338,6 @@ def sync(ctx):
 
     click.echo("✅ Sync complete!")
 
-
-# Add version management commands
-from genesis.commands.version import version
 
 cli.add_command(version)
 

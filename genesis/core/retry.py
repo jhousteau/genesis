@@ -56,7 +56,7 @@ from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Deque, Optional, TypeVar
+from typing import Any, TypeVar
 
 from .errors.handler import ErrorCategory, GenesisError
 
@@ -90,12 +90,12 @@ class RetryConfig:
     @classmethod
     def create(
         cls,
-        max_attempts: Optional[int] = None,
-        initial_delay: Optional[float] = None,
-        max_delay: Optional[float] = None,
-        exponential_base: Optional[float] = None,
-        jitter: Optional[bool] = None,
-        exceptions: Optional[tuple[type[Exception], ...]] = None,
+        max_attempts: int | None = None,
+        initial_delay: float | None = None,
+        max_delay: float | None = None,
+        exponential_base: float | None = None,
+        jitter: bool | None = None,
+        exceptions: tuple[type[Exception], ...] | None = None,
     ) -> "RetryConfig":
         """Create RetryConfig with optional parameters, using defaults for missing ones."""
         default_config = cls.default()
@@ -124,7 +124,7 @@ class RetryConfig:
         )
 
 
-def retry(config: Optional[RetryConfig] = None) -> Callable:
+def retry(config: RetryConfig | None = None) -> Callable:
     """Retry decorator with exponential backoff.
 
     Args:
@@ -242,8 +242,8 @@ class CircuitBreakerMetrics:
     failed_requests: int = 0
     open_state_count: int = 0
     half_open_state_count: int = 0
-    last_failure_time: Optional[float] = None
-    last_success_time: Optional[float] = None
+    last_failure_time: float | None = None
+    last_success_time: float | None = None
     state_transitions: int = 0
 
     @property
@@ -273,7 +273,7 @@ class CircuitBreakerConfig:
     name: str
 
     @classmethod
-    def default(cls, name: Optional[str] = None) -> "CircuitBreakerConfig":
+    def default(cls, name: str | None = None) -> "CircuitBreakerConfig":
         """Create CircuitBreakerConfig with values from environment variables."""
         from genesis.core.constants import CircuitBreakerDefaults
 
@@ -289,12 +289,12 @@ class CircuitBreakerConfig:
     @classmethod
     def create(
         cls,
-        failure_threshold: Optional[int] = None,
-        timeout: Optional[float] = None,
-        half_open_max_calls: Optional[int] = None,
-        success_threshold: Optional[int] = None,
-        sliding_window_size: Optional[int] = None,
-        name: Optional[str] = None,
+        failure_threshold: int | None = None,
+        timeout: float | None = None,
+        half_open_max_calls: int | None = None,
+        success_threshold: int | None = None,
+        sliding_window_size: int | None = None,
+        name: str | None = None,
     ) -> "CircuitBreakerConfig":
         """Create CircuitBreakerConfig with optional parameters, using defaults for missing ones."""
         default_config = cls.default()
@@ -336,7 +336,7 @@ class CircuitBreaker:
     - HALF_OPEN: Testing if service recovered
     """
 
-    def __init__(self, config: Optional[CircuitBreakerConfig] = None):
+    def __init__(self, config: CircuitBreakerConfig | None = None):
         if config is None:
             config = CircuitBreakerConfig.default()
 
@@ -350,12 +350,12 @@ class CircuitBreaker:
 
         # State management
         self._state = CircuitBreakerState.CLOSED
-        self._last_failure_time: Optional[float] = None
+        self._last_failure_time: float | None = None
         self._half_open_calls = 0
         self._half_open_successes = 0
 
         # Sliding window for tracking recent calls
-        self._call_results: Deque[bool] = deque(maxlen=config.sliding_window_size)
+        self._call_results: deque[bool] = deque(maxlen=config.sliding_window_size)
 
         # Thread safety
         self._lock = threading.RLock()
@@ -557,7 +557,7 @@ class CircuitBreaker:
             }
 
 
-def circuit_breaker(config: Optional[CircuitBreakerConfig] = None) -> Callable:
+def circuit_breaker(config: CircuitBreakerConfig | None = None) -> Callable:
     """Circuit breaker decorator factory."""
     cb = CircuitBreaker(config)
     return cb.decorator
@@ -565,8 +565,8 @@ def circuit_breaker(config: Optional[CircuitBreakerConfig] = None) -> Callable:
 
 # Integration: Retry + Circuit Breaker
 def resilient_call(
-    retry_config: Optional[RetryConfig] = None,
-    circuit_config: Optional[CircuitBreakerConfig] = None,
+    retry_config: RetryConfig | None = None,
+    circuit_config: CircuitBreakerConfig | None = None,
 ) -> Callable:
     """
     Combined retry and circuit breaker decorator.
@@ -604,10 +604,10 @@ def resilient_call(
 
 # Convenience functions
 def resilient_external_service(
-    max_attempts: Optional[int] = None,
-    failure_threshold: Optional[int] = None,
-    timeout: Optional[float] = None,
-    name: Optional[str] = None,
+    max_attempts: int | None = None,
+    failure_threshold: int | None = None,
+    timeout: float | None = None,
+    name: str | None = None,
 ) -> Callable:
     """
     Pre-configured resilient decorator for external service calls.
@@ -630,10 +630,10 @@ def resilient_external_service(
 
 
 def resilient_database(
-    max_attempts: Optional[int] = None,
-    failure_threshold: Optional[int] = None,
-    timeout: Optional[float] = None,
-    name: Optional[str] = None,
+    max_attempts: int | None = None,
+    failure_threshold: int | None = None,
+    timeout: float | None = None,
+    name: str | None = None,
 ) -> Callable:
     """
     Pre-configured resilient decorator for database calls.

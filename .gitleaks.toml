@@ -1,4 +1,4 @@
-# Gitleaks configuration for Genesis
+# Gitleaks configuration for genesis
 # Exclude test files that intentionally contain patterns for negative testing
 
 [allowlist]

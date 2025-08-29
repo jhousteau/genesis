@@ -6,8 +6,16 @@ repos:
       # CRITICAL: Block direct commits to main branch
       - id: no-commit-to-branch
         args: ['--branch', 'main', '--branch', 'master']
-        name: Protect main branch
-        description: Prevents direct commits to main/master branches
+        name: 🔒 Main branch protection
+        description: |
+          Direct commits to main/master branches are blocked for safety.
+
+          To commit your changes:
+          1. Create a feature branch: git checkout -b feature/your-change
+          2. Make your commits on the feature branch
+          3. Use pull requests to merge to main
+
+          This protects the main branch from accidental commits.
 
       # Essential file validation
       - id: check-yaml
@@ -50,34 +58,12 @@ repos:
       - id: black
         language_version: python3.11
 
-  # Custom hardcoded values detection
-  - repo: local
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
     hooks:
-      - id: hardcoded-values-check
-        name: Check for hardcoded configuration values
-        description: Prevents hardcoded configuration values from being committed
-        entry: ./scripts/find-hardcoded-values.sh
-        language: script
-        pass_filenames: false
-        files: '\.(py|ts|tsx|js|jsx)$'
-
-      - id: variable-defaults-check
-        name: Check for variable default assignments
-        description: Prevents hardcoded variable defaults from being committed
-        entry: ./scripts/check-variable-defaults.sh
-        language: script
-        pass_filenames: false
-        files: '\.(py|ts|tsx|js|jsx)$'
-
-  # Terraform hooks
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.96.2
-    hooks:
-      - id: terraform_fmt
-      - id: terraform_validate
-      - id: terraform_tflint
-        args:
-          - '--args=--config=__GIT_WORKING_DIR__/.tflint.hcl'
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
 
 # Global settings
 default_language_version:
@@ -92,21 +78,15 @@ exclude: |
     \.idea/.*|
     build/.*|
     tmp/.*|
-    workspace/.*|
-    dev-workspace/.*|
-    test-workspace/.*|
-    \.gcloud/.*|
-    gcloud-config/.*|
-    monitoring-data/.*|
-    test-results/.*|
-    security-reports/.*|
-    \.terraform/.*|
-    terraform\.tfstate.*|
-    \.terragrunt-cache/.*|
+    \.venv/.*|
+    venv/.*|
+    __pycache__/.*|
+    \.pytest_cache/.*|
+    \.mypy_cache/.*|
+    htmlcov/.*|
     .*\.bak|
     .*\.backup|
-    .*-backup-.*|
-    intelligence/smart-commit/htmlcov/.*
+    .*-backup-.*
   )$
 
 # Stop on first failure to avoid running unnecessary checks

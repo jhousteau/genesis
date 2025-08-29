@@ -4,13 +4,13 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 class MockFilesystem:
     """Mock filesystem operations for testing."""
 
-    def __init__(self, base_path: Optional[Path] = None):
+    def __init__(self, base_path: Path | None = None):
         if base_path is None:
             self.temp_dir = tempfile.mkdtemp()
             self.base_path = Path(self.temp_dir)

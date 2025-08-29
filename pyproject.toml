@@ -4,11 +4,18 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "genesis"
-version = "0.1.0-alpha"
+version = "0.1.0"
 description = "Genesis Development Toolkit - Unified package for lean, AI-safe projects"
 authors = ["Genesis Team"]
 readme = "README.md"
 packages = [{include = "genesis"}]
+include = [
+    "templates/**/*",
+    "smart-commit/**/*",
+    "worktree-tools/**/*",
+    "shared-typescript/**/*",
+    "scripts/**/*",
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"

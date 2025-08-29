@@ -4,7 +4,6 @@ import subprocess
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from genesis.core.logger import get_logger
 
@@ -34,11 +33,11 @@ class ProjectInfo:
     """Information about detected project."""
 
     project_type: ProjectType
-    python_subtype: Optional[PythonSubtype] = None
+    python_subtype: PythonSubtype | None = None
     has_docker: bool = False
     has_precommit: bool = False
     available_tools: dict[str, bool] = None
-    project_root: Optional[Path] = None
+    project_root: Path | None = None
 
     def __post_init__(self):
         if self.available_tools is None:
@@ -48,7 +47,7 @@ class ProjectInfo:
 class ProjectDetector:
     """Detects project type and available tools."""
 
-    def __init__(self, project_root: Optional[Path] = None):
+    def __init__(self, project_root: Path | None = None):
         """Initialize project detector.
 
         Args:
@@ -160,7 +159,7 @@ class ProjectDetector:
         return (self.project_root / ".pre-commit-config.yaml").exists()
 
     def _detect_available_tools(
-        self, project_type: ProjectType, python_subtype: Optional[PythonSubtype]
+        self, project_type: ProjectType, python_subtype: PythonSubtype | None
     ) -> dict[str, bool]:
         """Detect which autofix tools are available.
 
