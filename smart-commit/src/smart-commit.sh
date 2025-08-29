@@ -264,9 +264,67 @@ elif [[ "$commit_type" == "fix" ]]; then
     fi
 fi
 
-# 9. Create atomic commit with all changes
+# 9. Handle branch management and commit
+current_branch=$(git branch --show-current)
+main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
+
+# Check if we're on the main branch
+if [[ "$current_branch" == "$main_branch" ]]; then
+    # Create a new branch based on commit message
+    branch_name=""
+    case "$commit_type" in
+        "feat")
+            branch_name="feature/$(echo "$commit_msg" | sed -E 's/^feat: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
+            ;;
+        "fix")
+            branch_name="fix/$(echo "$commit_msg" | sed -E 's/^fix: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
+            ;;
+        *)
+            branch_name="chore/$(echo "$commit_msg" | sed -E 's/^[^:]+: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
+            ;;
+    esac
+
+    log "🌿 Creating new branch: $branch_name"
+    git checkout -b "$branch_name"
+fi
+
+# 10. Create atomic commit with all changes
 git add -A
 git commit -m "$commit_msg"
 
 log "✅ Commit created: $commit_msg" "$GREEN"
-log "ℹ️ Next: git push to publish changes"
+
+# 11. Push changes and create PR if needed
+current_branch=$(git branch --show-current)
+
+if [[ "$current_branch" != "$main_branch" ]]; then
+    log "📤 Pushing branch to origin..."
+    git push -u origin "$current_branch"
+
+    # Create PR if gh CLI is available
+    if command -v gh &> /dev/null; then
+        log "🔗 Creating pull request..."
+
+        # Generate PR description based on commit type
+        pr_body=""
+        case "$commit_type" in
+            "feat")
+                pr_body="## Summary\n- New feature: $(echo "$commit_msg" | sed -E 's/^feat: //')\n\n## Test plan\n- [ ] Manual testing completed\n- [ ] All existing tests pass"
+                ;;
+            "fix")
+                pr_body="## Summary\n- Bug fix: $(echo "$commit_msg" | sed -E 's/^fix: //')\n\n## Test plan\n- [ ] Fix verified manually\n- [ ] All existing tests pass"
+                ;;
+            *)
+                pr_body="## Summary\n- $(echo "$commit_msg" | sed -E 's/^[^:]+: //')\n\n## Test plan\n- [ ] Changes reviewed and tested"
+                ;;
+        esac
+
+        gh pr create --title "$commit_msg" --body "$pr_body" --base "$main_branch" || {
+            log "⚠️ Could not create PR automatically - create manually if needed"
+        }
+    else
+        log "ℹ️ Install gh CLI for automatic PR creation"
+    fi
+else
+    log "ℹ️ On main branch - changes committed locally"
+fi
