@@ -57,7 +57,55 @@ else
 fi
 log "✅ AutoFixer completed" "$GREEN"
 
-# 3. Run pre-commit hooks for validation
+# 3. Handle branch management before pre-commit checks
+log "ℹ️ Checking branch status..."
+current_branch=$(git branch --show-current)
+main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
+
+# Check if we're on the main branch and need to create a feature branch
+if [[ "$current_branch" == "$main_branch" ]]; then
+    # We need a commit message to create a proper branch name
+    # Check if commit message provided via environment variable (from CLI)
+    if [[ -n "${COMMIT_MESSAGE:-}" ]]; then
+        commit_msg="$COMMIT_MESSAGE"
+    # Check if commit type and message provided as arguments
+    elif [[ $# -ge 2 ]]; then
+        type="$1"
+        desc="$2"
+        # Validate commit type
+        if [[ ! "$type" =~ ^(feat|fix|docs|refactor|test|chore)$ ]]; then
+            error_exit "Invalid commit type: $type. Must be one of: feat, fix, docs, refactor, test, chore"
+        fi
+        commit_msg="$type: $desc"
+    else
+        # Create a generic branch name with timestamp
+        timestamp=$(date +"%Y%m%d-%H%M%S")
+        branch_name="feature/auto-branch-$timestamp"
+        log "🌿 Creating auto-branch: $branch_name" "$YELLOW"
+        git checkout -b "$branch_name"
+    fi
+
+    # If we have a commit message, create a descriptive branch name
+    if [[ -n "${commit_msg:-}" ]]; then
+        commit_type=$(echo "$commit_msg" | cut -d':' -f1)
+        case "$commit_type" in
+            "feat")
+                branch_name="feature/$(echo "$commit_msg" | sed -E 's/^feat: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
+                ;;
+            "fix")
+                branch_name="fix/$(echo "$commit_msg" | sed -E 's/^fix: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
+                ;;
+            *)
+                branch_name="chore/$(echo "$commit_msg" | sed -E 's/^[^:]+: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
+                ;;
+        esac
+
+        log "🌿 Creating branch: $branch_name" "$GREEN"
+        git checkout -b "$branch_name"
+    fi
+fi
+
+# 4. Run pre-commit hooks for validation
 if [[ -f .pre-commit-config.yaml ]]; then
     log "ℹ️ Running pre-commit checks..."
     if ! pre-commit run --all-files; then
@@ -72,7 +120,7 @@ if [[ -f .pre-commit-config.yaml ]]; then
     log "✅ Pre-commit checks passed" "$GREEN"
 fi
 
-# 4. Run tests with continue option
+# 5. Run tests with continue option
 log "ℹ️ Running tests..."
 test_cmd=""
 if [[ -d tests/ ]] && command -v pytest &>/dev/null; then
@@ -91,13 +139,13 @@ if [[ -n $test_cmd ]]; then
     fi
 fi
 
-# 5. Basic secret detection
+# 6. Basic secret detection
 log "ℹ️ Scanning for secrets..."
 if grep -rE "(sk-[a-zA-Z0-9]{48}|ghp_[a-zA-Z0-9]{36})" --include="*.py" --include="*.js" --include="*.ts" . 2>/dev/null | grep -v test; then
     error_exit "Potential secrets detected! Remove before committing"
 fi
 
-# 6. Interactive commit message
+# 7. Interactive commit message
 echo ""
 
 # Check if commit message provided via environment variable (from CLI)
@@ -137,7 +185,7 @@ if [[ -z "${COMMIT_MESSAGE:-}" ]]; then
     [[ $REPLY =~ ^[Nn]$ ]] && { log "Cancelled" "$YELLOW"; exit 0; }
 fi
 
-# 7. Update documentation before commit
+# 8. Update documentation before commit
 log "ℹ️ Updating documentation..."
 
 # Extract commit type from message for documentation updates
@@ -215,7 +263,7 @@ else
     log "ℹ️ Skipping CHANGELOG.md update (no changelog or non-notable change)"
 fi
 
-# 8. Detect version bump needs
+# 9. Detect version bump needs
 should_bump_version=false
 if [[ -f "pyproject.toml" ]] && [[ "$commit_type" == "feat" ]]; then
     log "ℹ️ Feature detected - checking version bump..."
@@ -262,30 +310,6 @@ elif [[ "$commit_type" == "fix" ]]; then
             log "✅ Patch version bumped in pyproject.toml"
         fi
     fi
-fi
-
-# 9. Handle branch management and commit
-current_branch=$(git branch --show-current)
-main_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
-
-# Check if we're on the main branch
-if [[ "$current_branch" == "$main_branch" ]]; then
-    # Create a new branch based on commit message
-    branch_name=""
-    case "$commit_type" in
-        "feat")
-            branch_name="feature/$(echo "$commit_msg" | sed -E 's/^feat: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
-            ;;
-        "fix")
-            branch_name="fix/$(echo "$commit_msg" | sed -E 's/^fix: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
-            ;;
-        *)
-            branch_name="chore/$(echo "$commit_msg" | sed -E 's/^[^:]+: //' | sed -E 's/[^a-zA-Z0-9]+/-/g' | tr '[:upper:]' '[:lower:]' | sed -E 's/-+$//g')"
-            ;;
-    esac
-
-    log "🌿 Creating new branch: $branch_name"
-    git checkout -b "$branch_name"
 fi
 
 # 10. Create atomic commit with all changes

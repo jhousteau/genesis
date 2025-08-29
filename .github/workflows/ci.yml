@@ -155,7 +155,7 @@ jobs:
         run: |
           pip install safety bandit
           echo "🔍 Running Safety (dependency vulnerabilities)..."
-          timeout 120 safety scan --output json > safety-report.json 2>&1 || echo "Safety scan completed with warnings"
+          timeout 120 safety scan --output json --output-file safety-report.json || echo "Safety scan completed with warnings"
           echo "🔍 Running Bandit (SAST for Python)..."
           bandit -r . -f json -o bandit-report.json --configfile .bandit || echo "Bandit scan completed with findings"
 

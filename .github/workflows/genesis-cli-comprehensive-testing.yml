@@ -242,7 +242,7 @@ jobs:
     - name: Security Vulnerability Scan
       run: |
         # Check for known vulnerabilities
-        safety check --json --output reports/safety-report.json || true
+        safety scan --output json --output-file reports/safety-report.json || true
 
         # Static security analysis
         bandit -r cli/ -f json -o reports/bandit-report.json || true
