@@ -172,38 +172,58 @@ check_misplaced_scripts() {
 }
 
 check_documentation_organization() {
-    log_check "Checking documentation organization"
+    log_check "Checking and cleaning up documentation organization"
 
-    local found_issues=false
+    local files_moved=0
 
-    # Find .md files in wrong places
+    # Ensure scratch directory exists
+    mkdir -p scratch/
+
+    # Find loose .md files in project root and move to scratch/
     if command -v find >/dev/null 2>&1; then
-        local misplaced_docs=$(find . -name "*.md" \
-            -not -path "./docs/*" \
-            -not -path "./README.md" \
-            -not -path "./CLAUDE.md" \
-            -not -path "./SECURITY.md" \
-            -not -path "./LICENSE.md" \
-            -not -path "./**/README.md" \
-            -not -path "./.git/*" \
-            -not -path "./node_modules/*" \
-            -not -path "./.venv/*" \
-            -not -path "./venv/*" \
+        local loose_docs=$(find . -maxdepth 1 -name "*.md" \
+            -not -name "README.md" \
+            -not -name "CLAUDE.md" \
+            -not -name "SECURITY.md" \
+            -not -name "LICENSE.md" \
             2>/dev/null || true)
 
-        if [ -n "$misplaced_docs" ]; then
-            log_issue "Documentation files in wrong location:"
-            echo "$misplaced_docs" | while read -r doc; do
-                if [[ ! "$doc" =~ /README\.md$ ]]; then  # Allow README.md in subdirectories
-                    echo "  $doc → Should be in docs/"
-                    found_issues=true
+        if [ -n "$loose_docs" ]; then
+            echo -e "${YELLOW}📦 Moving loose documentation files to scratch/${NC}"
+            echo "$loose_docs" | while read -r doc; do
+                if [ -f "$doc" ]; then
+                    mv "$doc" "scratch/"
+                    echo "  Moved: $doc → scratch/"
+                    files_moved=$((files_moved + 1))
                 fi
             done
         fi
+
+        # Find files directly in docs/ root (except README.md and CLAUDE.md) and move to scratch/
+        if [ -d "docs" ]; then
+            local docs_root_files=$(find ./docs -maxdepth 1 -name "*.md" \
+                -not -name "README.md" \
+                -not -name "CLAUDE.md" \
+                2>/dev/null || true)
+
+            if [ -n "$docs_root_files" ]; then
+                echo -e "${YELLOW}📦 Moving files from docs/ root to scratch/${NC}"
+                echo "$docs_root_files" | while read -r doc; do
+                    if [ -f "$doc" ]; then
+                        filename=$(basename "$doc")
+                        mv "$doc" "scratch/docs-${filename}"
+                        echo "  Moved: $doc → scratch/docs-${filename}"
+                        files_moved=$((files_moved + 1))
+                    fi
+                done
+            fi
+        fi
     fi
 
-    if [ "$found_issues" = false ]; then
+    if [ $files_moved -eq 0 ]; then
         log_success "Documentation properly organized"
+    else
+        echo -e "${GREEN}✅ Moved $files_moved files to scratch/ for reorganization${NC}"
     fi
     echo
 }
@@ -261,12 +281,59 @@ check_directory_structure() {
     echo
 }
 
+check_directory_documentation() {
+    log_check "Checking that directories have proper documentation"
+
+    local found_issues=false
+    local min_files=3  # Only check directories with 3+ files
+
+    # Find all directories and check for documentation
+    if command -v find >/dev/null 2>&1; then
+        find . -type d \
+            -not -path "./.git*" \
+            -not -path "./node_modules*" \
+            -not -path "./.venv*" \
+            -not -path "./venv*" \
+            -not -path "./htmlcov*" \
+            -not -path "./.pytest_cache*" \
+            -not -path "./dist*" \
+            -not -path "./__pycache__*" \
+            2>/dev/null | while read -r dir; do
+
+            # Skip root directory
+            if [ "$dir" = "." ]; then
+                continue
+            fi
+
+            # Count files in directory (excluding subdirectories and hidden files)
+            local file_count=$(find "$dir" -maxdepth 1 -type f -not -name ".*" 2>/dev/null | wc -l)
+
+            if [ "$file_count" -ge "$min_files" ]; then
+                # Check for README.md or CLAUDE.md
+                if [ ! -f "$dir/README.md" ] && [ ! -f "$dir/CLAUDE.md" ]; then
+                    if [ "$found_issues" = false ]; then
+                        log_issue "Directories missing documentation (README.md or CLAUDE.md):"
+                        found_issues=true
+                    fi
+                    echo "  $dir ($file_count files) - needs README.md or CLAUDE.md"
+                fi
+            fi
+        done
+    fi
+
+    if [ "$found_issues" = false ]; then
+        log_success "All significant directories have documentation"
+    fi
+    echo
+}
+
 # Run all checks
 check_root_clutter
 check_misplaced_scripts
 check_documentation_organization
 check_test_organization
 check_directory_structure
+check_directory_documentation
 
 echo
 if [ $ISSUES_FOUND -eq 0 ]; then

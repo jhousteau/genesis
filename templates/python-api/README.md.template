@@ -7,9 +7,14 @@
 - FastAPI framework with automatic OpenAPI documentation
 - Poetry for dependency management
 - Pytest with async support and coverage reporting
-- Pre-commit hooks for code quality
+- Pre-commit hooks with comprehensive code quality checks
 - Type checking with mypy
 - Code formatting with black and isort
+- Advanced linting with ruff and flake8
+- Security scanning with bandit and gitleaks
+- Code quality analysis with pylint
+- Environment management with direnv
+- AI safety file count enforcement
 
 ## Quick Start
 
@@ -17,14 +22,18 @@
 
 - Python {{python_version}}+
 - Poetry
+- direnv (optional, for automatic environment loading)
 
 ### Installation
 
-```bash
-# Install dependencies
-poetry install
+✅ **Already configured!** Genesis bootstrap has set up everything for you:
+- Poetry dependencies installed
+- Pre-commit hooks configured
+- Development environment ready
 
-# Install pre-commit hooks
+If you need to reinstall dependencies:
+```bash
+poetry install
 poetry run pre-commit install
 ```
 
@@ -32,20 +41,30 @@ poetry run pre-commit install
 
 ```bash
 # Run the development server
-poetry run uvicorn {{project_name}}.main:app --reload
+poetry run uvicorn {{module_name}}.main:app --reload
+# or use make
+make run
 
 # Run tests
 poetry run pytest
+# or use make
+make test
 
 # Run tests with coverage
 poetry run pytest --cov
+# or use make
+make test-cov
 
 # Format code
 poetry run black src/ tests/
 poetry run isort src/ tests/
+# or use make
+make format
 
 # Type checking
 poetry run mypy src/
+# or use make
+make typecheck
 ```
 
 ### API Documentation
@@ -66,7 +85,7 @@ Once the server is running, you can access:
 poetry install --only=main
 
 # Run with Gunicorn (production WSGI server)
-poetry run gunicorn {{project_name}}.main:app -w 4 -k uvicorn.workers.UvicornWorker
+poetry run gunicorn {{module_name}}.main:app -w 4 -k uvicorn.workers.UvicornWorker
 ```
 
 ## Testing
@@ -94,6 +113,59 @@ make lint
 # Type check
 make typecheck
 
+# Security scanning
+make security
+
 # Run all quality checks
 make quality
 ```
+
+## Build and Cleanup
+
+```bash
+# Build the package
+make build
+
+# Clean build artifacts
+make clean
+```
+
+## Available Commands
+
+```bash
+# See all available make targets
+make help
+```
+
+## Security
+
+This project includes comprehensive security scanning:
+
+- **Bandit**: Python security linter
+- **Gitleaks**: Secret detection
+- **Pre-commit hooks**: Prevent security issues from being committed
+
+## Genesis Integration
+
+This project includes full Genesis CLI integration:
+
+```bash
+# Smart commit with quality gates
+genesis commit -m "your message"
+
+# Check project health
+genesis status
+
+# Create AI-safe worktrees
+genesis worktree create feature-branch
+
+# Clean and optimize
+genesis clean
+```
+
+## AI Safety
+
+This project enforces AI safety file count limits:
+- Maximum 30 files per worktree for optimal AI assistant interaction
+- Automatic file count warnings in development environment
+- Consider using sparse worktrees for larger codebases

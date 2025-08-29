@@ -1,0 +1,16 @@
+# Genesis Project Configuration
+# These values are used for template substitution in Genesis's own config files
+
+project_name: "genesis"
+project_description: "Genesis Development Toolkit - Unified package for lean, AI-safe projects"
+author_name: "Genesis Team"
+author_email: "genesis@example.com"  # Default, can be overridden by GENESIS_AUTHOR_EMAIL
+python_version: "3.11"
+
+# Genesis-specific settings
+genesis_version: "0.1.0-alpha"
+repository_url: "https://github.com/jhousteau/genesis"
+
+# Development settings
+debug: false
+log_level: "info"

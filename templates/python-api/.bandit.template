@@ -1,4 +1,4 @@
-# Bandit configuration for genesis security scanning
+# Bandit configuration for {{project_name}} security scanning
 exclude_dirs:
   - "*/tests/*"
   - "*/test_*"

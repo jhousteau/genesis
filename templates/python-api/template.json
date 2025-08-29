@@ -35,13 +35,143 @@
       "substitute": true
     },
     {
+      "src": "Makefile.template",
+      "dest": "Makefile",
+      "substitute": true
+    },
+    {
+      "src": ".gitignore.template",
+      "dest": ".gitignore",
+      "substitute": false
+    },
+    {
+      "src": ".envrc.template",
+      "dest": ".envrc",
+      "substitute": true
+    },
+    {
       "src": ".env.example.template",
       "dest": ".env.example",
       "substitute": true
     },
     {
-      "src": "Makefile.template",
-      "dest": "Makefile",
+      "src": ".pre-commit-config.yaml.template",
+      "dest": ".pre-commit-config.yaml",
+      "substitute": true
+    },
+    {
+      "src": ".flake8.template",
+      "dest": ".flake8",
+      "substitute": false
+    },
+    {
+      "src": ".bandit.template",
+      "dest": ".bandit",
+      "substitute": true
+    },
+    {
+      "src": ".pylintrc.template",
+      "dest": ".pylintrc",
+      "substitute": true
+    },
+    {
+      "src": ".gitattributes.template",
+      "dest": ".gitattributes",
+      "substitute": false
+    },
+    {
+      "src": ".gitleaks.toml.template",
+      "dest": ".gitleaks.toml",
+      "substitute": true
+    },
+    {
+      "src": ".markdownlint.json.template",
+      "dest": ".markdownlint.json",
+      "substitute": false
+    },
+    {
+      "src": "setup.sh.template",
+      "dest": "setup.sh",
+      "substitute": true
+    },
+    {
+      "src": "CLAUDE.md.template",
+      "dest": "CLAUDE.md",
+      "substitute": true
+    },
+    {
+      "src": "docs/README.md.template",
+      "dest": "docs/README.md",
+      "substitute": true
+    },
+    {
+      "src": "scripts/README.md.template",
+      "dest": "scripts/README.md",
+      "substitute": true
+    },
+    {
+      "src": "scratch/README.md.template",
+      "dest": "scratch/README.md",
+      "substitute": true
+    },
+    {
+      "src": "config/README.md.template",
+      "dest": "config/README.md",
+      "substitute": true
+    },
+    {
+      "src": "docs/vision/CLAUDE.md.template",
+      "dest": "docs/vision/CLAUDE.md",
+      "substitute": true
+    },
+    {
+      "src": "docs/architecture/CLAUDE.md.template",
+      "dest": "docs/architecture/CLAUDE.md",
+      "substitute": true
+    },
+    {
+      "src": "docs/standards/CLAUDE.md.template",
+      "dest": "docs/standards/CLAUDE.md",
+      "substitute": true
+    },
+    {
+      "src": "docs/CLAUDE.md.template",
+      "dest": "docs/CLAUDE.md",
+      "substitute": true
+    },
+    {
+      "src": "scratch/CLAUDE.md.template",
+      "dest": "scratch/CLAUDE.md",
+      "substitute": true
+    },
+    {
+      "src": "CHANGELOG.md.template",
+      "dest": "CHANGELOG.md",
+      "substitute": true
+    },
+    {
+      "src": ".github/workflows/release.yml.template",
+      "dest": ".github/workflows/release.yml",
+      "substitute": true
+    },
+    {
+      "src": "docs/releases/README.md.template",
+      "dest": "docs/releases/README.md",
+      "substitute": true
+    },
+    {
+      "src": "docs/releases/v0.1.0.md.template",
+      "dest": "docs/releases/v0.1.0.md",
+      "substitute": true
+    },
+    {
+      "src": ".claude/settings.json.template",
+      "dest": ".claude/settings.json",
+      "substitute": true
+    },
+    {
+      "src": ".claude/hooks/update-docs.py.template",
+      "dest": ".claude/hooks/update-docs.py",
       "substitute": true
     }
   ]

@@ -96,9 +96,15 @@ class ErrorContext:
             from genesis.core.constants import get_environment, get_service_name
 
             if service is None:
-                service = get_service_name()
+                try:
+                    service = get_service_name()
+                except ValueError:
+                    service = "genesis-cli"  # Default for CLI usage
             if environment is None:
-                environment = get_environment()
+                try:
+                    environment = get_environment()
+                except ValueError:
+                    environment = "development"  # Default for CLI usage
 
         return cls(
             correlation_id=str(uuid.uuid4()),
@@ -423,9 +429,19 @@ def get_error_handler() -> ErrorHandler:
     if _error_handler is None:
         from genesis.core.constants import get_environment, get_service_name
 
+        try:
+            service_name = get_service_name()
+        except ValueError:
+            service_name = "genesis-cli"
+
+        try:
+            environment = get_environment()
+        except ValueError:
+            environment = "development"
+
         _error_handler = ErrorHandler(
-            service_name=get_service_name(),
-            environment=get_environment(),
+            service_name=service_name,
+            environment=environment,
         )
     return _error_handler
 

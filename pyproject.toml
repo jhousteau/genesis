@@ -9,6 +9,13 @@ description = "Genesis Development Toolkit - Unified package for lean, AI-safe p
 authors = ["Genesis Team"]
 readme = "README.md"
 packages = [{include = "genesis"}]
+include = [
+    "templates/**/*",
+    "smart-commit/**/*",
+    "worktree-tools/**/*",
+    "shared-typescript/**/*",
+    "scripts/**/*",
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"

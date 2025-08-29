@@ -219,17 +219,21 @@ class LoggerConfig:
         except ValueError:
             pass
 
-        # If we can't determine environment, require explicit config
-        raise ValueError(
-            "Log level not configured. Set LOG_LEVEL or configure environment."
-        )
+        # Default to INFO for CLI usage when environment isn't configured
+        return "INFO"
 
     @staticmethod
     def should_format_json() -> bool:
         """Whether to format logs as JSON."""
         value = os.environ.get("LOG_JSON")
         if not value:
-            raise ValueError("LOG_JSON environment variable is required")
+            # Default based on environment if available
+            try:
+                environment = get_environment()
+                return environment in ["production", "prod", "staging"]
+            except ValueError:
+                return False  # Default to human-readable for CLI
+
         value = value.lower()
         if value in ["true", "1", "yes"]:
             return True
@@ -241,14 +245,15 @@ class LoggerConfig:
             environment = get_environment()
             return environment in ["production", "prod", "staging"]
         except ValueError:
-            return True  # Safe default for unknown environments
+            return False  # Default to human-readable for CLI
 
     @staticmethod
     def should_include_timestamp() -> bool:
         """Whether to include timestamp in logs."""
         value = os.environ.get("LOG_TIMESTAMP")
         if not value:
-            raise ValueError("LOG_TIMESTAMP environment variable is required")
+            return True  # Default to including timestamps
+
         value = value.lower()
         if value in ["true", "1", "yes"]:
             return True
@@ -261,7 +266,7 @@ class LoggerConfig:
         """Whether to include caller info in logs."""
         value = os.environ.get("LOG_CALLER")
         if not value:
-            raise ValueError("LOG_CALLER environment variable is required")
+            return False  # Default to not including caller for CLI simplicity
         value = value.lower()
         if value in ["true", "1", "yes"]:
             return True
