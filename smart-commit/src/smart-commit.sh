@@ -113,12 +113,12 @@ log "ℹ️ Pre-commit validation completed by AutoFixer" "$GREEN"
 # 5. Run tests with continue option
 log "ℹ️ Running tests..."
 test_cmd=""
-if [[ -f pyproject.toml ]] && command -v poetry &>/dev/null && [[ -d tests/ ]]; then
-    # Poetry project - use poetry run pytest
-    test_cmd="poetry run pytest"
-elif [[ -f Makefile ]] && make -n test &>/dev/null; then
-    # Has Makefile with test target
+if [[ -f Makefile ]] && make -n test &>/dev/null; then
+    # Prefer Makefile test target (official project test command)
     test_cmd="make test"
+elif [[ -f pyproject.toml ]] && command -v poetry &>/dev/null && [[ -d tests/ ]]; then
+    # Poetry project - use poetry run pytest on tests directory only
+    test_cmd="poetry run pytest tests/"
 elif [[ -d tests/ ]] && command -v pytest &>/dev/null; then
     # Fallback to direct pytest
     test_cmd="pytest tests/ -q"
@@ -129,7 +129,7 @@ if [[ -n $test_cmd ]]; then
     # echo "DEBUG: Running '$test_cmd' in directory '$(pwd)'"
 
     # Use eval to ensure proper command expansion
-    if eval "$test_cmd" &>/dev/null; then
+    if eval "$test_cmd"; then
         log "✅ Tests passed" "$GREEN"
     else
         log "⚠️ Tests failed" "$YELLOW"

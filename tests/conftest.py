@@ -224,14 +224,26 @@ def clean_environment():
     """Clean up environment variables and state between tests."""
     # Store original environment
     original_env = os.environ.copy()
-    original_cwd = os.getcwd()
+
+    # Store original working directory, with fallback if it doesn't exist
+    try:
+        original_cwd = os.getcwd()
+    except FileNotFoundError:
+        # If current directory doesn't exist, use project root as fallback
+        original_cwd = str(Path(__file__).parent.parent)
 
     yield
 
     # Restore environment
     os.environ.clear()
     os.environ.update(original_env)
-    os.chdir(original_cwd)
+
+    # Restore working directory if it exists
+    try:
+        os.chdir(original_cwd)
+    except (FileNotFoundError, OSError):
+        # If original directory no longer exists, go to project root
+        os.chdir(str(Path(__file__).parent.parent))
 
 
 @pytest.fixture
