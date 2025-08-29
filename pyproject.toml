@@ -16,6 +16,13 @@ include = [
     "shared-typescript/**/*",
     "scripts/**/*",
 ]
+exclude = [
+    "**/.terraform/**",
+    "**/.terraform.lock.hcl",
+    "**/terraform.tfstate*",
+    "**/*.tfvars",
+    "**/*tfplan*",
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"
