@@ -6,10 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from testing.fixtures import (
-    create_genesis_project_structure,
-    patch_subprocess_run,
-)
+from testing.fixtures import create_genesis_project_structure, patch_subprocess_run
 
 
 class TestComponentIntegration:

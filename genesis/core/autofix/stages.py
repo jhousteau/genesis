@@ -151,12 +151,16 @@ class PythonFormatterStage(FormatterStage):
         if project_info.python_subtype == PythonSubtype.POETRY:
             if project_info.available_tools.get("poetry-isort"):
                 commands.append(("isort", "poetry run isort ."))
+            elif project_info.available_tools.get("isort"):
+                commands.append(("isort", "poetry run isort ."))
         elif project_info.available_tools.get("isort"):
             commands.append(("isort", "isort ."))
 
         # Black formatting
         if project_info.python_subtype == PythonSubtype.POETRY:
             if project_info.available_tools.get("poetry-black"):
+                commands.append(("Black", "poetry run black ."))
+            elif project_info.available_tools.get("black"):
                 commands.append(("Black", "poetry run black ."))
         elif project_info.available_tools.get("black"):
             commands.append(("Black", "black ."))
@@ -166,6 +170,8 @@ class PythonFormatterStage(FormatterStage):
         # Ruff formatting
         if project_info.python_subtype == PythonSubtype.POETRY:
             if project_info.available_tools.get("poetry-ruff"):
+                commands.append(("Ruff format", "poetry run ruff format ."))
+            elif project_info.available_tools.get("ruff"):
                 commands.append(("Ruff format", "poetry run ruff format ."))
         elif project_info.available_tools.get("ruff"):
             commands.append(("Ruff format", "ruff format ."))
@@ -257,6 +263,8 @@ class PythonLinterStage(LinterStage):
         # Ruff linting
         if project_info.python_subtype == PythonSubtype.POETRY:
             if project_info.available_tools.get("poetry-ruff"):
+                commands.append(("Ruff fix", "poetry run ruff check --fix ."))
+            elif project_info.available_tools.get("ruff"):
                 commands.append(("Ruff fix", "poetry run ruff check --fix ."))
         elif project_info.available_tools.get("ruff"):
             commands.append(("Ruff fix", "ruff check --fix ."))

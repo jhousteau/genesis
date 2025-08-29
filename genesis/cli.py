@@ -62,7 +62,11 @@ def get_component_path(component: str) -> Path | None:
 @click.version_option(version=__version__)
 @click.pass_context
 def cli(ctx):
-    """Genesis - Development toolkit for lean, AI-safe projects."""
+    """Genesis - Development toolkit for lean, AI-safe projects.
+
+    Genesis provides automated code quality, formatting, and project management
+    tools designed for AI-assisted development workflows.
+    """
     ctx.ensure_object(dict)
     ctx.obj["genesis_root"] = find_genesis_root()
 
@@ -137,6 +141,73 @@ def worktree(ctx, name: str, focus_path: str, max_files: int | None, verify: boo
     except Exception as e:
         handled_error = handle_error(e)
         click.echo(f"❌ Worktree creation failed: {handled_error.message}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.option(
+    "--dry-run", is_flag=True, help="Show what would be fixed without making changes"
+)
+@click.option(
+    "--stages",
+    help="Comma-separated list of stages to run (basic,formatter,linter,validation)",
+)
+@click.option(
+    "--max-iterations",
+    type=int,
+    help="Maximum convergent fixing iterations (default: 3)",
+)
+@click.pass_context
+def autofix(ctx, dry_run: bool, stages: str | None, max_iterations: int | None):
+    """Run autofix (formatting, linting) without committing changes."""
+    try:
+        from genesis.core.autofix import AutoFixer
+        from genesis.core.errors import handle_error
+    except ImportError as e:
+        click.echo(f"❌ AutoFixer not available: {e}", err=True)
+        sys.exit(1)
+
+    # Set required environment variables for AutoFixer if not already set
+    env_vars = {
+        "AUTOFIX_MAX_ITERATIONS": str(max_iterations) if max_iterations else "3",
+        "AUTOFIX_MAX_RUNS": "5",
+        "AI_MAX_FILES": "30",
+        "AI_SAFETY_MODE": "enforced",
+        "LOG_LEVEL": "info",
+    }
+
+    for var, default_value in env_vars.items():
+        if var not in os.environ:
+            os.environ[var] = default_value
+
+    try:
+        fixer = AutoFixer(max_iterations=max_iterations or 3)
+
+        if stages:
+            # Run specific stages only
+            stage_list = [s.strip() for s in stages.split(",")]
+            result = fixer.run_stage_only(stage_list, dry_run=dry_run)
+        else:
+            # Run all stages
+            result = fixer.run(dry_run=dry_run)
+
+        if result.success:
+            if dry_run:
+                click.echo("✅ AutoFixer dry-run completed! (no changes made)")
+            else:
+                click.echo("✅ AutoFixer completed successfully!")
+                click.echo(
+                    f"📊 Executed {len(result.stage_results)} stages with {result.total_runs} total runs"
+                )
+        else:
+            click.echo(
+                f"❌ AutoFixer failed: {result.error or 'Unknown error'}", err=True
+            )
+            sys.exit(1)
+
+    except Exception as e:
+        handled_error = handle_error(e)
+        click.echo(f"❌ AutoFixer failed: {handled_error.message}", err=True)
         sys.exit(1)
 
 
