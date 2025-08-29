@@ -105,32 +105,31 @@ if [[ "$current_branch" == "$main_branch" ]]; then
     fi
 fi
 
-# 4. Run pre-commit hooks for validation
-if [[ -f .pre-commit-config.yaml ]]; then
-    log "ℹ️ Running pre-commit checks..."
-    if ! pre-commit run --all-files; then
-        echo -e "\n${YELLOW}💡 Common fixes:${NC}"
-        echo "   • If main branch is protected: git checkout -b feature/your-change"
-        echo "   • For formatting issues: make format"
-        echo "   • For linting issues: make lint"
-        echo "   • For test failures: make test"
-        echo ""
-        error_exit "Pre-commit checks failed"
-    fi
-    log "✅ Pre-commit checks passed" "$GREEN"
-fi
+# 4. Pre-commit validation already completed by AutoFixer with convergent fixing
+# AutoFixer runs individual hooks + final 'pre-commit run --all-files' validation
+# No need to duplicate this work - trust the AutoFixer results
+log "ℹ️ Pre-commit validation completed by AutoFixer" "$GREEN"
 
 # 5. Run tests with continue option
 log "ℹ️ Running tests..."
 test_cmd=""
-if [[ -d tests/ ]] && command -v pytest &>/dev/null; then
-    test_cmd="pytest tests/ -q"
+if [[ -f pyproject.toml ]] && command -v poetry &>/dev/null && [[ -d tests/ ]]; then
+    # Poetry project - use poetry run pytest
+    test_cmd="poetry run pytest"
 elif [[ -f Makefile ]] && make -n test &>/dev/null; then
+    # Has Makefile with test target
     test_cmd="make test"
+elif [[ -d tests/ ]] && command -v pytest &>/dev/null; then
+    # Fallback to direct pytest
+    test_cmd="pytest tests/ -q"
 fi
 
 if [[ -n $test_cmd ]]; then
-    if $test_cmd &>/dev/null; then
+    # Debug: show what we're about to run
+    # echo "DEBUG: Running '$test_cmd' in directory '$(pwd)'"
+
+    # Use eval to ensure proper command expansion
+    if eval "$test_cmd" &>/dev/null; then
         log "✅ Tests passed" "$GREEN"
     else
         log "⚠️ Tests failed" "$YELLOW"

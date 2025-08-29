@@ -259,9 +259,87 @@ def setup_project_environment(project_path: Path) -> None:
                     capture_output=True,
                 )
                 logger.info("✅ Direnv environment configured")
-            except (subprocess.CalledProcessError, FileNotFoundError):
+            except FileNotFoundError:
+                # Direnv not found - try to install it
+                logger.info("📦 Installing direnv for automatic environment loading...")
+                try:
+                    # Try to install direnv via Homebrew (macOS/Linux)
+                    subprocess.run(
+                        ["brew", "install", "direnv"],
+                        check=True,
+                        capture_output=True,
+                    )
+                    # Configure direnv for the shell automatically
+                    logger.info("🔧 Configuring direnv for shell integration...")
+                    try:
+                        # Add direnv hook to shell config files
+                        import os
+
+                        shell = os.environ.get("SHELL", "/bin/zsh")
+
+                        if "zsh" in shell:
+                            zshrc_path = Path.home() / ".zshrc"
+                            hook_line = 'eval "$(direnv hook zsh)"\n'
+                        elif "bash" in shell:
+                            bashrc_path = Path.home() / ".bashrc"
+                            hook_line = 'eval "$(direnv hook bash)"\n'
+                        else:
+                            # Default to zsh
+                            zshrc_path = Path.home() / ".zshrc"
+                            hook_line = 'eval "$(direnv hook zsh)"\n'
+
+                        # Add hook if not already present
+                        if "zsh" in shell:
+                            config_file = zshrc_path
+                        else:
+                            config_file = bashrc_path if "bash" in shell else zshrc_path
+
+                        if config_file.exists():
+                            existing_content = config_file.read_text()
+                            if "direnv hook" not in existing_content:
+                                with config_file.open("a") as f:
+                                    f.write(
+                                        f"\n# Added by Genesis bootstrap\n{hook_line}"
+                                    )
+                                logger.info(
+                                    "✅ Added direnv hook to shell configuration"
+                                )
+                        else:
+                            # Create shell config file with direnv hook
+                            with config_file.open("w") as f:
+                                f.write(f"# Genesis shell configuration\n{hook_line}")
+                            logger.info(
+                                "✅ Created shell configuration with direnv hook"
+                            )
+
+                        # Allow the .envrc file after installation
+                        subprocess.run(
+                            ["direnv", "allow", str(project_path)],
+                            check=True,
+                            capture_output=True,
+                        )
+                        logger.info("✅ Direnv installed and configured automatically")
+
+                    except subprocess.CalledProcessError:
+                        logger.warning("⚠️  Direnv installed but configuration failed")
+                        logger.info(
+                            "💡 Run 'direnv allow' in the project directory to enable environment loading"
+                        )
+                except subprocess.CalledProcessError:
+                    logger.warning("⚠️  Could not install direnv automatically")
+                    logger.info("💡 Install manually: brew install direnv")
+                    logger.info("💡 Then run 'direnv allow' in the project directory")
+                except FileNotFoundError:
+                    logger.warning(
+                        "⚠️  Homebrew not found - cannot install direnv automatically"
+                    )
+                    logger.info(
+                        "💡 Install direnv manually for automatic environment loading"
+                    )
+            except subprocess.CalledProcessError:
+                logger.warning("⚠️  Failed to configure direnv for this project")
                 logger.info(
-                    "ℹ️  direnv not found - you can install it for automatic environment loading"
+                    "💡 Run 'direnv allow' in the project directory to enable environment loading"
                 )
 
     except subprocess.CalledProcessError as e:

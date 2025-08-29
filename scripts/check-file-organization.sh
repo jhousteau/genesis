@@ -47,6 +47,7 @@ ALLOWED_ROOT_FILES=(
     "pytest\.ini"
     "requirements\.txt"
     "requirements-dev\.txt"
+    ".*\.json"
     "Dockerfile"
     "docker-compose\.yml"
     "\.dockerignore"

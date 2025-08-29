@@ -5,6 +5,7 @@ Provides common testing utilities, mocks, and AI safety validation.
 """
 
 import os
+import subprocess
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
@@ -15,6 +16,27 @@ import pytest
 
 # Test markers
 pytest_plugins = []
+
+
+def load_envrc():
+    """Load .envrc environment variables for tests."""
+    envrc_path = Path(__file__).parent.parent / ".envrc"
+    if envrc_path.exists():
+        # Run bash to source .envrc and output environment
+        result = subprocess.run(
+            ["bash", "-c", f"source {envrc_path} && env"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            for line in result.stdout.strip().split("\n"):
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key] = value
+
+
+# Load .envrc environment variables at test startup
+load_envrc()
 
 
 @pytest.fixture(scope="session")
