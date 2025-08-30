@@ -52,6 +52,7 @@ ALLOWED_ROOT_FILES=(
     "requirements-dev\.txt"
     "setup\.sh"
     "install\.sh"
+    ".*\.json"
     "Dockerfile"
     "docker-compose\.yml"
     "\.dockerignore"

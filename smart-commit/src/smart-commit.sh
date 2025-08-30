@@ -111,16 +111,20 @@ fi
 # 4. Run tests with continue option
 log "ℹ️ Running tests..."
 test_cmd=""
-# Prefer Makefile test target (handles Poetry/virtualenv properly)
 if [[ -f Makefile ]] && make -n test &>/dev/null; then
+    # Prefer Makefile test target (official project test command)
     test_cmd="make test"
+elif [[ -f pyproject.toml ]] && command -v poetry &>/dev/null && [[ -d tests/ ]]; then
+    # Poetry project - use poetry run pytest on tests directory only
+    test_cmd="poetry run pytest tests/"
 elif [[ -d tests/ ]] && command -v pytest &>/dev/null; then
+    # Fallback to direct pytest
     test_cmd="pytest tests/ -q"
 fi
 
 if [[ -n $test_cmd ]]; then
     echo "Running: $test_cmd"
-    if $test_cmd; then
+    if eval "$test_cmd"; then
         log "✅ Tests passed" "$GREEN"
     else
         log "⚠️ Tests failed" "$YELLOW"

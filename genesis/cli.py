@@ -26,6 +26,22 @@ def get_git_root() -> Path | None:
     return None
 
 
+def get_component_path(component_name: str) -> Path | None:
+    """Find Genesis component path."""
+    # Try relative to CLI file first (for development)
+    cli_path = Path(__file__)
+    component_path = cli_path.parent.parent / component_name
+    if component_path.exists():
+        return component_path
+
+    # Try current directory (if we're in Genesis project)
+    current_path = Path.cwd() / component_name
+    if current_path.exists():
+        return current_path
+
+    return None
+
+
 @click.group()
 @click.version_option(version=__version__)
 def cli():
@@ -336,6 +352,109 @@ def status(verbose: bool):
         click.echo("🎉 Genesis project is healthy!")
     else:
         click.echo("⚠️  Genesis project has issues")
+        sys.exit(1)
+
+
+@cli.command()
+@click.option("--message", "-m", help="Commit message")
+@click.pass_context
+def commit(ctx, message: str | None):
+    """Smart commit with quality gates and pre-commit hooks."""
+    # Check if we're in a git repository
+    if not Path.cwd().joinpath(".git").exists():
+        click.echo(
+            "❌ Not in a git repository. Initialize git first with: git init", err=True
+        )
+        sys.exit(1)
+
+    # Find smart-commit script from component path
+    smart_commit_path = get_component_path("smart-commit")
+    if not smart_commit_path:
+        click.echo(
+            "❌ Smart-commit component not found. Genesis may not be properly installed.",
+            err=True,
+        )
+        sys.exit(1)
+
+    smart_commit_script = smart_commit_path / "src" / "smart-commit.sh"
+    if not smart_commit_script.exists():
+        click.echo(
+            f"❌ Smart-commit script not found at {smart_commit_script}", err=True
+        )
+        sys.exit(1)
+
+    # Set required environment variables for AutoFixer if not already set
+    env_vars = {
+        "AUTOFIX_MAX_ITERATIONS": "3",
+        "AUTOFIX_MAX_RUNS": "5",
+        "AI_MAX_FILES": "30",
+        "AI_SAFETY_MODE": "enforced",
+        "LOG_LEVEL": "info",
+    }
+
+    for var, default_value in env_vars.items():
+        if var not in os.environ:
+            os.environ[var] = default_value
+
+    cmd = [str(smart_commit_script)]
+    if message:
+        os.environ["COMMIT_MESSAGE"] = message
+
+    try:
+        # FIXED: Run smart-commit in the current working directory (project directory)
+        subprocess.run(cmd, check=True, cwd=os.getcwd())
+        click.echo("✅ Smart commit completed!")
+    except Exception as e:
+        handled_error = handle_error(e)
+        click.echo(f"❌ Smart commit failed: {handled_error.message}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.option(
+    "--dry-run", is_flag=True, help="Show what would be fixed without making changes"
+)
+@click.option(
+    "--stages",
+    help="Comma-separated list of stages to run (basic,formatter,linter,validation)",
+)
+@click.option(
+    "--max-iterations",
+    type=int,
+    help="Maximum convergent fixing iterations (default: 3)",
+)
+@click.pass_context
+def autofix(ctx, dry_run: bool, stages: str | None, max_iterations: int | None):
+    """Run autofix (formatting, linting) without committing changes."""
+    from genesis.core.autofix import AutoFixer
+    from genesis.core.errors import handle_error
+
+    try:
+        fixer = AutoFixer(max_iterations=max_iterations)
+
+        # Parse stages if provided
+        stage_list = None
+        if stages:
+            stage_list = [s.strip() for s in stages.split(",")]
+
+        if stages:
+            # Run specific stages only
+            result = fixer.run_stage_only(stages=stage_list, dry_run=dry_run)
+        else:
+            # Run full autofix process
+            result = fixer.run(dry_run=dry_run)
+
+        if dry_run:
+            click.echo("🔍 Dry run completed - no changes made")
+        else:
+            click.echo("✅ AutoFix completed")
+
+        if hasattr(result, "success") and not result.success:
+            click.echo("⚠️  Some issues were found during autofix")
+
+    except Exception as e:
+        handled_error = handle_error(e)
+        click.echo(f"❌ AutoFix failed: {handled_error.message}", err=True)
         sys.exit(1)
 
 

@@ -5,6 +5,7 @@ Provides common testing utilities, mocks, and AI safety validation.
 """
 
 import os
+import subprocess
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
@@ -15,6 +16,27 @@ import pytest
 
 # Test markers
 pytest_plugins = []
+
+
+def load_envrc():
+    """Load .envrc environment variables for tests."""
+    envrc_path = Path(__file__).parent.parent / ".envrc"
+    if envrc_path.exists():
+        # Run bash to source .envrc and output environment
+        result = subprocess.run(
+            ["bash", "-c", f"source {envrc_path} && env"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            for line in result.stdout.strip().split("\n"):
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key] = value
+
+
+# Load .envrc environment variables at test startup
+load_envrc()
 
 
 @pytest.fixture(scope="session")
@@ -202,14 +224,26 @@ def clean_environment():
     """Clean up environment variables and state between tests."""
     # Store original environment
     original_env = os.environ.copy()
-    original_cwd = os.getcwd()
+
+    # Store original working directory, with fallback if it doesn't exist
+    try:
+        original_cwd = os.getcwd()
+    except FileNotFoundError:
+        # If current directory doesn't exist, use project root as fallback
+        original_cwd = str(Path(__file__).parent.parent)
 
     yield
 
     # Restore environment
     os.environ.clear()
     os.environ.update(original_env)
-    os.chdir(original_cwd)
+
+    # Restore working directory if it exists
+    try:
+        os.chdir(original_cwd)
+    except (FileNotFoundError, OSError):
+        # If original directory no longer exists, go to project root
+        os.chdir(str(Path(__file__).parent.parent))
 
 
 @pytest.fixture
