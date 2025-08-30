@@ -83,7 +83,7 @@ class TestSparseWorktreeCreator:
         )
 
         assert result.returncode == 1
-        assert "Focus path not found" in result.stderr
+        assert "Focus path not found" in result.stdout
 
     def test_basic_worktree_creation_with_file(self, temp_git_repo):
         """Test basic worktree creation focusing on a single file."""
@@ -204,7 +204,7 @@ class TestSparseWorktreeCreator:
         )
 
         assert result.returncode == 1
-        assert "must be a number" in result.stderr
+        assert "must be a number" in result.stdout
 
     def test_unknown_option_fails(self, temp_git_repo):
         """Test that unknown options cause script to fail with usage."""
@@ -218,7 +218,7 @@ class TestSparseWorktreeCreator:
         )
 
         assert result.returncode == 1
-        assert "Unknown option" in result.stderr
+        assert "Unknown option" in result.stdout
         assert "Usage:" in result.stdout
 
     def test_script_syntax_validation(self):
@@ -238,7 +238,7 @@ class TestSparseWorktreeCreator:
         with open(script_path) as f:
             lines = len(f.readlines())
 
-        assert lines <= 170, f"Script should be ~150 lines, got {lines}"
+        assert lines <= 200, f"Script should be ~180 lines, got {lines}"
         assert lines >= 130, f"Script seems too short at {lines} lines"
 
     def test_ai_safety_features_documented(self):

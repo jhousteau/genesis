@@ -204,3 +204,6 @@ target/
 *.backup
 *~
 PROJECT_INDEX.json
+
+# Worktrees
+/worktrees/

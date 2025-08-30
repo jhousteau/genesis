@@ -104,16 +104,16 @@ class AILimits:
     @staticmethod
     def get_max_worktree_files() -> int:
         """Get maximum files per worktree for AI safety."""
-        value_str = os.environ.get("MAX_WORKTREE_FILES")
+        value_str = os.environ.get("AI_MAX_FILES")
         if not value_str:
-            raise ValueError("MAX_WORKTREE_FILES environment variable is required")
+            raise ValueError("AI_MAX_FILES environment variable is required")
         try:
             value = int(value_str)
             if value <= 0 or value > 100:
-                raise ValueError("MAX_WORKTREE_FILES must be between 1-100")
+                raise ValueError("AI_MAX_FILES must be between 1-100")
             return value
         except ValueError as e:
-            raise ValueError(f"Invalid MAX_WORKTREE_FILES '{value_str}': {e}") from e
+            raise ValueError(f"Invalid AI_MAX_FILES '{value_str}': {e}") from e
 
     @staticmethod
     def get_max_project_files() -> int:
@@ -132,16 +132,16 @@ class AILimits:
     @staticmethod
     def get_max_component_files() -> int:
         """Get maximum files per component for AI safety."""
-        value_str = os.environ.get("MAX_COMPONENT_FILES")
+        value_str = os.environ.get("AI_MAX_FILES")
         if not value_str:
-            raise ValueError("MAX_COMPONENT_FILES environment variable is required")
+            raise ValueError("AI_MAX_FILES environment variable is required")
         try:
             value = int(value_str)
             if value <= 0 or value > 100:
-                raise ValueError("MAX_COMPONENT_FILES must be between 1-100")
+                raise ValueError("AI_MAX_FILES must be between 1-100")
             return value
         except ValueError as e:
-            raise ValueError(f"Invalid MAX_COMPONENT_FILES '{value_str}': {e}") from e
+            raise ValueError(f"Invalid AI_MAX_FILES '{value_str}': {e}") from e
 
 
 class RetryDefaults:
@@ -329,8 +329,7 @@ def get_genesis_components() -> dict[str, str]:
             "bootstrap",
             "smart-commit",
             "worktree-tools",
-            "shared-python",
-            "genesis-cli",
+            "genesis",
             "testing",
         ]
     }

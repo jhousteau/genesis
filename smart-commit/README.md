@@ -1,6 +1,6 @@
 # Smart Commit System
 
-Extracted and simplified quality gates system from old Genesis codebase. Provides automated validation before commits with essential quality gates.
+Automated quality gates system providing validation before commits with essential quality gates.
 
 ## Features
 

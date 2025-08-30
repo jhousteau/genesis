@@ -1,0 +1,55 @@
+.PHONY: help install dev test test-cov test-watch format lint typecheck security quality clean run build
+
+help: ## Show this help message
+	@echo 'Usage: make [target]'
+	@echo ''
+	@echo 'Targets:'
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+install: ## Install dependencies
+	poetry install
+
+dev: install ## Install with development dependencies
+	poetry run pre-commit install
+
+test: ## Run tests
+	poetry run pytest
+
+test-cov: ## Run tests with coverage
+	poetry run pytest --cov --cov-report=html --cov-report=term
+
+test-watch: ## Run tests in watch mode
+	poetry run pytest-watch
+
+format: ## Format code with black and isort
+	poetry run black src/ tests/
+	poetry run isort src/ tests/
+
+lint: ## Lint code with flake8, ruff, and pylint
+	poetry run flake8 src/ tests/
+	poetry run ruff check src/ tests/
+	poetry run pylint src/ tests/ --disable=all --enable=unused-import,unused-variable
+
+typecheck: ## Type check with mypy
+	poetry run mypy src/
+
+security: ## Run security scans
+	poetry run bandit -r src/ -c .bandit || true
+	poetry run gitleaks detect --verbose --no-banner || true
+
+quality: format lint typecheck security ## Run all quality checks
+
+clean: ## Clean build artifacts
+	rm -rf build/
+	rm -rf dist/
+	rm -rf *.egg-info/
+	rm -rf .coverage
+	rm -rf htmlcov/
+	rm -rf .pytest_cache/
+	rm -rf .mypy_cache/
+
+run: ## Run the development server
+	poetry run uvicorn test_project.main:app --reload
+
+build: ## Build the package
+	poetry build

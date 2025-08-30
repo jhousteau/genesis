@@ -83,10 +83,9 @@ def validate_ai_safety_limits(
         if component_dir.is_dir() and not component_dir.name.startswith("."):
             if component_dir.name in [
                 "bootstrap",
-                "genesis-cli",
+                "genesis",
                 "smart-commit",
                 "worktree-tools",
-                "shared-python",
                 "testing",
             ]:
                 component_files = count_files_in_directory(component_dir)
@@ -176,10 +175,9 @@ def get_file_count_report(directory: Path) -> dict[str, Any]:
         if component_dir.is_dir() and not component_dir.name.startswith("."):
             if component_dir.name in [
                 "bootstrap",
-                "genesis-cli",
+                "genesis",
                 "smart-commit",
                 "worktree-tools",
-                "shared-python",
                 "testing",
             ]:
                 component_files = count_files_in_directory(component_dir)

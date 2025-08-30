@@ -18,7 +18,7 @@ Arguments:
   focus_path   Path to focus on (file or directory)
 
 Options:
-  --max-files <n>   Max files (default: 30)
+  --max-files <n>   Max files (required, or set AI_MAX_FILES env var)
   --verify          Verify safety after creation
   --help           Show help
 
@@ -30,10 +30,11 @@ Features: File limits, depth restrictions, safety manifest, contamination detect
 EOF
 }
 
-# Parse arguments
+# Parse arguments - check for help first
+[[ $# -gt 0 && "$1" == "--help" ]] && { show_usage; exit 0; }
 [[ $# -lt 2 ]] && { show_usage; exit 1; }
 
-NAME="$1"; FOCUS_PATH="$2"; MAX_FILES=30; VERIFY=false
+NAME="$1"; FOCUS_PATH="$2"; MAX_FILES="${AI_MAX_FILES:-}"; VERIFY=false
 
 shift 2
 while [[ $# -gt 0 ]]; do
@@ -47,6 +48,7 @@ done
 
 # Validate inputs
 [[ ! -e "$FOCUS_PATH" ]] && { echo -e "${RED}Focus path not found: $FOCUS_PATH${NC}"; exit 1; }
+[[ -z "$MAX_FILES" ]] && { echo -e "${RED}Max files not specified. Use --max-files <n> or set AI_MAX_FILES environment variable${NC}"; exit 1; }
 [[ ! $MAX_FILES =~ ^[0-9]+$ ]] && { echo -e "${RED}Max files must be a number${NC}"; exit 1; }
 
 # Get repository info
@@ -57,7 +59,7 @@ if git rev-parse --git-dir 2>/dev/null | grep -q worktrees; then
 fi
 
 BRANCH="sparse-$NAME"
-WORKTREE_DIR="../worktrees/$NAME"
+WORKTREE_DIR="worktrees/$NAME"
 
 echo -e "${GREEN}Creating AI-safe sparse worktree${NC}"
 echo -e "${BLUE}Name:${NC} $NAME  ${BLUE}Focus:${NC} $FOCUS_PATH  ${BLUE}Limit:${NC} $MAX_FILES files"

@@ -1,6 +1,6 @@
 # Worktree Tools - AI-Safe Development Isolation
 
-Extracted and simplified sparse worktree creator from old Genesis codebase. Creates AI-safe development environments with file count limits and contamination prevention.
+AI-safe sparse worktree creator providing development environments with file count limits and contamination prevention.
 
 ## Features
 

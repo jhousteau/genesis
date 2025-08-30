@@ -44,9 +44,18 @@ def get_component_path(component_name: str) -> Path | None:
 
 @click.group()
 @click.version_option(version=__version__)
-def cli():
+@click.pass_context
+def cli(ctx):
     """Genesis - Development toolkit for lean, AI-safe projects."""
-    pass
+    # Ensure click context object exists
+    ctx.ensure_object(dict)
+
+    # Try to find genesis root
+    genesis_root = get_git_root()
+    if genesis_root:
+        # Simple heuristic: if we have genesis-cli directory, we're likely in Genesis
+        if (genesis_root / "genesis").exists():
+            ctx.obj["genesis_root"] = genesis_root
 
 
 @cli.command()
@@ -71,57 +80,6 @@ def bootstrap(name: str, project_type: str, target_path: str | None, skip_git: b
 
 # Worktree functionality removed - use direct script calls instead
 # Direct usage: /path/to/genesis/worktree-tools/src/create-sparse-worktree.sh <name> <focus_path> --max-files <n> --verify
-
-
-@cli.command()
-@click.option("--message", "-m", help="Commit message")
-def commit(message: str | None):
-    """Smart commit with quality gates and pre-commit hooks."""
-    # Check if we're in a git repository
-    if not Path.cwd().joinpath(".git").exists():
-        click.echo(
-            "❌ Not in a git repository. Initialize git first with: git init", err=True
-        )
-        sys.exit(1)
-
-    # Try to find smart-commit script relative to CLI file
-    cli_path = Path(__file__)
-    smart_commit_script = (
-        cli_path.parent.parent / "smart-commit" / "src" / "smart-commit.sh"
-    )
-
-    if not smart_commit_script.exists():
-        click.echo(
-            "❌ Smart-commit script not found. Use direct call instead:", err=True
-        )
-        click.echo("   /path/to/genesis/smart-commit/src/smart-commit.sh", err=True)
-        sys.exit(1)
-
-    # Set required environment variables for AutoFixer if not already set
-    env_vars = {
-        "AUTOFIX_MAX_ITERATIONS": "3",
-        "AUTOFIX_MAX_RUNS": "5",
-        "AI_MAX_FILES": "30",
-        "AI_SAFETY_MODE": "enforced",
-        "LOG_LEVEL": "info",
-    }
-
-    for var, default_value in env_vars.items():
-        if var not in os.environ:
-            os.environ[var] = default_value
-
-    # Build command arguments
-    cmd = [str(smart_commit_script)]
-    if message:
-        os.environ["COMMIT_MESSAGE"] = message
-
-    try:
-        subprocess.run(cmd, check=True)
-        click.echo("✅ Smart commit completed!")
-    except Exception as e:
-        handled_error = handle_error(e)
-        click.echo(f"❌ Smart commit failed: {handled_error.message}", err=True)
-        sys.exit(1)
 
 
 @cli.command()
@@ -232,7 +190,8 @@ def clean(worktrees: bool, artifacts: bool, clean_all: bool):
 
 
 @cli.command()
-def sync():
+@click.pass_context
+def sync(ctx):
     """Update shared components and dependencies."""
     genesis_root = ctx.obj.get("genesis_root")
     if not genesis_root:
@@ -271,7 +230,8 @@ cli.add_command(version)
 
 @cli.command()
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed status")
-def status(verbose: bool):
+@click.pass_context
+def status(ctx, verbose: bool):
     """Check Genesis project health and component status."""
     genesis_root = ctx.obj.get("genesis_root")
     if not genesis_root:
@@ -285,8 +245,8 @@ def status(verbose: bool):
         "bootstrap": "Project initialization system",
         "smart-commit": "Quality gates before commits",
         "worktree-tools": "AI-safe sparse worktree creation",
-        "shared-python": "Common Python utilities",
-        "genesis-cli": "Main CLI interface",
+        "genesis": "Core CLI and shared utilities",
+        "testing": "Testing infrastructure and fixtures",
     }
 
     all_healthy = True
@@ -303,22 +263,10 @@ def status(verbose: bool):
 
     # Check file count for AI safety
     try:
+        # Use git ls-files to respect .gitignore
         result = subprocess.run(
-            [
-                "find",
-                str(genesis_root),
-                "-type",
-                "f",
-                "-not",
-                "-path",
-                "*/old-bloated-code-read-only/*",
-                "-not",
-                "-path",
-                "*/.git/*",
-                "-not",
-                "-path",
-                "*/node_modules/*",
-            ],
+            ["git", "ls-files"],
+            cwd=genesis_root,
             capture_output=True,
             text=True,
             check=True,

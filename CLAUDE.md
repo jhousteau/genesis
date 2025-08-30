@@ -1,33 +1,33 @@
-# ⚠️ CONTEXT MODE: BUILDING GENESIS ⚠️
+# ⚠️ CONTEXT MODE: IMPROVING GENESIS (ALPHA) ⚠️
 
-**You are currently BUILDING Genesis, not using it.**
+**You are currently improving Genesis, not using it in a client project.**
 
-Genesis is a development toolkit we are creating. This document prevents confusion between building Genesis vs using Genesis in future projects.
+Genesis is a development toolkit in active alpha development. This document prevents confusion between improving Genesis vs using Genesis in future projects.
 
 ## Context Detection Rules
 
-### You're BUILDING Genesis if:
-- The project root contains `EXTRACTION_PLAN.md`
-- Tasks involve creating Genesis components
-- You're creating the genesis-cli tool itself
-- Working in a project directory named "genesis"
+### You're IMPROVING Genesis if:
+- Working in the Genesis repository (directory named "genesis")
+- Tasks involve enhancing Genesis components
+- You're improving the genesis CLI tool
+- Adding features to Genesis templates or core utilities
 
 ### You're USING Genesis if:
 - The project has `.genesis/` configuration directory
-- You're running `genesis` commands (not building them)
-- You're importing from shared libraries (not creating them)
-- There's no `EXTRACTION_PLAN.md`
+- You're running `genesis` commands (not improving them)
+- You're importing from Genesis libraries (not enhancing them)
+- Working in a client project that uses Genesis
 
-## Building vs Using Genesis
+## Improving vs Using Genesis
 
-| NOW (Building Genesis)               | FUTURE (Using Genesis)                    |
+| NOW (Improving Genesis)              | FUTURE (Using Genesis)                    |
 |--------------------------------------|-------------------------------------------|
-| Creating smart-commit.sh             | Running smart-commit.sh                   |
-| Building genesis CLI tool            | Running `genesis bootstrap <project>`     |
-| Making shared libraries              | Importing from shared libraries           |
-| Creating Genesis components          | Using clean Genesis tools                 |
-| Setting up Genesis worktrees         | Using Genesis to create project worktrees|
-| Implementing file count validation   | Benefiting from automatic file limits    |
+| Enhancing smart-commit.sh            | Running smart-commit.sh                   |
+| Improving genesis CLI tool           | Running `genesis bootstrap <project>`     |
+| Extending shared libraries           | Importing from shared libraries           |
+| Enhancing Genesis components         | Using clean Genesis tools                 |
+| Improving Genesis worktree tools     | Using Genesis to create project worktrees|
+| Refining file count validation       | Benefiting from automatic file limits    |
 
 ## 🎯 Core Building Principle: "Build Generic, Use Everywhere"
 
@@ -203,19 +203,19 @@ project/
 ## ⚠️ Common Confusion Points
 
 ### Smart Commit
-- **NOW**: We're extracting and simplifying smart-commit.sh from old code
-- **FUTURE**: Projects will use the smart-commit tool we create
+- **NOW**: We're refining smart-commit.sh for better reliability
+- **FUTURE**: Projects will use the smart-commit tool we've created
 
 ### Directory Structure
-- **NOW**: Creating genesis-cli/, shared-python/, etc. directories
+- **NOW**: Improving genesis CLI and core utilities
 - **FUTURE**: Projects import FROM these directories via Genesis
 
 ### Sparse Worktrees
-- **NOW**: Setting up Genesis to be sparse-worktree friendly
+- **NOW**: Enhancing Genesis worktree tools for better AI safety
 - **FUTURE**: Projects use Genesis tools to create sparse worktrees
 
 ### Bootstrap Process
-- **NOW**: Creating the bootstrap.sh script and templates
+- **NOW**: Improving the bootstrap system and templates
 - **FUTURE**: Running `genesis bootstrap` to create new projects
 
 ## Standard Project Structure
@@ -242,81 +242,82 @@ project/
 - **scripts/**: Executable utilities with `--help`, named `action-target.sh`
 - **docs/**: Organized by type (api, guides, architecture)
 
-## Current Genesis Components (Being Built)
+## Current Genesis Components (Alpha State)
 
-### Phase 0: Foundation
-- `CLAUDE.md` ← You are here
-- `.envrc` and environment management
-- Comprehensive ignore files
-- Dependency management (Poetry, npm)
-- Root Makefile for automation
-- Standard project structure (docs/, scripts/, scratch/)
-
-### Phase 1: Structure
-- Component-based directories
-- CI/CD with GitHub Actions
-- Testing infrastructure
-
-### Phase 2: Components
+### Main Repository Structure
+- **genesis/**: Core Python package with CLI and utilities
+- **bootstrap/**: Project initialization system
 - **smart-commit/**: Quality gates before commits
 - **worktree-tools/**: AI-safe sparse worktree creation
-- **shared-python/**: Common utilities (retry, logger, config, health)
-- **bootstrap/**: Project initialization system
-- **genesis-cli/**: Main CLI with 4 commands
-- **templates/**: Project templates (Python API, CLI, library)
-- **shared-typescript/**: TypeScript versions of utilities
+- **templates/**: Project templates (Python API, CLI, TypeScript, Terraform)
+- **shared-typescript/**: TypeScript utilities
+- **terraform/**: Infrastructure modules
+- **docs/**: Comprehensive documentation
+- **scripts/**: Utility scripts for validation and automation
+
+### Worktree-Based Development
+Genesis uses sparse worktrees for AI-safe development:
+- **Main workspace**: 211 files (too large for AI)
+- **Focused worktrees**: <30 files each for specific tasks
+- **AI protection**: Built-in safeguards prevent context overflow
 
 ## AI Safety Rules (Apply to Both Modes)
 
 ### File Count Limits
-- **Building Genesis**: Keep total project <5,000 lines
+- **Improving Genesis**: Each worktree <30 files for AI safety
 - **Using Genesis**: Each worktree <30 files for AI safety
 
 ### Sparse Worktree Isolation
-- **Building Genesis**: Each component <30 files when checked out
+- **Improving Genesis**: Each component <30 files when checked out
 - **Using Genesis**: Genesis enforces these limits automatically
 
 ### Quality Gates
-- **Building Genesis**: We implement pre-commit hooks and testing
+- **Improving Genesis**: We maintain pre-commit hooks and testing
 - **Using Genesis**: Genesis provides pre-configured quality gates
 
-## What Genesis Will Provide (End Goal)
+## What Genesis Provides (Alpha Release)
 
-### CLI Commands
+### CLI Commands (Currently Available)
 ```bash
 genesis bootstrap <name>    # Create new project with templates
-genesis worktree create     # Create AI-safe sparse worktree
-genesis sync               # Update shared components
+genesis autofix            # Run formatting and linting
+genesis commit             # Smart commit with quality gates
 genesis status             # Check project health
+genesis sync               # Update shared components
+genesis clean              # Clean workspace and worktrees
+genesis version            # Version management utilities
 ```
 
-### Shared Libraries
-- **Python**: `from shared_core import retry, logger, config, health`
-- **TypeScript**: `import { retry, logger, config, health } from '@genesis/shared'`
+### Core Libraries (Available Now)
+- **Python**: `from genesis.core import retry, logger, config, health, errors`
+- **Autofix**: Multi-stage convergent code fixing
+- **Circuit Breaker**: Resilient failure handling
+- **Context Management**: Structured error correlation
 
-### Templates & Patterns
-- Pre-configured project templates
-- Automatic worktree setup
-- Built-in quality gates
-- Security scanning
-- AI safety enforcement
+### Templates & Infrastructure (Ready to Use)
+- 4 complete project templates (Python API, CLI, TypeScript, Terraform)
+- Terraform modules for GCP infrastructure
+- Pre-configured quality gates
+- Security scanning (Bandit, Gitleaks)
+- AI safety enforcement via worktrees
 
 ## Anti-Confusion Checklist
 
 Before taking any action, verify:
 
-- [ ] Am I building Genesis or using Genesis?
-- [ ] Do I see `EXTRACTION_PLAN.md`? (Building mode)
-- [ ] Am I creating components or using them?
-- [ ] Are file paths in `/genesis/` (building) or `/project/` (using)?
+- [ ] Am I improving Genesis or using Genesis?
+- [ ] Am I in the Genesis repository? (Improving mode)
+- [ ] Am I enhancing components or using them?
+- [ ] Are file paths in `/genesis/` (improving) or `/project/` (using)?
 
 ## Success Metrics
 
-### Building Genesis Success:
-- [ ] Total lines reduced from 250,000+ to <5,000
+### Improving Genesis Success:
+- [ ] Genesis CLI stable and feature-complete
 - [ ] Each component <30 files for AI safety
 - [ ] All manual setup steps automated
 - [ ] Genesis can bootstrap itself
+- [ ] Quality gates prevent regressions
 
 ### Using Genesis Success:
 - [ ] New project created in <2 minutes
@@ -326,6 +327,6 @@ Before taking any action, verify:
 
 ---
 
-**Remember**: We are currently in **BUILDING** mode. Genesis doesn't exist yet - we're creating it.
+**Remember**: We are currently in **IMPROVING** mode. Genesis is in alpha - we're enhancing it.
 
-Once Genesis is complete, this file will help AI assistants understand when they're working WITH Genesis vs ON Genesis.
+This file helps AI assistants understand when they're working ON Genesis vs WITH Genesis.

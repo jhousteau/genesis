@@ -101,7 +101,7 @@ def create_genesis_project_structure(base_path: Path) -> MockFilesystem:
             "src": {"bootstrap.sh": "#!/usr/bin/env bash"},
             "tests": {"test_bootstrap.py": '"""Bootstrap tests."""'},
         },
-        "genesis-cli": {
+        "genesis": {
             "README.md": "# Genesis CLI",
             "src": {
                 "genesis.py": "#!/usr/bin/env python3",
@@ -119,22 +119,19 @@ def create_genesis_project_structure(base_path: Path) -> MockFilesystem:
             "src": {"create-sparse-worktree.sh": "#!/usr/bin/env bash"},
             "tests": {"test_sparse_worktree.py": '"""Worktree tests."""'},
         },
-        "shared-python": {
-            "README.md": "# Shared Python",
+        "testing": {
+            "README.md": "# Testing",
             "src": {
-                "shared_core": {
-                    "__init__.py": '"""Shared core package."""',
-                    "retry.py": '"""Retry utility."""',
-                    "logger.py": '"""Logger utility."""',
-                    "config.py": '"""Config utility."""',
-                    "health.py": '"""Health utility."""',
+                "testing_core": {
+                    "__init__.py": '"""Testing core package."""',
+                    "ai_safety.py": '"""AI safety utility."""',
+                    "integration.py": '"""Integration utility."""',
+                    "fixtures.py": '"""Testing fixtures."""',
                 }
             },
             "tests": {
-                "test_retry.py": '"""Retry tests."""',
-                "test_logger.py": '"""Logger tests."""',
-                "test_config.py": '"""Config tests."""',
-                "test_health.py": '"""Health tests."""',
+                "test_ai_safety.py": '"""AI safety tests."""',
+                "test_integration.py": '"""Integration tests."""',
             },
         },
     }

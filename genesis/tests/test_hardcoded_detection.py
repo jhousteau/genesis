@@ -19,7 +19,7 @@ class TestHardcodedDetection:
     @pytest.fixture
     def scripts_dir(self) -> Path:
         """Get path to scripts directory."""
-        return Path(__file__).parent.parent / "scripts"
+        return Path(__file__).parent.parent.parent / "scripts"
 
     @pytest.fixture
     def hardcoded_script(self, scripts_dir: Path) -> Path:
