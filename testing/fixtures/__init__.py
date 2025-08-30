@@ -1,5 +1,11 @@
 """Testing fixtures for Genesis components."""
 
+import tempfile
+from collections.abc import Generator
+from pathlib import Path
+
+import pytest
+
 from .mock_commands import (
     MockCommandRunner,
     MockScriptEnvironment,
@@ -14,7 +20,16 @@ from .mock_filesystem import (
 )
 from .mock_git import MockGit, create_mock_git, patch_git_operations
 
+
+@pytest.fixture
+def temp_dir() -> Generator[Path, None, None]:
+    """Create a temporary directory for testing."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield Path(tmpdir)
+
+
 __all__ = [
+    "temp_dir",
     "MockGit",
     "create_mock_git",
     "patch_git_operations",

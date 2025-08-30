@@ -254,12 +254,15 @@ class PythonLinterStage(LinterStage):
 
         commands = []
 
-        # Ruff linting
-        if project_info.python_subtype == PythonSubtype.POETRY:
-            if project_info.available_tools.get("poetry-ruff"):
+        # Ruff linting - prefer poetry run for poetry projects, fallback to direct ruff
+        if project_info.available_tools.get("ruff"):
+            if (
+                project_info.python_subtype == PythonSubtype.POETRY
+                and project_info.available_tools.get("poetry")
+            ):
                 commands.append(("Ruff fix", "poetry run ruff check --fix ."))
-        elif project_info.available_tools.get("ruff"):
-            commands.append(("Ruff fix", "ruff check --fix ."))
+            else:
+                commands.append(("Ruff fix", "ruff check --fix ."))
 
         return commands
 

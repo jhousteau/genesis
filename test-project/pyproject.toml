@@ -1,0 +1,79 @@
+[tool.poetry]
+name = "test-project"
+version = "0.1.0"
+description = "A test-project project created with Genesis"
+authors = ["Test User <test@example.com>"]
+readme = "README.md"
+packages = [{include = "test_project", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.104.0"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
+pydantic = "^2.5.0"
+pydantic-settings = "^2.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-cov = "^4.1.0"
+pytest-asyncio = "^0.21.1"
+pytest-watch = "^4.2.0"
+httpx = "^0.25.2"
+black = "^23.11.0"
+isort = "^5.12.0"
+mypy = "^1.7.1"
+flake8 = "^6.1.0"
+bandit = "^1.7.5"
+pylint = "^3.0.3"
+ruff = "^0.1.6"
+pre-commit = "^3.6.0"
+gunicorn = "^21.2.0"
+# Note: direnv is required for .envrc auto-loading but must be installed system-wide
+# Install: brew install direnv (macOS) or apt-get install direnv (Ubuntu)
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["test_project"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=test_project",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=80"
+]
+asyncio_mode = "auto"

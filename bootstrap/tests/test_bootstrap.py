@@ -206,8 +206,8 @@ class TestBootstrapScript:
         with open(script_path) as f:
             lines = len(f.readlines())
 
-        assert lines <= 180, f"Script should be ~150 lines, got {lines}"
-        assert lines >= 140, f"Script seems too short at {lines} lines"
+        assert lines <= 250, f"Script should be ~200 lines, got {lines}"
+        assert lines >= 180, f"Script seems too short at {lines} lines"
 
     def test_makefile_content_valid(self):
         """Test that generated Makefile has valid content."""

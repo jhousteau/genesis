@@ -85,14 +85,20 @@ class TestAISafetyValidation:
     @pytest.mark.ai_safety
     def test_genesis_project_ai_safety(self, genesis_root):
         """Test that actual Genesis project meets AI safety limits."""
-        checker = AISafetyChecker(max_total_files=100, max_component_files=30)
+        import os
+
+        max_total_files = int(os.environ["MAX_PROJECT_FILES"])
+        max_component_files = int(os.environ["AI_MAX_FILES"])
+        checker = AISafetyChecker(
+            max_total_files=max_total_files, max_component_files=max_component_files
+        )
 
         # This should pass for the real Genesis project
         result = checker.check_project(genesis_root)
 
         # Print report for debugging if needed
         if not result["is_safe"]:
-            from testing.utilities import print_ai_safety_report
+            from genesis.testing.ai_safety import print_ai_safety_report
 
             print_ai_safety_report(genesis_root)
 
@@ -103,10 +109,10 @@ class TestAISafetyValidation:
         # Check individual components
         components = [
             "bootstrap",
-            "genesis-cli",
+            "genesis",
             "smart-commit",
             "worktree-tools",
-            "shared-python",
+            "testing",
         ]
         for component_name in components:
             component_path = genesis_root / component_name
@@ -173,10 +179,10 @@ class TestFileCountReporting:
         # Should have detected Genesis components
         expected_components = [
             "bootstrap",
-            "genesis-cli",
+            "genesis",
             "smart-commit",
             "worktree-tools",
-            "shared-python",
+            "testing",
         ]
         for component in expected_components:
             assert component in report["components"]

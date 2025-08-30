@@ -1,0 +1,69 @@
+"""Main FastAPI application."""
+
+import os
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+
+def get_required_env(var_name: str) -> str:
+    """Get required environment variable with clear error message."""
+    value = os.environ.get(var_name)
+    if not value:
+        raise ValueError(f"{var_name} environment variable is required but not set")
+    return value
+
+
+def get_optional_env(var_name: str, default: str) -> str:
+    """Get optional environment variable with explicit default."""
+    return os.environ.get(var_name, default)
+
+
+# Configuration loaded with fail-fast behavior
+SERVICE_NAME = get_optional_env("SERVICE_NAME", "test-project")
+SERVICE_VERSION = get_optional_env("SERVICE_VERSION", "0.1.0")
+LOG_LEVEL = get_optional_env("LOG_LEVEL", "info")
+
+app = FastAPI(
+    title=SERVICE_NAME,
+    description="A test-project project created with Genesis",
+    version=SERVICE_VERSION,
+)
+
+
+class HealthResponse(BaseModel):
+    """Health check response model."""
+
+    status: str
+    service: str
+    version: str
+
+
+class MessageResponse(BaseModel):
+    """Generic message response model."""
+
+    message: str
+
+
+@app.get("/")
+async def root() -> MessageResponse:
+    """Root endpoint returning welcome message."""
+    return MessageResponse(message=f"Welcome to {SERVICE_NAME}!")
+
+
+@app.get("/health", response_model=HealthResponse)
+async def health_check() -> HealthResponse:
+    """Health check endpoint."""
+    return HealthResponse(
+        status="healthy", service=SERVICE_NAME, version=SERVICE_VERSION
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    # Get server configuration with fail-fast behavior
+    host = get_optional_env("SERVER_HOST", "127.0.0.1")
+    port = int(get_optional_env("SERVER_PORT", "8000"))
+
+    uvicorn.run(app, host=host, port=port)

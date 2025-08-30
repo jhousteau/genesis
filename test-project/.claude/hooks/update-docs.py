@@ -124,7 +124,8 @@ def update_changelog(change_type: str, file_path: str, description: str):
                 new_unreleased = unreleased_content
         else:
             # Add new section
-            new_entry = f"\\n{section_header}\\n- Updated {Path(file_path).name}: {description}\\n"
+            file_name = Path(file_path).name
+            new_entry = f"\\n{section_header}\\n- Updated {file_name}: {description}\\n"
             # Insert before the next ## section
             next_section_pos = unreleased_content.find("\\n## [")
             if next_section_pos == -1:

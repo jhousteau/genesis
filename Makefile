@@ -47,14 +47,40 @@ install-prod: ## Install production dependencies only
 	fi
 
 test: ## Run all tests with coverage
-	@echo "$(BLUE)Running tests for $(PROJECT_NAME)...$(NC)"
+	@echo "$(BLUE)Running all tests for $(PROJECT_NAME)...$(NC)"
+	@$(MAKE) test-unit
+	@$(MAKE) test-integration
+
+test-unit: ## Run unit tests from all components
+	@echo "$(BLUE)Running component unit tests...$(NC)"
 	@if [ -f "pyproject.toml" ] || [ -f "pytest.ini" ]; then \
-		echo "$(BLUE)Running Python tests...$(NC)"; \
-		pytest; \
+		echo "$(BLUE)Running Python unit tests...$(NC)"; \
+		pytest bootstrap/tests/ smart-commit/tests/ worktree-tools/tests/ genesis/tests/ testing/tests/ -v --tb=short; \
 	fi
 	@if [ -f "package.json" ] && [ -d "node_modules" ]; then \
 		echo "$(BLUE)Running Node.js tests...$(NC)"; \
 		npm test; \
+	fi
+
+test-integration: ## Run cross-component integration tests
+	@echo "$(BLUE)Running integration tests...$(NC)"
+	@if [ -f "testing/tests/test_integration.py" ]; then \
+		pytest testing/tests/test_integration.py -v --tb=short; \
+	else \
+		echo "$(YELLOW)No integration tests found$(NC)"; \
+	fi
+
+test-component: ## Run tests for specific component (usage: make test-component COMPONENT=bootstrap)
+	@if [ -z "$(COMPONENT)" ]; then \
+		echo "$(RED)Error: COMPONENT parameter required. Usage: make test-component COMPONENT=bootstrap$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Running tests for $(COMPONENT) component...$(NC)"
+	@if [ -d "$(COMPONENT)/tests" ]; then \
+		pytest $(COMPONENT)/tests/ -v --tb=short; \
+	else \
+		echo "$(RED)Error: Component $(COMPONENT) tests not found at $(COMPONENT)/tests/$(NC)"; \
+		exit 1; \
 	fi
 
 lint: ## Run all linters and formatters

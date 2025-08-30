@@ -1,6 +1,6 @@
 # Bootstrap - Generic Project Initialization
 
-Extracted and simplified project bootstrapper from old Genesis codebase. Creates project structure and tooling for Python APIs, TypeScript services, and CLI tools.
+Generic project bootstrapper creating project structure and tooling for Python APIs, TypeScript services, and CLI tools.
 
 ## Features
 
