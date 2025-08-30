@@ -1,0 +1,26 @@
+# Genesis Minimal Shared Resources Manifest
+#
+# LEAN APPROACH: Only include files absolutely required for operational functionality
+# Principle: Minimal coupling, maximum isolation, reduced merge conflicts
+#
+# Format: One resource per line (ONLY what should be included)
+# - Files: relative path from project root
+# - Comments: lines starting with #
+# - Empty lines: ignored
+
+# REQUIRED FOR BUILDS/TESTS
+Makefile
+pyproject.toml
+
+# REQUIRED FOR ENVIRONMENT
+.envrc
+
+# REQUIRED FOR GIT OPERATIONS
+.gitignore
+
+# REQUIRED FOR QUALITY GATES (if agent needs to commit)
+.pre-commit-config.yaml
+
+# REQUIRED FOR PROJECT UNDERSTANDING
+README.md
+CLAUDE.md

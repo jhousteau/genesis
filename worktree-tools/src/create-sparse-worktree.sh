@@ -67,12 +67,28 @@ echo -e "${BLUE}Name:${NC} $NAME  ${BLUE}Focus:${NC} $FOCUS_PATH  ${BLUE}Limit:$
 # Create worktree directory
 mkdir -p "$(dirname "$WORKTREE_DIR")"
 
+# Clean up any stale worktree references
+echo "Cleaning up stale worktree references..."
+git worktree prune 2>/dev/null || true
+
 # Create worktree with sparse checkout
 echo "Setting up worktree..."
-git worktree add --no-checkout "$WORKTREE_DIR" -b "$BRANCH" 2>/dev/null || \
-git worktree add --no-checkout "$WORKTREE_DIR" "$BRANCH" 2>/dev/null || {
-    echo -e "${RED}Failed to create worktree - may already exist${NC}"; exit 1;
-}
+# Try creating with new branch first
+if ! git worktree add --no-checkout "$WORKTREE_DIR" -b "$BRANCH" 2>/tmp/git_error.log; then
+    echo -e "${YELLOW}Branch $BRANCH may exist, trying to reuse...${NC}"
+    # Try reusing existing branch
+    if ! git worktree add --no-checkout "$WORKTREE_DIR" "$BRANCH" 2>/tmp/git_error.log; then
+        echo -e "${RED}Failed to create worktree. Git error:${NC}"
+        cat /tmp/git_error.log
+        echo -e "${RED}Possible causes:${NC}"
+        echo "- Branch '$BRANCH' already exists: git branch -D $BRANCH"
+        echo "- Worktree path exists: rm -rf $WORKTREE_DIR"
+        echo "- Uncommitted changes in main repo: git status"
+        rm -f /tmp/git_error.log
+        exit 1
+    fi
+fi
+rm -f /tmp/git_error.log
 
 cd "$WORKTREE_DIR"
 
@@ -94,46 +110,188 @@ else
     cd "$PARENT_REPO"; git worktree remove "$WORKTREE_DIR" --force 2>/dev/null; exit 1
 fi
 
+# Build complete sparse-checkout list (focus + shared resources)
+SPARSE_CHECKOUT_LIST=("$FOCUS_PATH")
+
+# Add shared resources from manifest
+SHARED_MANIFEST="$PARENT_REPO/shared-resources.manifest"
+if [[ -f "$SHARED_MANIFEST" ]]; then
+    echo "Adding shared resources from manifest..."
+    while IFS= read -r line; do
+        # Skip comments, empty lines, and exclude patterns
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# || "$line" =~ ^[[:space:]]*! ]] && continue
+
+        # Clean up line (remove leading/trailing whitespace)
+        resource=$(echo "$line" | xargs)
+        [[ -z "$resource" ]] && continue
+
+        # Check if resource exists in parent repo before adding
+        if [[ -e "$PARENT_REPO/$resource" ]]; then
+            SPARSE_CHECKOUT_LIST+=("$resource")
+            echo -e "${BLUE}  Will include:${NC} $resource"
+        else
+            echo -e "${YELLOW}  Skipped (not found):${NC} $resource"
+        fi
+    done < "$SHARED_MANIFEST"
+else
+    echo -e "${YELLOW}No shared resources manifest found at $SHARED_MANIFEST${NC}"
+fi
+
+# Set sparse-checkout to exact list (prevents .venv, etc.)
+echo "Configuring precise sparse-checkout..."
+printf '%s\n' "${SPARSE_CHECKOUT_LIST[@]}" | git sparse-checkout set --stdin
+
 # Checkout files and count
 git checkout -q
-FILE_COUNT=$(git ls-files --cached --others --exclude-standard | wc -l)
+# Use actual filesystem count instead of git ls-files (sparse-checkout bug)
+FILE_COUNT=$(find . -type f -not -path "./.git/*" | wc -l)
+echo -e "${BLUE}Debug:${NC} Counting actual files from $(pwd), found $FILE_COUNT files"
+
+# Create isolated local directories (not shared with other worktrees)
+echo "Creating isolated local directories..."
+mkdir -p docs tests scratch
+
+# Create docs/CLAUDE.md from template
+CLAUDE_TEMPLATE="$PARENT_REPO/worktree-tools/templates/docs-claude.md.template"
+if [[ -f "$CLAUDE_TEMPLATE" ]]; then
+    cp "$CLAUDE_TEMPLATE" docs/CLAUDE.md
+else
+    echo -e "${YELLOW}Warning: Template not found at $CLAUDE_TEMPLATE, creating basic version${NC}"
+    cat > docs/CLAUDE.md << 'EOF'
+# Worktree Documentation Instructions for AI Agents
+
+This docs/ folder is LOCAL to this worktree. Document your work here.
+
+## File Organization
+- docs/ - Isolated to this worktree
+- tests/ - Component-specific tests only
+- scratch/ - Temporary files and experiments
+
+## Shared Files (Minimal Set)
+- Makefile, pyproject.toml, .envrc, .gitignore, README.md, CLAUDE.md
+
+Document your changes in docs/README.md
+EOF
+fi
+
+# Create docs/README.md from template
+README_TEMPLATE="$PARENT_REPO/worktree-tools/templates/docs-readme.md.template"
+if [[ -f "$README_TEMPLATE" ]]; then
+    # Use sed to substitute template variables
+    sed -e "s/{{NAME}}/$NAME/g" \
+        -e "s/{{BRANCH}}/$BRANCH/g" \
+        -e "s/{{DATE}}/$(date -u +"%Y-%m-%d")/g" \
+        -e "s|{{FOCUS_PATH}}|$FOCUS_PATH|g" \
+        "$README_TEMPLATE" > docs/README.md
+else
+    echo -e "${YELLOW}Warning: Template not found at $README_TEMPLATE, creating basic version${NC}"
+    cat > docs/README.md << EOF
+# Worktree: $NAME
+Branch: $BRANCH
+Created: $(date -u +"%Y-%m-%d")
+
+## Overview
+[Describe what this worktree is working on]
+
+## Changes Made
+### ${FOCUS_PATH}/
+[List changes made to your focus component]
+
+## Technical Decisions
+[Document important choices and rationale]
+
+## Follow-up Required
+[What needs to happen next]
+EOF
+fi
+
+# tests/ directory created but no .gitkeep needed (will be tracked when files are added)
+
+# Create scratch/.gitignore to ignore everything in scratch/
+echo "*" > scratch/.gitignore
+
+echo -e "${BLUE}Isolated directories created:${NC} docs/, tests/, scratch/"
+
+# Recalculate file count including new local files
+FILE_COUNT=$(find . -type f -not -path "./.git/*" | wc -l)
 
 # Apply file count restrictions if needed
 if [[ $FILE_COUNT -gt $MAX_FILES ]]; then
-    echo -e "${YELLOW}File count ($FILE_COUNT) exceeds limit ($MAX_FILES) - applying restrictions${NC}"
-
-    # Create a temporary file with restricted patterns
-    TEMP_PATTERNS=$(mktemp)
-
-    # Get code files from the focus path, limited to MAX_FILES
-    git ls-files --cached --others --exclude-standard | \
-        grep -E '\.(py|ts|js|go|sh|md)$' | \
-        grep "^$FOCUS_PATH" | \
-        head -"$MAX_FILES" > "$TEMP_PATTERNS"
-
-    # If we still don't have enough files, include some other important files
-    if [[ $(wc -l < "$TEMP_PATTERNS") -lt $MAX_FILES ]]; then
-        git ls-files --cached --others --exclude-standard | \
-            grep "^$FOCUS_PATH" | \
-            grep -E '\.(json|toml|yml|yaml|txt)$' | \
-            head -$((MAX_FILES - $(wc -l < "$TEMP_PATTERNS"))) >> "$TEMP_PATTERNS"
-    fi
-
-    # Apply the sparse checkout with the filtered files
-    if [[ -s "$TEMP_PATTERNS" ]]; then
-        # Add the focus directory pattern to ensure directory structure
-        echo "$FOCUS_PATH/*" > "$TEMP_PATTERNS.final"
-        cat "$TEMP_PATTERNS" >> "$TEMP_PATTERNS.final"
-
-        git sparse-checkout set --stdin < "$TEMP_PATTERNS.final"
-        rm "$TEMP_PATTERNS" "$TEMP_PATTERNS.final"
-    else
-        # Fallback to just the focus path if no specific files found
-        git sparse-checkout set "$FOCUS_PATH"
-    fi
-
-    FILE_COUNT=$(git ls-files | wc -l)
+    echo -e "${YELLOW}Warning: $FILE_COUNT files exceeds $MAX_FILES limit${NC}"
+    echo -e "${YELLOW}For component focus, this is expected. Use sparse-checkout to reduce if needed.${NC}"
+    echo -e "${BLUE}Current focus: $FOCUS_PATH with shared resources${NC}"
 fi
+
+# Ensure isolated local directories still exist after any sparse-checkout changes
+mkdir -p docs tests scratch
+
+# Auto-allow direnv if .envrc exists (prevents blocking when entering worktree)
+if [[ -f .envrc ]] && command -v direnv >/dev/null 2>&1; then
+    echo "Auto-allowing direnv for worktree..."
+    direnv allow 2>/dev/null || echo -e "${YELLOW}Warning: Could not auto-allow direnv${NC}"
+fi
+
+# Recreate docs/CLAUDE.md if missing
+if [[ ! -f docs/CLAUDE.md ]]; then
+    CLAUDE_TEMPLATE="$PARENT_REPO/worktree-tools/templates/docs-claude.md.template"
+    if [[ -f "$CLAUDE_TEMPLATE" ]]; then
+        cp "$CLAUDE_TEMPLATE" docs/CLAUDE.md
+    else
+        cat > docs/CLAUDE.md << 'EOF'
+# Worktree Documentation Instructions for AI Agents
+
+This docs/ folder is LOCAL to this worktree. Document your work here.
+
+## File Organization
+- docs/ - Isolated to this worktree
+- tests/ - Component-specific tests only
+- scratch/ - Temporary files and experiments
+
+## Shared Files (Minimal Set)
+- Makefile, pyproject.toml, .envrc, .gitignore, README.md, CLAUDE.md
+
+Document your changes in docs/README.md
+EOF
+    fi
+fi
+
+# Recreate docs/README.md if missing
+if [[ ! -f docs/README.md ]]; then
+    README_TEMPLATE="$PARENT_REPO/worktree-tools/templates/docs-readme.md.template"
+    if [[ -f "$README_TEMPLATE" ]]; then
+        # Use sed to substitute template variables
+        sed -e "s/{{NAME}}/$NAME/g" \
+            -e "s/{{BRANCH}}/$BRANCH/g" \
+            -e "s/{{DATE}}/$(date -u +"%Y-%m-%d")/g" \
+            -e "s|{{FOCUS_PATH}}|$FOCUS_PATH|g" \
+            "$README_TEMPLATE" > docs/README.md
+    else
+        cat > docs/README.md << EOF
+# Worktree: $NAME
+Branch: $BRANCH
+Created: $(date -u +"%Y-%m-%d")
+
+## Overview
+[Describe what this worktree is working on]
+
+## Changes Made
+### ${FOCUS_PATH}/
+[List changes made to your focus component]
+
+## Technical Decisions
+[Document important choices and rationale]
+
+## Follow-up Required
+[What needs to happen next]
+EOF
+    fi
+fi
+
+# tests/ directory maintained by actual test files, no .gitkeep needed
+[[ ! -f scratch/.gitignore ]] && echo "*" > scratch/.gitignore
+
+# Final file count including local files
+FILE_COUNT=$(find . -type f -not -path "./.git/*" | wc -l)
 
 # Create AI safety manifest
 cat > .ai-safety-manifest << EOF
@@ -156,8 +314,8 @@ AI Safety Rules:
 For other work areas, create separate sparse worktrees.
 EOF
 
-# Calculate directory depth for safety check
-MAX_DEPTH=$(find . -type d -not -path "./.git/*" -printf '%d\n' 2>/dev/null | sort -nr | head -1 || echo 0)
+# Calculate directory depth for safety check (BSD find compatible)
+MAX_DEPTH=$(find . -type d -not -path "./.git/*" 2>/dev/null | awk -F/ '{print NF-1}' | sort -nr | head -1 || echo 0)
 
 # Display results
 echo
@@ -168,7 +326,7 @@ echo -e "${BLUE}Depth:${NC} $MAX_DEPTH levels"
 
 echo
 echo -e "${BLUE}Included files:${NC}"
-git ls-files --cached --others --exclude-standard | grep -v ".ai-safety-manifest" | head -8
+find . -type f -not -path "./.git/*" -not -name ".ai-safety-manifest" | head -8
 [[ $FILE_COUNT -gt 8 ]] && echo "  ... and $((FILE_COUNT - 8)) more"
 
 # Safety verification
@@ -185,4 +343,8 @@ echo "  cd $WORKTREE_DIR"
 echo "  # Work on $FOCUS_PATH"
 echo "  # Use smart-commit when ready"
 echo
-echo -e "${YELLOW}This is an AI-safe workspace - only $FILE_COUNT files visible to prevent contamination${NC}"
+echo -e "${GREEN}🎉 SUCCESS: AI-safe worktree '$NAME' created with $FILE_COUNT files${NC}"
+echo -e "${BLUE}Ready for development work on $FOCUS_PATH${NC}"
+
+# Ensure script exits successfully
+exit 0
