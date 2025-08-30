@@ -61,14 +61,37 @@ Why: Main workspace has 259 files - too many for AI context
 ✅ Solution: Create a focused worktree for your specific task
 ```
 
-## Worktree Structure
+## Worktree Structure and Isolation Strategy
+
+**Key Principle**: True isolation with minimal shared surface area to prevent merge conflicts.
 
 After creation, your directory structure will look like:
 
 ```
-genesis/                       # Main repository (259 files)
+genesis/                       # Main repository (full project)
 ├── .git/                     # Git repository data
-├── worktrees/                # All sparse worktrees (empty, ready for creation)
+├── worktrees/                # All sparse worktrees
+│   └── [worktree-name]/      # Individual worktree
+│       ├── [component-code]/ # FOCUS: Component being worked on (e.g., testing/)
+│       │
+│       ├── docs/             # ISOLATED: Worktree-specific documentation
+│       │   ├── README.md     # Document changes made in this worktree
+│       │   └── CLAUDE.md     # Instructions for AI agents
+│       ├── tests/            # ISOLATED: Component-specific tests only
+│       ├── scratch/          # ISOLATED: Temporary files (git-ignored)
+│       │
+│       └── [SHARED VIA GIT TREE - MINIMAL SET]
+│           ├── Makefile      # Build, test, lint commands
+│           ├── pyproject.toml # Project dependencies & config
+│           ├── .envrc        # Environment setup
+│           ├── .gitignore    # Git ignore rules
+│           ├── .pre-commit-config.yaml # Quality gates
+│           ├── README.md     # Main project overview
+│           └── CLAUDE.md     # Main project AI instructions
+│
+├── GLOBAL_docs/              # Global documentation (NOT in worktrees)
+├── GLOBAL_scripts/           # Global utility scripts (NOT in worktrees)
+├── GLOBAL_tests/             # Integration tests (NOT in worktrees)
 ├── genesis/                  # Core Python package with CLI and utilities
 ├── templates/                # 4 complete project templates
 ├── bootstrap/                # Project initialization system
@@ -77,10 +100,29 @@ genesis/                       # Main repository (259 files)
 ├── shared-python/            # Reusable Python utilities
 ├── shared-typescript/        # TypeScript utilities
 ├── terraform/                # Infrastructure modules
-├── scripts/                  # Validation and automation utilities
-├── testing/                  # Testing infrastructure
-└── docs/                     # Documentation
+└── testing/                  # Testing infrastructure
 ```
+
+## Isolation Strategy
+
+### **Truly Shared Files (Via Git Tree)**
+- **Minimal set** for operational functionality only
+- Changes propagate across worktrees via Git operations
+- **Single source of truth** in repository
+- **Lean approach** to minimize merge conflict surface
+
+### **Isolated Files (Per Worktree)**
+- `docs/` - Each worktree documents its own changes
+- `tests/` - Component-specific tests only
+- `scratch/` - Worktree-specific temporary files
+- **Zero sharing** - complete independence between worktrees
+
+### **Benefits of This Approach**
+1. **True sharing** - shared files are actually shared via Git, not copied
+2. **Complete isolation** - isolated files cannot conflict between worktrees
+3. **Minimal coupling** - only essential operational files are shared
+4. **Reduced merge conflicts** - small shared surface area
+5. **Clear boundaries** - obvious what's shared vs isolated
 
 ## Genesis CLI Worktree Commands
 
@@ -113,13 +155,14 @@ genesis worktree create test-infra testing/ --max-files 25
 ```
 
 **Contains**:
-- `testing/` directory - Core testing utilities and fixtures
-- `tests/conftest.py` - Root pytest configuration
-- `tests/test_integration.py` - Cross-component integration tests
-- `Makefile` - Test orchestration commands
-- Shared resources (see below)
+- **EDITABLE**: `testing/` directory - Core testing utilities and fixtures
+- **EDITABLE**: `docs/` - Document testing infrastructure changes
+- **EDITABLE**: `scripts/` - Test automation and validation scripts
+- **EDITABLE**: `scratch/` - Test data, debug output, experiments
+- **READ-ONLY**: `Makefile`, `pyproject.toml`, configs - For running tests and builds
+- **READ-ONLY**: Global `docs/`, `scripts/` - For reference
 
-**Test Strategy**: This worktree focuses on the testing infrastructure that supports all components. Component-specific tests remain with their components for isolated development.
+**Documentation Focus**: Use local `docs/README.md` to document testing strategy changes, new fixtures added, integration test updates, etc.
 
 ### 2. Genesis Core Worktree
 
@@ -130,9 +173,13 @@ genesis worktree create genesis-core genesis/core --max-files 25
 ```
 
 **Contains**:
-- `genesis/core/` directory
-- Related test files
-- Shared resources (see below)
+- **EDITABLE**: `genesis/core/` directory - Core modules (autofix, errors, config, etc.)
+- **EDITABLE**: `docs/` - Document core module changes and architecture decisions
+- **EDITABLE**: `scripts/` - Utilities for testing core functionality
+- **EDITABLE**: `scratch/` - Debug experiments and test data
+- **READ-ONLY**: Build and test infrastructure for validation
+
+**Documentation Focus**: Architecture decisions, error handling patterns, configuration design, API changes.
 
 ### 3. Bootstrap Component Worktree
 
@@ -143,12 +190,14 @@ genesis worktree create bootstrap-work bootstrap/ --max-files 25
 ```
 
 **Contains**:
-- One component directory at a time (e.g., `bootstrap/`)
-- Component's tests (`bootstrap/tests/`)
-- Component's documentation (`bootstrap/README.md`)
-- Shared resources (see below)
+- **EDITABLE**: `bootstrap/` directory - Project initialization system
+- **EDITABLE**: `bootstrap/tests/` - Component-specific tests
+- **EDITABLE**: `docs/` - Document bootstrap workflow changes
+- **EDITABLE**: `scripts/` - Template validation and testing utilities
+- **EDITABLE**: `scratch/` - Template experiments and test projects
+- **READ-ONLY**: Project configs and global resources
 
-**Test Strategy**: Each component includes its own tests for isolated development. Run `pytest bootstrap/tests/` within the worktree to test only that component.
+**Documentation Focus**: Template changes, bootstrap workflow updates, new project types supported.
 
 ### 4. Templates Worktree
 
@@ -159,40 +208,96 @@ genesis worktree create template-work templates/ --max-files 25
 ```
 
 **Contains**:
-- `templates/` directory with all 4 project templates
-- Template-specific tests and validation
-- Bootstrap integration files
-- Shared resources (see below)
+- **EDITABLE**: `templates/` directory - All 4 project templates (Python API, CLI, TypeScript, Terraform)
+- **EDITABLE**: `docs/` - Document template changes and new patterns
+- **EDITABLE**: `scripts/` - Template validation and generation utilities
+- **EDITABLE**: `scratch/` - Test template instantiations and experiments
+- **READ-ONLY**: Bootstrap integration and project configurations
 
-## Adding Shared Resources
+**Documentation Focus**: Template structure changes, new variables added, pattern updates, validation improvements.
 
-After creating any worktree, add shared resources that all worktrees need:
+## Local Worktree Directories
 
-```bash
-# Navigate to the worktree
-cd worktrees/<worktree-name>
+Each worktree includes local directories for task-specific work:
 
-# Add shared resources to sparse-checkout (if needed)
-git sparse-checkout add docs scripts Makefile pyproject.toml .envrc .gitignore CLAUDE.md README.md
-
-# Add specific additional resources as needed
-git sparse-checkout add config     # Configuration files
-git sparse-checkout add terraform  # For infrastructure work
+### docs/ (Local Documentation)
+```
+docs/
+├── README.md          # Document all changes made in this worktree
+└── CLAUDE.md          # Instructions for AI agents working here
 ```
 
-### Shared Resources Included
+**Purpose**: Preserve implementation context while working. Documentation created here is ephemeral and manually rolled up to global docs/ when needed.
 
-Each worktree should include these common resources (~15-20 files):
+**docs/README.md Template**:
+```markdown
+# Worktree: [worktree-name]
+Branch: [branch-name]
+Created: [date]
 
-- **`docs/`** - Documentation for reference (6 files)
-- **`scripts/`** - Utility scripts like validators and checkers (10 files)
-- **`scratch/`** - Temporary workspace (gitignored, won't count toward file limit)
-- **`.gitignore`** - Know what to ignore
-- **`.envrc`** - Environment setup
-- **`Makefile`** - Common commands (test, lint, etc.)
-- **`pyproject.toml`** - Project configuration
-- **`README.md`** - Project overview
-- **`CLAUDE.md`** - AI context
+## Overview
+[What this worktree accomplished]
+
+## Changes by Directory
+### [component]/
+- Modified file.py: Description of changes
+- Added new-file.py: What it does
+
+## Technical Decisions
+- Chose approach X because...
+- Used pattern Y for...
+
+## Follow-up Required
+- Update global docs/architecture/ with...
+- Add migration guide for...
+```
+
+### scripts/ (Task-Specific Utilities)
+Local scripts for this specific task:
+- Test data generators
+- Bug reproduction scripts
+- Validation utilities
+- Task automation
+
+### scratch/ (Temporary Workspace)
+Git-ignored directory for:
+- Debug output files
+- Experimental code
+- Temporary data
+- Test artifacts
+
+## Minimal Shared Resources (Via Git Tree)
+
+The Genesis worktree tool automatically includes only essential shared resources via Git sparse-checkout:
+
+### **Core Operational Files (Truly Shared)**
+- **`Makefile`** - Build, test, lint commands
+- **`pyproject.toml`** - Python dependencies & project configuration
+- **`.envrc`** - Environment setup and variables
+- **`.gitignore`** - Git ignore rules
+- **`.pre-commit-config.yaml`** - Quality gates (if agent needs to commit)
+- **`README.md`** - Main project overview and setup
+- **`CLAUDE.md`** - Main project AI instructions
+
+### **What's NOT Shared (Stays in Main)**
+- **Global `docs/`** - Global documentation remains in main repository only
+- **Global `scripts/`** - Global utility scripts remain in main repository only
+- **Global `tests/`** - Integration tests remain in main repository only
+- **Development configs** - `.vscode/`, `.github/`, `config/` stay in main
+- **Legal files** - `LICENSE`, `SECURITY.md` stay in main
+
+### **Isolation Benefits**
+- **7 shared files max** - Minimal merge conflict surface
+- **Complete docs isolation** - Each worktree has independent documentation
+- **Complete test isolation** - Component-specific tests per worktree
+- **True sharing** - Changes to shared files propagate via Git operations
+- **Clear boundaries** - Obvious what's shared vs isolated
+
+### **When Agents Need More**
+If agents need to update global resources:
+1. Document the need in local `docs/README.md`
+2. Implement changes in local files first
+3. Manual promotion to global resources when appropriate
 
 ## Verification
 
@@ -280,20 +385,54 @@ cd worktrees/bootstrap-work
 cd worktrees/template-work
 ```
 
-### Making Changes
+### Making Changes and Documentation
 
 Each worktree works like a normal Git repository:
 
 ```bash
-# Make changes
+# Make changes to component code
 vim some-file.py
 
-# Stage and commit (commits to the worktree's branch)
+# Document changes immediately while context is fresh
+echo "## Changes Made
+- Modified some-file.py: Fixed timeout logic
+- Increased default timeout from 10s to 30s
+
+## Technical Decision
+- Chose 30s based on production metrics showing 95th percentile at 25s
+- Added exponential backoff to prevent thundering herd
+
+## Follow-up Required
+- Update deployment docs with new timeout values
+- Monitor production metrics after deploy" >> docs/README.md
+
+# Stage and commit everything (code + documentation)
 git add .
-git commit -m "Fix issue in component"
+git commit -m "Fix timeout logic in authentication
+
+Increased timeout from 10s to 30s based on production data.
+Added exponential backoff for better resilience."
 
 # Push to remote (creates branch if needed)
-git push -u origin sparse-test-fixes
+git push -u origin sparse-auth-fixes
+```
+
+### Documentation Strategy
+
+**Ephemeral Documentation**: Each worktree's `docs/` directory is temporary and task-specific. It preserves implementation context that would otherwise be lost.
+
+**Manual Rollup Process**: When important patterns or decisions emerge, manually copy relevant parts to global `docs/`:
+
+```bash
+# After completing worktree task
+# Copy important documentation to global docs
+cp worktrees/my-task/docs/README.md ../archived-docs/task-summary.md
+
+# Or integrate insights into architecture docs
+vim docs/architecture/error-handling.md  # Add new patterns discovered
+
+# Clean up worktree
+genesis worktree remove my-task
 ```
 
 ### Synchronizing with Main

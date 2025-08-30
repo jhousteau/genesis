@@ -1,0 +1,23 @@
+# Worktree: {{NAME}}
+Branch: {{BRANCH}}
+Created: {{DATE}}
+
+## Overview
+[Describe what this worktree is working on - focus component and goals]
+
+## Changes Made
+
+### {{FOCUS_PATH}}/
+[List specific files modified in your focus component]
+
+### tests/ (Local)
+[Document any component-specific tests added]
+
+### Shared Files Modified
+[List any changes to Makefile, pyproject.toml, etc. and why]
+
+## Technical Decisions
+[Document important technical choices and rationale]
+
+## Follow-up Required
+[What needs to happen next - global docs updates, deployment changes, etc.]

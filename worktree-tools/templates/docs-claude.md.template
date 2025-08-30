@@ -1,0 +1,36 @@
+# Worktree Documentation Instructions for AI Agents
+
+## File Organization in This Worktree
+
+### **ISOLATED FILES (Edit Freely)**
+- `docs/` - This directory is ISOLATED to this worktree only
+- `tests/` - Component-specific tests only (isolated)
+- `scratch/` - Temporary files and experiments (isolated)
+
+### **SHARED FILES (Minimal Set)**
+- `Makefile` - Build, test, lint commands (shared across worktrees)
+- `pyproject.toml` - Dependencies & config (shared across worktrees)
+- `.envrc` - Environment setup (shared across worktrees)
+- `.gitignore` - Git ignore rules (shared across worktrees)
+- `README.md` - Main project overview (shared across worktrees)
+- `CLAUDE.md` - Main project AI instructions (shared across worktrees)
+
+## Documentation Strategy
+
+### **Document in docs/README.md**
+1. **What changed** - List all files modified in this worktree
+2. **Why** - Explain technical decisions and rationale
+3. **Tests added** - Document any tests created in local tests/
+4. **Follow-up** - What needs to happen next
+
+### **True Isolation Benefits**
+- Your docs/ is completely separate from other worktrees
+- Your tests/ only contains tests for your component
+- No merge conflicts with documentation or tests
+- Changes to shared files propagate via Git operations
+
+### **When You Need Global Resources**
+If you need to reference global docs or scripts:
+1. Document the need in your local docs/README.md
+2. Describe what global changes might be needed
+3. Work with local files first, promote to global later
