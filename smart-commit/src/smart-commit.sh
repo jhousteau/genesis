@@ -310,9 +310,34 @@ elif [[ "$commit_type" == "fix" ]]; then
     fi
 fi
 
-# 10. Create atomic commit with all changes
+# 10. Create atomic commit with all changes (with pre-commit hook handling)
 git add -A
-git commit -m "$commit_msg"
+
+# Try commit and handle pre-commit hook modifications
+max_attempts=3
+attempt=1
+
+while [ $attempt -le $max_attempts ]; do
+    log "🔄 Commit attempt $attempt/$max_attempts..."
+
+    if git commit -m "$commit_msg"; then
+        log "✅ Commit successful!" "$GREEN"
+        break
+    else
+        # Pre-commit hooks may have modified files - check and restage
+        if [[ -n $(git status --porcelain) ]]; then
+            log "ℹ️ Pre-commit hooks modified files, restaging..." "$YELLOW"
+            git add -A
+            attempt=$((attempt + 1))
+
+            if [ $attempt -gt $max_attempts ]; then
+                error_exit "Failed to commit after $max_attempts attempts. Pre-commit hooks keep modifying files."
+            fi
+        else
+            error_exit "Commit failed for unknown reason"
+        fi
+    fi
+done
 
 log "✅ Commit created: $commit_msg" "$GREEN"
 

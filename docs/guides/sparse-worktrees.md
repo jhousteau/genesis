@@ -47,7 +47,7 @@ make lint                          # All quality gates should pass
 
 Genesis includes built-in AI protection to prevent context overflow:
 
-- **Main workspace is protected**: AI assistants cannot work directly in main (211+ files)
+- **Main workspace is protected**: AI assistants cannot work directly in main (259 files)
 - **Automatic detection**: `.envrc` detects AI tools and blocks them with helpful message
 - **Worktree bypass**: Worktrees include `.ai-safety-manifest` that allows AI work
 - **Human-friendly**: Humans can work normally in main workspace
@@ -57,7 +57,7 @@ When an AI assistant tries to work in main, they see:
 ```
 🤖 AI SAFETY PROTECTION ACTIVE
 ❌ AI assistants cannot work directly in the main workspace
-Why: Main workspace has 211 files - too many for AI context
+Why: Main workspace has 259 files - too many for AI context
 ✅ Solution: Create a focused worktree for your specific task
 ```
 
@@ -66,40 +66,50 @@ Why: Main workspace has 211 files - too many for AI context
 After creation, your directory structure will look like:
 
 ```
-genesis/                       # Main repository (211 files)
+genesis/                       # Main repository (259 files)
 ├── .git/                     # Git repository data
-├── worktrees/                # All sparse worktrees (visible to developers, ignored by git)
-│   ├── test-fixes/           # For test suite fixes (~45 files)
-│   ├── core-genesis/         # For core module work (~45 files)
-│   ├── component-fixes/      # For component updates (~40 files)
-│   └── cli-integration/      # For CLI improvements (~35 files)
-├── src/                      # Source code
-├── scripts/                  # Utility scripts
+├── worktrees/                # All sparse worktrees (empty, ready for creation)
+├── genesis/                  # Core Python package with CLI and utilities
+├── templates/                # 4 complete project templates
+├── bootstrap/                # Project initialization system
+├── smart-commit/             # Quality gates and pre-commit automation
+├── worktree-tools/           # AI-safe sparse worktree creation tools
+├── shared-python/            # Reusable Python utilities
+├── shared-typescript/        # TypeScript utilities
+├── terraform/                # Infrastructure modules
+├── scripts/                  # Validation and automation utilities
+├── testing/                  # Testing infrastructure
 └── docs/                     # Documentation
 ```
 
-## Integration with Genesis CLI
+## Genesis CLI Worktree Commands
 
-While this guide focuses on the direct worktree creation script, Genesis also provides CLI integration:
+Genesis provides a unified CLI interface for all worktree operations:
 
 ```bash
-# Future Genesis CLI commands (in development)
+# Create AI-safe worktree
 genesis worktree create test-fixes testing/ --max-files 25
+
+# List all worktrees
 genesis worktree list
+
+# Remove worktree
 genesis worktree remove test-fixes
-genesis worktree status
+
+# Show worktree information
+genesis worktree info test-fixes
 ```
 
-For now, use the direct script as documented below.
+The Genesis CLI handles all the complexity of sparse worktrees, file limits, and AI safety automatically.
 
 ## Creating Worktrees
 
-### 1. Test-Fixes Worktree
+### 1. Testing Infrastructure Worktree
 
-**Purpose**: Fix pytest configuration, test infrastructure, and cross-component testing
+**Purpose**: Work on pytest configuration, test infrastructure, and cross-component testing
 
 ```bash
-./worktree-tools/src/create-sparse-worktree.sh test-fixes testing/ --max-files 25
+genesis worktree create test-infra testing/ --max-files 25
 ```
 
 **Contains**:
@@ -111,12 +121,12 @@ For now, use the direct script as documented below.
 
 **Test Strategy**: This worktree focuses on the testing infrastructure that supports all components. Component-specific tests remain with their components for isolated development.
 
-### 2. Core-Genesis Worktree
+### 2. Genesis Core Worktree
 
-**Purpose**: Work on Genesis core modules and utilities
+**Purpose**: Work on Genesis core modules and utilities (autofix, errors, config, etc.)
 
 ```bash
-./worktree-tools/src/create-sparse-worktree.sh core-genesis genesis/core --max-files 25
+genesis worktree create genesis-core genesis/core --max-files 25
 ```
 
 **Contains**:
@@ -124,12 +134,12 @@ For now, use the direct script as documented below.
 - Related test files
 - Shared resources (see below)
 
-### 3. Component-Fixes Worktree
+### 3. Bootstrap Component Worktree
 
-**Purpose**: Work on individual components (bootstrap, smart-commit, worktree-tools)
+**Purpose**: Work on the bootstrap project initialization system
 
 ```bash
-./worktree-tools/src/create-sparse-worktree.sh component-fixes bootstrap/ --max-files 25
+genesis worktree create bootstrap-work bootstrap/ --max-files 25
 ```
 
 **Contains**:
@@ -140,19 +150,18 @@ For now, use the direct script as documented below.
 
 **Test Strategy**: Each component includes its own tests for isolated development. Run `pytest bootstrap/tests/` within the worktree to test only that component.
 
-### 4. CLI-Integration Worktree
+### 4. Templates Worktree
 
-**Purpose**: Work on CLI commands and integration features
+**Purpose**: Work on project templates (Python API, CLI tool, TypeScript service, Terraform)
 
 ```bash
-./worktree-tools/src/create-sparse-worktree.sh cli-integration genesis/cli.py --max-files 25
+genesis worktree create template-work templates/ --max-files 25
 ```
 
 **Contains**:
-- `genesis/cli.py`
-- `genesis/commands/` directory
-- Integration tests
-- `templates/` directory (for bootstrap command)
+- `templates/` directory with all 4 project templates
+- Template-specific tests and validation
+- Bootstrap integration files
 - Shared resources (see below)
 
 ## Adding Shared Resources
@@ -163,12 +172,12 @@ After creating any worktree, add shared resources that all worktrees need:
 # Navigate to the worktree
 cd worktrees/<worktree-name>
 
-# Add shared resources to sparse-checkout
+# Add shared resources to sparse-checkout (if needed)
 git sparse-checkout add docs scripts Makefile pyproject.toml .envrc .gitignore CLAUDE.md README.md
 
-# If you need specific additional resources
-git sparse-checkout add templates  # For CLI worktree
-git sparse-checkout add config     # If needed
+# Add specific additional resources as needed
+git sparse-checkout add config     # Configuration files
+git sparse-checkout add terraform  # For infrastructure work
 ```
 
 ### Shared Resources Included
@@ -237,16 +246,16 @@ make test-component bootstrap # Run specific component tests
 
 **In Worktrees** (focused development):
 ```bash
-# In test-fixes worktree
+# In test-infra worktree
 pytest testing/tests/ -v               # Test infrastructure
-pytest tests/test_integration.py -v    # Cross-component tests
+pytest testing/tests/test_integration.py -v    # Cross-component tests
 
-# In component-fixes worktree (e.g., bootstrap focus)
+# In bootstrap-work worktree
 pytest bootstrap/tests/ -v             # Test only bootstrap component
 pytest bootstrap/tests/test_bootstrap.py::TestSpecific -v # Specific test
 
-# In core-genesis worktree
-pytest genesis/core/tests/ -v          # Test core modules
+# In genesis-core worktree
+pytest genesis/tests/ -v          # Test core modules
 ```
 
 ### Test Isolation Benefits
@@ -265,10 +274,10 @@ pytest genesis/core/tests/ -v          # Test core modules
 cd /path/to/genesis
 
 # Go to specific worktree
-cd worktrees/test-fixes
-cd worktrees/core-genesis
-cd worktrees/component-fixes
-cd worktrees/cli-integration
+cd worktrees/test-infra
+cd worktrees/genesis-core
+cd worktrees/bootstrap-work
+cd worktrees/template-work
 ```
 
 ### Making Changes
@@ -312,25 +321,28 @@ gh pr create --title "Fix test suite configuration" --base main
 ### List All Worktrees
 
 ```bash
-# From main repo or any worktree
-git worktree list
+# List Genesis worktrees
+genesis worktree list
+
+# List all worktrees (including non-Genesis)
+genesis worktree list --all
 ```
 
 ### Remove a Worktree
 
 ```bash
-# From main repo
-git worktree remove worktrees/<worktree-name>
+# Remove worktree by name
+genesis worktree remove <worktree-name>
 
-# Or from within the worktree
-git worktree remove .
+# Force removal even with uncommitted changes
+genesis worktree remove <worktree-name> --force
 ```
 
-### Prune Deleted Worktrees
+### Get Worktree Information
 
 ```bash
-# Clean up references to deleted worktrees
-git worktree prune
+# Show detailed information about a worktree
+genesis worktree info <worktree-name>
 ```
 
 ## Best Practices
@@ -393,10 +405,10 @@ make lint
 
 ```bash
 # Check if worktree already exists
-git worktree list
+genesis worktree list
 
 # Remove existing worktree if needed
-git worktree remove worktrees/<name> --force
+genesis worktree remove <name> --force
 ```
 
 ### Too Many Files
@@ -424,42 +436,44 @@ git sparse-checkout add docs scripts Makefile pyproject.toml .envrc
 Here's a full example of creating a worktree, making changes, and submitting a PR:
 
 ```bash
-# 1. Create focused worktree for authentication work
-./worktree-tools/src/create-sparse-worktree.sh auth-fixes genesis/core/auth.py --max-files 25
+# 1. Create focused worktree for bootstrap component work
+genesis worktree create bootstrap-fixes bootstrap/ --max-files 25
 
 # 2. Navigate to the worktree
-cd worktrees/auth-fixes
+cd worktrees/bootstrap-fixes
 
 # 3. Verify file count and contents
 echo "File count: $(git ls-files | wc -l)"
 git ls-files | sort
 
 # 4. Make your changes
-vim genesis/core/auth.py
+vim bootstrap/src/bootstrap.sh
 
 # 5. Run tests (within the worktree context)
-make test
+make test-component COMPONENT=bootstrap
 
 # 6. Create a quality commit
 git add .
-git commit -m "fix: improve authentication error handling"
+git commit -m "fix: improve bootstrap template generation"
 
 # 7. Push and create PR
-git push -u origin sparse-auth-fixes
-gh pr create --title "Fix authentication error handling" --base main
+git push -u origin sparse-bootstrap-fixes
+gh pr create --title "Fix bootstrap template generation" --base main
 
 # 8. When done, clean up
 cd ../..
-git worktree remove worktrees/auth-fixes
+git worktree remove worktrees/bootstrap-fixes
 ```
 
 ## Current Status (Genesis Project)
 
 Genesis uses the worktree system for development but currently has no active worktrees:
 
-- **Main repository**: 211 files (too large for direct AI work)
+- **Main repository**: 259 files (too large for direct AI work)
 - **Available worktrees**: None currently active
-- **Worktree tool**: ✅ Ready for use at `worktree-tools/src/create-sparse-worktree.sh`
+- **Worktree tools**: ✅ Ready for use
+  - Genesis CLI: `genesis worktree create <name> <path> --max-files 25`
+  - Direct script: `worktree-tools/src/create-sparse-worktree.sh`
 - **Target file limits**: 25-30 files per worktree for optimal AI safety
 
 ## Key Learnings
@@ -483,16 +497,16 @@ The actual commands that work are exactly as documented:
 
 ```bash
 # These commands create complete, ready-to-use worktrees:
-./worktree-tools/src/create-sparse-worktree.sh test-fixes testing/ --max-files 25
-./worktree-tools/src/create-sparse-worktree.sh core-genesis genesis/core --max-files 25
-./worktree-tools/src/create-sparse-worktree.sh component-fixes bootstrap/ --max-files 25
-./worktree-tools/src/create-sparse-worktree.sh cli-integration genesis/cli.py --max-files 25
+genesis worktree create test-infra testing/ --max-files 25
+genesis worktree create genesis-core genesis/core --max-files 25
+genesis worktree create bootstrap-work bootstrap/ --max-files 25
+genesis worktree create template-work templates/ --max-files 25
 ```
 
 ### File Count Reality
 
 The actual file counts are:
-- **Much lower than main repo**: Main has 211 files, worktrees have 21-47 files
+- **Much lower than main repo**: Main has 259 files, worktrees have 21-47 files
 - **Includes everything needed**: docs/, scripts/, configs, plus focused area
 - **Ready to work**: No additional setup required
 
@@ -502,3 +516,57 @@ The actual file counts are:
 2. **Trust the file limits** - the tool enforces them properly
 3. **Start working immediately** - worktrees are ready after creation
 4. **Monitor with**: `find . -type f -name ".git" -prune -o -type f -print | wc -l`
+
+## AI Safety Enforcement
+
+Genesis implements strict AI safety measures to prevent context overflow and ensure secure development:
+
+### Environment-Based Detection
+The `.envrc` file automatically detects AI assistants and applies appropriate restrictions:
+
+```bash
+# AI Safety configuration in .envrc
+export AI_MAX_FILES=30
+export AI_SAFETY_MODE="enforced"
+export MAX_PROJECT_FILES=1000
+```
+
+### Automatic File Limits
+- **Main workspace**: 259 files (blocked for AI assistants)
+- **Worktrees**: Auto-limited to 25-30 files
+- **Components**: Each kept under 30 files for AI safety
+
+### Safety Validation Scripts
+Genesis includes validation utilities:
+
+```bash
+# Check AI safety compliance
+scripts/validate-components.sh
+
+# Verify file counts
+make file-check
+
+# Generate AI safety report
+make ai-safety-report
+```
+
+### Genesis CLI Integration
+
+The Genesis CLI provides comprehensive worktree management:
+
+```bash
+# Create AI-safe worktree
+genesis worktree create my-feature src/feature.py --max-files 25
+
+# List all worktrees
+genesis worktree list
+
+# Check worktree status
+genesis worktree status
+
+# Clean up old worktrees
+genesis clean --worktrees
+
+# View project health
+genesis status --verbose
+```

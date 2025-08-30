@@ -60,16 +60,21 @@ ALLOWED_ROOT_FILES=(
     "variables\.tf"
     "outputs\.tf"
     "terraform\.tfvars\.example"
-    # Project-specific utility files
-    "create_worktree\.py"
-    ".*\.py"
+    # NO .py files allowed in root - they belong in src/ directories
 )
 
-# Define required directory structure (generic project)
+# Define required directory structure (Genesis project)
 REQUIRED_DIRS=(
-    "scripts/"
-    "docs/"
-    "tests/"
+    "scripts/"     # Validation and automation utilities
+    "docs/"        # Documentation
+    "genesis/"     # Core Python package
+    "templates/"   # Project templates
+    "bootstrap/"   # Project initialization
+    "smart-commit/" # Quality gates
+    "worktree-tools/" # AI-safe worktree tools
+    "shared-python/" # Reusable Python utilities
+    "terraform/"   # Infrastructure modules
+    "testing/"     # Testing infrastructure
 )
 
 check_root_clutter() {
@@ -109,9 +114,9 @@ check_root_clutter() {
                         ;;
                     *.py)
                         if [[ "$file" =~ ^test_ ]] || [[ "$file" == *test.py ]] || [[ "$file" == conftest.py ]]; then
-                            echo "    → Should be in tests/"
+                            echo "    → Should be in component/tests/ (e.g., genesis/tests/)"
                         else
-                            echo "    → Should be in src/"
+                            echo "    → Should be in component/src/ (e.g., genesis/)"
                         fi
                         ;;
                     *.js|*.ts)
@@ -294,47 +299,46 @@ check_directory_structure() {
 }
 
 check_directory_documentation() {
-    log_check "Checking that directories have proper documentation"
+    log_check "Checking that Genesis components have proper documentation"
 
     local found_issues=false
-    local min_files=3  # Only check directories with 3+ files
 
-    # Find all directories and check for documentation
-    if command -v find >/dev/null 2>&1; then
-        find . -type d \
-            -not -path "./.git*" \
-            -not -path "./node_modules*" \
-            -not -path "./.venv*" \
-            -not -path "./venv*" \
-            -not -path "./htmlcov*" \
-            -not -path "./.pytest_cache*" \
-            -not -path "./dist*" \
-            -not -path "./__pycache__*" \
-            2>/dev/null | while read -r dir; do
+    # Genesis components that should have documentation
+    local important_dirs=(
+        "genesis"
+        "genesis/core"
+        "genesis/commands"
+        "templates"
+        "bootstrap"
+        "smart-commit"
+        "worktree-tools"
+        "shared-python"
+        "shared-typescript"
+        "terraform"
+        "testing"
+        "scripts"
+    )
 
-            # Skip root directory
-            if [ "$dir" = "." ]; then
-                continue
-            fi
-
+    for dir in "${important_dirs[@]}"; do
+        if [ -d "$dir" ]; then
             # Count files in directory (excluding subdirectories and hidden files)
-            local file_count=$(find "$dir" -maxdepth 1 -type f -not -name ".*" 2>/dev/null | wc -l)
+            local file_count=$(find "$dir" -maxdepth 1 -type f -not -name ".*" 2>/dev/null | wc -l || echo 0)
 
-            if [ "$file_count" -ge "$min_files" ]; then
-                # Check for README.md or CLAUDE.md
+            # Check for README.md or CLAUDE.md only if directory has files
+            if [ "$file_count" -ge 2 ]; then
                 if [ ! -f "$dir/README.md" ] && [ ! -f "$dir/CLAUDE.md" ]; then
                     if [ "$found_issues" = false ]; then
-                        log_issue "Directories missing documentation (README.md or CLAUDE.md):"
+                        log_issue "Genesis components missing documentation (README.md or CLAUDE.md):"
                         found_issues=true
                     fi
                     echo "  $dir ($file_count files) - needs README.md or CLAUDE.md"
                 fi
             fi
-        done
-    fi
+        fi
+    done
 
     if [ "$found_issues" = false ]; then
-        log_success "All significant directories have documentation"
+        log_success "All important Genesis components have documentation"
     fi
     echo
 }

@@ -144,11 +144,17 @@ build: ## Build the project
 
 clean: ## Clean build artifacts and caches
 	@echo "$(BLUE)Cleaning $(PROJECT_NAME)...$(NC)"
-	@rm -rf build/ dist/ *.egg-info/ .pytest_cache/ .mypy_cache/ .ruff_cache/
+	@rm -rf build/ dist/ *.egg-info/
 	@rm -rf node_modules/.cache/ .next/ out/
 	@rm -rf bin/ target/
 	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	@find . -name "*.pyc" -delete 2>/dev/null || true
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -name ".coverage*" -delete 2>/dev/null || true
+	@find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
+	@find . -name "*.tsbuildinfo" -delete 2>/dev/null || true
 	@echo "$(GREEN)✓ Clean complete!$(NC)"
 
 worktree-create: ## Create AI-safe sparse worktree (requires name and path)
