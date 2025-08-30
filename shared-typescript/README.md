@@ -1,11 +1,11 @@
-# @genesis/shared
+# @genesis/typescript
 
 Genesis TypeScript shared utilities for retry, logging, config, health, errors, and context management.
 
 ## Installation
 
 ```bash
-npm install @genesis/shared
+npm install @genesis/typescript
 ```
 
 ## Quick Start
@@ -18,7 +18,7 @@ import {
   retry,
   getContext,
   handleError
-} from '@genesis/shared';
+} from '@genesis/typescript';
 
 // Logging
 const logger = getLogger('my-service');
@@ -47,7 +47,7 @@ class ApiService {
 }
 
 // Context management
-import { contextSpan, createRequestContext } from '@genesis/shared';
+import { contextSpan, createRequestContext } from '@genesis/typescript';
 
 const context = createRequestContext({ userId: 'user-123' });
 await contextSpan(context, async () => {
@@ -64,7 +64,7 @@ await contextSpan(context, async () => {
 - Predefined configuration presets
 
 ```typescript
-import { loadConfig, TypedConfig } from '@genesis/shared';
+import { loadConfig, TypedConfig } from '@genesis/typescript';
 
 // Simple usage
 const config = loadConfig('config.yml', 'APP_');
@@ -86,7 +86,7 @@ class AppConfig extends TypedConfig<{ port: number; dbUrl: string }> {
 - Multiple log levels and presets
 
 ```typescript
-import { getLogger, LoggerPresets } from '@genesis/shared';
+import { getLogger, LoggerPresets } from '@genesis/typescript';
 
 const logger = getLogger('my-service', LoggerPresets.production());
 logger.info('User action', { userId: '123', action: 'login' });
@@ -98,7 +98,7 @@ logger.info('User action', { userId: '123', action: 'login' });
 - Overall status aggregation
 
 ```typescript
-import { HealthCheck, HealthChecks } from '@genesis/shared';
+import { HealthCheck, HealthChecks } from '@genesis/typescript';
 
 const health = new HealthCheck();
 health.addCheck('api', () => HealthChecks.httpEndpoint('http://api.example.com/health'));
@@ -114,7 +114,7 @@ const summary = await health.getSummary();
 - Pre-configured patterns for external services and databases
 
 ```typescript
-import { retry, resilientExternalService, retryFunction } from '@genesis/shared';
+import { retry, resilientExternalService, retryFunction } from '@genesis/typescript';
 
 // Decorator usage
 class Service {
@@ -137,7 +137,7 @@ const result = await retryFunction(
 - Error conversion and handling utilities
 
 ```typescript
-import { ValidationError, handleError, NetworkError } from '@genesis/shared';
+import { ValidationError, handleError, NetworkError } from '@genesis/typescript';
 
 // Throw structured errors
 throw new ValidationError('Invalid email format', 'email');
@@ -165,7 +165,7 @@ import {
   createRequestContext,
   getCorrelationId,
   createContextMiddleware
-} from '@genesis/shared';
+} from '@genesis/typescript';
 
 // Create and use context
 const context = createRequestContext({ userId: 'user-123' });
@@ -201,7 +201,7 @@ import {
   HealthCheck,
   HealthChecks,
   createContextMiddleware
-} from '@genesis/shared';
+} from '@genesis/typescript';
 
 // Load configuration
 const config = loadConfig('config.yml', 'SERVICE_');
@@ -225,7 +225,7 @@ app.get('/health', async (req, res) => {
 ### Resilient External API Calls
 
 ```typescript
-import { resilientExternalService, getLogger } from '@genesis/shared';
+import { resilientExternalService, getLogger } from '@genesis/typescript';
 
 class ExternalApiClient {
   private logger = getLogger('api-client');

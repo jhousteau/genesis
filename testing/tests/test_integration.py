@@ -44,6 +44,7 @@ class TestComponentIntegration:
                 project_name = "test-project"
                 import os
 
+                old_cwd = None
                 try:
                     old_cwd = Path.cwd()
                     os.chdir(temp_dir)
@@ -57,9 +58,25 @@ class TestComponentIntegration:
                             "--skip-git",
                         ],
                     )
+                except FileNotFoundError:
+                    # Current working directory doesn't exist, use temp_dir as base
+                    os.chdir(temp_dir)
+                    result = runner.invoke(
+                        cli,
+                        [
+                            "bootstrap",
+                            project_name,
+                            "--type",
+                            "python-api",
+                            "--skip-git",
+                        ],
+                    )
                 finally:
                     try:
-                        os.chdir(old_cwd)
+                        if old_cwd:
+                            os.chdir(old_cwd)
+                        else:
+                            os.chdir(Path.home())
                     except (OSError, FileNotFoundError):
                         # Original directory might be deleted, go to a safe location
                         os.chdir(Path.home())
@@ -118,6 +135,8 @@ class TestComponentIntegration:
 
         import sys
 
+        # Save original sys.path for cleanup
+        original_path = sys.path.copy()
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "genesis"))
 
         from click.testing import CliRunner
@@ -126,13 +145,29 @@ class TestComponentIntegration:
 
         runner = CliRunner()
 
+        # Create a git repository in temp_dir
+        (temp_dir / ".git").mkdir()
+
         with (
             patch("genesis.cli.get_git_root", return_value=temp_dir),
+            patch("genesis.cli.get_component_path") as mock_get_component,
             patch(
                 "genesis.core.constants.get_git_author_info",
                 return_value=("Test User", "test@example.com"),
             ),
         ):
+            # Mock the smart-commit component path
+            smart_commit_dir = temp_dir / "smart-commit"
+            smart_commit_dir.mkdir(exist_ok=True)
+            (smart_commit_dir / "src").mkdir(exist_ok=True)
+            smart_commit_script = smart_commit_dir / "src" / "smart-commit.sh"
+            smart_commit_script.write_text(
+                "#!/bin/bash\necho 'Smart commit completed!'"
+            )
+            smart_commit_script.chmod(0o755)
+
+            mock_get_component.return_value = smart_commit_dir
+
             with patch_subprocess_run()[0] as mock_run:
                 mock_run.return_value.returncode = 0
 
@@ -140,6 +175,9 @@ class TestComponentIntegration:
 
                 assert result.exit_code == 0
                 assert "Smart commit completed" in result.output
+
+        # Cleanup sys.path
+        sys.path[:] = original_path
 
     @pytest.mark.integration
     def test_testing_utilities_integration(self, temp_dir):
@@ -196,6 +234,8 @@ class TestEndToEndWorkflows:
 
         import sys
 
+        # Save original sys.path for cleanup
+        original_path = sys.path.copy()
         sys.path.insert(0, str(Path(__file__).parent.parent.parent / "genesis"))
 
         from click.testing import CliRunner
@@ -221,6 +261,7 @@ class TestEndToEndWorkflows:
             # Step 2: Bootstrap new project (without subprocess mocks to allow actual bootstrap)
             import os
 
+            old_cwd = None
             try:
                 old_cwd = Path.cwd()
                 os.chdir(temp_dir)
@@ -228,9 +269,19 @@ class TestEndToEndWorkflows:
                     cli, ["bootstrap", "my-api", "--type", "python-api", "--skip-git"]
                 )
                 assert result.exit_code == 0
+            except FileNotFoundError:
+                # Current working directory doesn't exist, use temp_dir as base
+                os.chdir(temp_dir)
+                result = runner.invoke(
+                    cli, ["bootstrap", "my-api", "--type", "python-api", "--skip-git"]
+                )
+                assert result.exit_code == 0
             finally:
                 try:
-                    os.chdir(old_cwd)
+                    if old_cwd:
+                        os.chdir(old_cwd)
+                    else:
+                        os.chdir(Path.home())
                 except (OSError, FileNotFoundError):
                     # Original directory might be deleted, go to a safe location
                     os.chdir(Path.home())
@@ -252,6 +303,9 @@ class TestEndToEndWorkflows:
                 mock_run.return_value.returncode = 0
                 result = runner.invoke(cli, ["clean", "--worktrees"])
                 assert result.exit_code == 0
+
+        # Cleanup sys.path
+        sys.path[:] = original_path
 
     @pytest.mark.e2e
     @pytest.mark.ai_safety
