@@ -100,11 +100,37 @@ FILE_COUNT=$(git ls-files --cached --others --exclude-standard | wc -l)
 if [[ $FILE_COUNT -gt $MAX_FILES ]]; then
     echo -e "${YELLOW}File count ($FILE_COUNT) exceeds limit ($MAX_FILES) - applying restrictions${NC}"
 
-    # Restrict to code files only
+    # Create a temporary file with restricted patterns
+    TEMP_PATTERNS=$(mktemp)
+
+    # Get code files from the focus path, limited to MAX_FILES
     git ls-files --cached --others --exclude-standard | \
-        grep -E '\.(py|ts|js|go|sh|md)$' | head -"$MAX_FILES" > .git/info/sparse-checkout
-    git read-tree -m -u HEAD
-    FILE_COUNT=$(git ls-files --cached --others --exclude-standard | wc -l)
+        grep -E '\.(py|ts|js|go|sh|md)$' | \
+        grep "^$FOCUS_PATH" | \
+        head -"$MAX_FILES" > "$TEMP_PATTERNS"
+
+    # If we still don't have enough files, include some other important files
+    if [[ $(wc -l < "$TEMP_PATTERNS") -lt $MAX_FILES ]]; then
+        git ls-files --cached --others --exclude-standard | \
+            grep "^$FOCUS_PATH" | \
+            grep -E '\.(json|toml|yml|yaml|txt)$' | \
+            head -$((MAX_FILES - $(wc -l < "$TEMP_PATTERNS"))) >> "$TEMP_PATTERNS"
+    fi
+
+    # Apply the sparse checkout with the filtered files
+    if [[ -s "$TEMP_PATTERNS" ]]; then
+        # Add the focus directory pattern to ensure directory structure
+        echo "$FOCUS_PATH/*" > "$TEMP_PATTERNS.final"
+        cat "$TEMP_PATTERNS" >> "$TEMP_PATTERNS.final"
+
+        git sparse-checkout set --stdin < "$TEMP_PATTERNS.final"
+        rm "$TEMP_PATTERNS" "$TEMP_PATTERNS.final"
+    else
+        # Fallback to just the focus path if no specific files found
+        git sparse-checkout set "$FOCUS_PATH"
+    fi
+
+    FILE_COUNT=$(git ls-files | wc -l)
 fi
 
 # Create AI safety manifest

@@ -9,6 +9,65 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 log() { echo -e "${2:-$BLUE}$1${NC}"; }
 error_exit() { log "❌ $1" "$RED" >&2; exit 1; }
 
+# Find Genesis root directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GENESIS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+TEMPLATES_DIR="$GENESIS_ROOT/templates"
+
+copy_genesis_tooling() {
+    local template_type="$1"
+    local project_path="$2"
+    local template_path="$TEMPLATES_DIR/$template_type"
+
+    if [ ! -d "$template_path" ]; then
+        log "⚠️  Template directory not found: $template_path" "$RED"
+        return 0
+    fi
+
+    log "🔧 Copying Genesis tooling files..."
+
+    # Copy scripts directory from Genesis root
+    if [ -d "$GENESIS_ROOT/scripts" ]; then
+        cp -r "$GENESIS_ROOT/scripts" "$project_path/"
+        chmod +x "$project_path/scripts"/*.sh 2>/dev/null || true
+        log "  ✅ Scripts directory copied"
+    fi
+
+    # Copy .claude directory if it exists in template
+    if [ -d "$template_path/.claude" ]; then
+        mkdir -p "$project_path/.claude"
+        cp -r "$template_path/.claude"/* "$project_path/.claude/"
+
+        # Process template variables in .claude files
+        find "$project_path/.claude" -name "*.template" -type f | while read -r template_file; do
+            output_file="${template_file%.template}"
+            sed "s/__project_name__/$PROJECT_NAME/g" "$template_file" > "$output_file"
+            rm "$template_file"
+        done
+        log "  ✅ Claude configuration copied"
+    fi
+
+    # Copy additional template files from the specific project type
+    if [ -d "$template_path/scripts" ]; then
+        cp -r "$template_path/scripts"/* "$project_path/scripts/" 2>/dev/null || true
+        chmod +x "$project_path/scripts"/*.sh 2>/dev/null || true
+        log "  ✅ Template-specific scripts copied"
+    fi
+
+    # Copy config directory if it exists
+    if [ -d "$template_path/config" ]; then
+        mkdir -p "$project_path/config"
+        cp -r "$template_path/config"/* "$project_path/config/" 2>/dev/null || true
+        log "  ✅ Configuration templates copied"
+    fi
+
+    # Copy and process .envrc template if it exists
+    if [ -f "$template_path/.envrc.template" ]; then
+        sed "s/{{project_name}}/$PROJECT_NAME/g" "$template_path/.envrc.template" > "$project_path/.envrc"
+        log "  ✅ Environment configuration (.envrc) created"
+    fi
+}
+
 show_usage() {
     cat << EOF
 Usage: $0 <project-name> [--type <type>] [--path <path>] [--skip-git]
@@ -132,6 +191,9 @@ clean: ## Clean build artifacts
 help: ## Show help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
 EOF
+
+    # Copy Genesis tooling files
+    copy_genesis_tooling "$PROJECT_TYPE" "$PROJECT_PATH"
 
     # Initialize git if requested
     [[ "$SKIP_GIT" == "true" ]] && return

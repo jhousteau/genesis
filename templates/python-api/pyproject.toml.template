@@ -28,6 +28,8 @@ pylint = "^3.0.3"
 ruff = "^0.1.6"
 pre-commit = "^3.6.0"
 gunicorn = "^21.2.0"
+# Note: direnv is required for .envrc auto-loading but must be installed system-wide
+# Install: brew install direnv (macOS) or apt-get install direnv (Ubuntu)
 
 [build-system]
 requires = ["poetry-core"]

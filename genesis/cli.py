@@ -17,15 +17,6 @@ from .core.errors import handle_error
 
 
 # Genesis root detection
-def find_genesis_root() -> Path | None:
-    """Find Genesis project root by looking for CLAUDE.md."""
-    current = Path.cwd()
-    for parent in [current] + list(current.parents):
-        if (parent / "CLAUDE.md").exists():
-            return parent
-    return None
-
-
 def get_git_root() -> Path | None:
     """Find Git repository root."""
     current = Path.cwd()
@@ -35,36 +26,11 @@ def get_git_root() -> Path | None:
     return None
 
 
-def get_component_path(component: str) -> Path | None:
-    """Get path to a Genesis component (works in dev and installed package)."""
-    # First try development directory
-    genesis_root = find_genesis_root()
-    if genesis_root:
-        component_path = genesis_root / component
-        if component_path.exists():
-            return component_path
-
-    # Then try installed package
-    try:
-        import genesis
-
-        package_root = Path(genesis.__file__).parent.parent
-        component_path = package_root / component
-        if component_path.exists():
-            return component_path
-    except (ImportError, AttributeError):
-        pass
-
-    return None
-
-
 @click.group()
 @click.version_option(version=__version__)
-@click.pass_context
-def cli(ctx):
+def cli():
     """Genesis - Development toolkit for lean, AI-safe projects."""
-    ctx.ensure_object(dict)
-    ctx.obj["genesis_root"] = find_genesis_root()
+    pass
 
 
 @cli.command()
@@ -80,70 +46,20 @@ def cli(ctx):
     "--path", "target_path", default=None, help="Directory to create project in"
 )
 @click.option("--skip-git", is_flag=True, help="Skip Git initialization")
-@click.pass_context
-def bootstrap(
-    ctx, name: str, project_type: str, target_path: str | None, skip_git: bool
-):
+def bootstrap(name: str, project_type: str, target_path: str | None, skip_git: bool):
     """Create new project with Genesis patterns and tooling."""
     from genesis.commands.bootstrap import bootstrap_command
 
     bootstrap_command(name, project_type, target_path, skip_git)
 
 
-@cli.command()
-@click.argument("name")
-@click.argument("focus_path")
-@click.option(
-    "--max-files",
-    type=int,
-    help="Maximum files in worktree (default from MAX_WORKTREE_FILES)",
-)
-@click.option("--verify", is_flag=True, help="Verify safety after creation")
-@click.pass_context
-def worktree(ctx, name: str, focus_path: str, max_files: int | None, verify: bool):
-    """Create AI-safe sparse worktree with file limits."""
-    from genesis.core.constants import AILimits
-
-    # Find worktree-tools component
-    worktree_path = get_component_path("worktree-tools")
-    if not worktree_path:
-        click.echo(
-            "❌ Worktree-tools component not found. Genesis may not be properly installed.",
-            err=True,
-        )
-        sys.exit(1)
-
-    worktree_script = worktree_path / "src" / "create-sparse-worktree.sh"
-    if not worktree_script.exists():
-        click.echo(f"❌ Worktree script not found at {worktree_script}", err=True)
-        sys.exit(1)
-
-    # Use configured limit if not provided
-    if max_files is None:
-        try:
-            max_files = AILimits.get_max_worktree_files()
-        except ValueError as e:
-            click.echo(f"❌ Configuration error: {e}", err=True)
-            sys.exit(1)
-
-    # Build command arguments
-    cmd = [str(worktree_script), name, focus_path, "--max-files", str(max_files)]
-    if verify:
-        cmd.append("--verify")
-
-    try:
-        subprocess.run(cmd, check=True)
-        click.echo(f"✅ Sparse worktree '{name}' created successfully!")
-    except Exception as e:
-        handled_error = handle_error(e)
-        click.echo(f"❌ Worktree creation failed: {handled_error.message}", err=True)
-        sys.exit(1)
+# Worktree functionality removed - use direct script calls instead
+# Direct usage: /path/to/genesis/worktree-tools/src/create-sparse-worktree.sh <name> <focus_path> --max-files <n> --verify
 
 
 @cli.command()
 @click.option("--message", "-m", help="Commit message")
-@click.pass_context
-def commit(ctx, message: str | None):
+def commit(message: str | None):
     """Smart commit with quality gates and pre-commit hooks."""
     # Check if we're in a git repository
     if not Path.cwd().joinpath(".git").exists():
@@ -152,20 +68,17 @@ def commit(ctx, message: str | None):
         )
         sys.exit(1)
 
-    # Find smart-commit script from component path
-    smart_commit_path = get_component_path("smart-commit")
-    if not smart_commit_path:
-        click.echo(
-            "❌ Smart-commit component not found. Genesis may not be properly installed.",
-            err=True,
-        )
-        sys.exit(1)
+    # Try to find smart-commit script relative to CLI file
+    cli_path = Path(__file__)
+    smart_commit_script = (
+        cli_path.parent.parent / "smart-commit" / "src" / "smart-commit.sh"
+    )
 
-    smart_commit_script = smart_commit_path / "src" / "smart-commit.sh"
     if not smart_commit_script.exists():
         click.echo(
-            f"❌ Smart-commit script not found at {smart_commit_script}", err=True
+            "❌ Smart-commit script not found. Use direct call instead:", err=True
         )
+        click.echo("   /path/to/genesis/smart-commit/src/smart-commit.sh", err=True)
         sys.exit(1)
 
     # Set required environment variables for AutoFixer if not already set
@@ -199,8 +112,7 @@ def commit(ctx, message: str | None):
 @click.option("--worktrees", is_flag=True, help="Clean old worktrees only")
 @click.option("--artifacts", is_flag=True, help="Clean build artifacts only")
 @click.option("--all", "clean_all", is_flag=True, help="Clean everything")
-@click.pass_context
-def clean(ctx, worktrees: bool, artifacts: bool, clean_all: bool):
+def clean(worktrees: bool, artifacts: bool, clean_all: bool):
     """Clean workspace: remove old worktrees and build artifacts."""
     # Get the current repo root instead of genesis_root
     repo_root = get_git_root()
@@ -304,8 +216,7 @@ def clean(ctx, worktrees: bool, artifacts: bool, clean_all: bool):
 
 
 @cli.command()
-@click.pass_context
-def sync(ctx):
+def sync():
     """Update shared components and dependencies."""
     genesis_root = ctx.obj.get("genesis_root")
     if not genesis_root:
@@ -344,8 +255,7 @@ cli.add_command(version)
 
 @cli.command()
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed status")
-@click.pass_context
-def status(ctx, verbose: bool):
+def status(verbose: bool):
     """Check Genesis project health and component status."""
     genesis_root = ctx.obj.get("genesis_root")
     if not genesis_root:

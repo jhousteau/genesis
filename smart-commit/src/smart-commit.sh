@@ -105,47 +105,41 @@ if [[ "$current_branch" == "$main_branch" ]]; then
     fi
 fi
 
-# 4. Run pre-commit hooks for validation
-if [[ -f .pre-commit-config.yaml ]]; then
-    log "ℹ️ Running pre-commit checks..."
-    if ! pre-commit run --all-files; then
-        echo -e "\n${YELLOW}💡 Common fixes:${NC}"
-        echo "   • If main branch is protected: git checkout -b feature/your-change"
-        echo "   • For formatting issues: make format"
-        echo "   • For linting issues: make lint"
-        echo "   • For test failures: make test"
-        echo ""
-        error_exit "Pre-commit checks failed"
-    fi
-    log "✅ Pre-commit checks passed" "$GREEN"
-fi
+# 4. Pre-commit validation handled by AutoFixer ValidationStage
+# (removed duplicate pre-commit execution that caused convergence issues)
 
-# 5. Run tests with continue option
+# 4. Run tests with continue option
 log "ℹ️ Running tests..."
 test_cmd=""
-if [[ -d tests/ ]] && command -v pytest &>/dev/null; then
-    test_cmd="pytest tests/ -q"
-elif [[ -f Makefile ]] && make -n test &>/dev/null; then
+# Prefer Makefile test target (handles Poetry/virtualenv properly)
+if [[ -f Makefile ]] && make -n test &>/dev/null; then
     test_cmd="make test"
+elif [[ -d tests/ ]] && command -v pytest &>/dev/null; then
+    test_cmd="pytest tests/ -q"
 fi
 
 if [[ -n $test_cmd ]]; then
-    if $test_cmd &>/dev/null; then
+    echo "Running: $test_cmd"
+    if $test_cmd; then
         log "✅ Tests passed" "$GREEN"
     else
         log "⚠️ Tests failed" "$YELLOW"
+        echo ""
+        echo "Test command that failed: $test_cmd"
+        echo "Run the command above to see detailed error output."
+        echo ""
         read -p "Continue anyway? (y/N): " -n 1 -r
         echo; [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
     fi
 fi
 
-# 6. Basic secret detection
+# 5. Basic secret detection
 log "ℹ️ Scanning for secrets..."
 if grep -rE "(sk-[a-zA-Z0-9]{48}|ghp_[a-zA-Z0-9]{36})" --include="*.py" --include="*.js" --include="*.ts" . 2>/dev/null | grep -v test; then
     error_exit "Potential secrets detected! Remove before committing"
 fi
 
-# 7. Interactive commit message
+# 6. Interactive commit message
 echo ""
 
 # Check if commit message provided via environment variable (from CLI)
