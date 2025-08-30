@@ -94,8 +94,23 @@ disallow_untyped_defs = true
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q --strict-markers"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "unit: Unit tests for individual components",
+    "integration: Integration tests across components",
+    "e2e: End-to-end tests for complete workflows",
+    "ai_safety: Tests for AI safety constraints (file counts, isolation)",
+    "slow: Tests that take more than 2 seconds",
+    "requires_git: Tests that need git operations",
+    "requires_network: Tests that need network access",
+]
 testpaths = [
-    "tests",
+    "bootstrap/tests",
+    "genesis-cli/tests",
+    "shared-python/tests",
+    "smart-commit/tests",
+    "worktree-tools/tests",
+    "testing/tests",
 ]
 python_files = [
     "test_*.py",

@@ -105,12 +105,10 @@ if [[ "$current_branch" == "$main_branch" ]]; then
     fi
 fi
 
-# 4. Pre-commit validation already completed by AutoFixer with convergent fixing
-# AutoFixer runs individual hooks + final 'pre-commit run --all-files' validation
-# No need to duplicate this work - trust the AutoFixer results
-log "ℹ️ Pre-commit validation completed by AutoFixer" "$GREEN"
+# 4. Pre-commit validation handled by AutoFixer ValidationStage
+# (removed duplicate pre-commit execution that caused convergence issues)
 
-# 5. Run tests with continue option
+# 4. Run tests with continue option
 log "ℹ️ Running tests..."
 test_cmd=""
 if [[ -f Makefile ]] && make -n test &>/dev/null; then
@@ -125,26 +123,27 @@ elif [[ -d tests/ ]] && command -v pytest &>/dev/null; then
 fi
 
 if [[ -n $test_cmd ]]; then
-    # Debug: show what we're about to run
-    # echo "DEBUG: Running '$test_cmd' in directory '$(pwd)'"
-
-    # Use eval to ensure proper command expansion
+    echo "Running: $test_cmd"
     if eval "$test_cmd"; then
         log "✅ Tests passed" "$GREEN"
     else
         log "⚠️ Tests failed" "$YELLOW"
+        echo ""
+        echo "Test command that failed: $test_cmd"
+        echo "Run the command above to see detailed error output."
+        echo ""
         read -p "Continue anyway? (y/N): " -n 1 -r
         echo; [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
     fi
 fi
 
-# 6. Basic secret detection
+# 5. Basic secret detection
 log "ℹ️ Scanning for secrets..."
 if grep -rE "(sk-[a-zA-Z0-9]{48}|ghp_[a-zA-Z0-9]{36})" --include="*.py" --include="*.js" --include="*.ts" . 2>/dev/null | grep -v test; then
     error_exit "Potential secrets detected! Remove before committing"
 fi
 
-# 7. Interactive commit message
+# 6. Interactive commit message
 echo ""
 
 # Check if commit message provided via environment variable (from CLI)

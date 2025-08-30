@@ -50,7 +50,7 @@ test: ## Run all tests with coverage
 	@echo "$(BLUE)Running tests for $(PROJECT_NAME)...$(NC)"
 	@if [ -f "pyproject.toml" ] || [ -f "pytest.ini" ]; then \
 		echo "$(BLUE)Running Python tests...$(NC)"; \
-		pytest tests/ --cov=. --cov-report=term-missing; \
+		pytest; \
 	fi
 	@if [ -f "package.json" ] && [ -d "node_modules" ]; then \
 		echo "$(BLUE)Running Node.js tests...$(NC)"; \

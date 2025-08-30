@@ -22,7 +22,24 @@
 
 - Python {{python_version}}+
 - Poetry
-- direnv (optional, for automatic environment loading)
+- direnv (required for automatic .envrc loading)
+
+### Setup direnv (required)
+
+```bash
+# macOS
+brew install direnv
+
+# Ubuntu/Debian
+sudo apt-get install direnv
+
+# Add to your shell (add to ~/.bashrc or ~/.zshrc)
+eval "$(direnv hook bash)"  # for bash
+eval "$(direnv hook zsh)"   # for zsh
+
+# Allow .envrc in this project
+direnv allow
+```
 
 ### Installation
 
