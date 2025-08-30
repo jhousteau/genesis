@@ -12,6 +12,7 @@ import click
 # Import version from package
 from genesis import __version__
 from genesis.commands.version import version
+from genesis.commands.worktree import worktree
 
 from .core.errors import handle_error
 
@@ -76,10 +77,6 @@ def bootstrap(name: str, project_type: str, target_path: str | None, skip_git: b
     from genesis.commands.bootstrap import bootstrap_command
 
     bootstrap_command(name, project_type, target_path, skip_git)
-
-
-# Worktree functionality removed - use direct script calls instead
-# Direct usage: /path/to/genesis/worktree-tools/src/create-sparse-worktree.sh <name> <focus_path> --max-files <n> --verify
 
 
 @cli.command()
@@ -226,6 +223,7 @@ def sync(ctx):
 
 
 cli.add_command(version)
+cli.add_command(worktree)
 
 
 @cli.command()
