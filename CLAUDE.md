@@ -250,7 +250,8 @@ project/
 - **smart-commit/**: Quality gates before commits
 - **worktree-tools/**: AI-safe sparse worktree creation
 - **templates/**: Project templates (Python API, CLI, TypeScript, Terraform)
-- **shared-typescript/**: TypeScript utilities
+- **shared-typescript/**: TypeScript utilities (separate worktree)
+- **shared-python/**: Python utilities (separate worktree)
 - **terraform/**: Infrastructure modules
 - **docs/**: Comprehensive documentation
 - **scripts/**: Utility scripts for validation and automation
